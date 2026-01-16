@@ -1,0 +1,1794 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>烘匠 BakeManager - 首页</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Cookpad 风格配色 - 统一配色 */
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+            --text-main: #333333;
+            --text-sub: #8b8b8b;
+            --bg-light: #f7f7f5;
+        }
+
+        /* 统一图标样式 - 现代柔和风格 (Soft Tint) */
+        .icon-base {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        
+        .icon-unified {
+            width: 2.75rem; /* 44px */
+            height: 2.75rem;
+            border-radius: 12px; /* 更圆润的圆角 (Squircle风格) */
+            margin: 0 auto 0.5rem auto;
+        }
+        
+        .icon-unified-lg {
+            width: 3.25rem; /* 52px */
+            height: 3.25rem;
+            border-radius: 16px;
+        }
+
+        /* 语义化配色方案 */
+        .icon-blue { background-color: #eff6ff; color: #2563eb; }
+        .icon-green { background-color: #ecfdf5; color: #059669; }
+        .icon-purple { background-color: #f5f3ff; color: #7c3aed; }
+        .icon-orange { background-color: #fff7ed; color: #ea580c; }
+        .icon-red { background-color: #fef2f2; color: #dc2626; }
+        .icon-cyan { background-color: #ecfeff; color: #0891b2; }
+        .icon-indigo { background-color: #eef2ff; color: #4f46e5; }
+
+        .gradient-primary {
+            background: linear-gradient(135deg, #ff9f43 0%, #ff8c00 100%);
+        }
+        .gradient-recipe {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+        .gradient-message {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+        .gradient-inventory {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        .gradient-order {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        .card {
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+        }
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .bottom-nav { 
+            background: rgba(255, 255, 255, 0.98); 
+            backdrop-filter: blur(10px); 
+            border-top: 1px solid #f0f0f0; 
+            padding-bottom: env(safe-area-inset-bottom); 
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 50;
+        }
+        .bottom-nav-item { 
+            padding: 8px 0 4px; 
+            color: #999; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .bottom-nav-item.active { color: #ff8c00; }
+        .bottom-nav-item i { font-size: 22px; margin-bottom: 2px; }
+        .bottom-nav-item span { font-size: 10px; font-weight: 500; }
+        .main-content {
+            padding-bottom: 80px;
+        }
+        .weather-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .message-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- 顶部状态栏 -->
+    <div class="bg-white px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
+                <i class="fas fa-bread-slice text-white text-sm"></i>
+            </div>
+            <div>
+                <div class="text-sm font-semibold text-gray-800">烘匠 BakeManager</div>
+                <div class="text-xs text-gray-500">智能烘焙管理平台</div>
+            </div>
+        </div>
+        <div class="flex items-center space-x-3">
+            <div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
+                <i class="fas fa-user text-gray-600 text-sm"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主内容区域 -->
+    <main class="main-content">
+
+
+        <!-- 搜索栏 -->
+        <div class="px-4 mt-4">
+            <div class="relative">
+                <input type="text" placeholder="搜索配方、原料或社区内容..." class="w-full bg-white rounded-xl px-4 py-3 pl-10 text-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <button class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-orange-500">
+                    <i class="fas fa-microphone"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 社区优质配方轮播图 -->
+        <div class="px-4 mt-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-gray-800">社区优质配方</h2>
+                <a href="#" class="text-sm text-orange-600">更多推荐</a>
+            </div>
+            <div class="relative overflow-hidden rounded-xl">
+                <div class="recipe-carousel flex transition-transform duration-500 ease-in-out" id="recipeCarousel">
+                    <!-- 轮播项1 -->
+                    <div class="w-full flex-shrink-0 relative">
+                        <div class="relative rounded-xl overflow-hidden h-48">
+                            <!-- 产品图片作为背景 -->
+                            <img src="https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" alt="法式马卡龙" class="w-full h-full object-cover">
+                            <!-- 渐变遮罩 -->
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
+                            <!-- 内容区域 -->
+                            <div class="absolute bottom-0 left-0 right-0 p-6 text-white">
+                                <div class="flex items-center space-x-2 mb-2">
+                                    <div class="w-8 h-8 rounded-full bg-white bg-opacity-20 flex items-center justify-center">
+                                        <i class="fas fa-crown text-yellow-300 text-sm"></i>
+                                    </div>
+                                    <span class="text-sm font-medium">本周热门</span>
+                                </div>
+                                <h3 class="text-xl font-bold mb-2">法式马卡龙</h3>
+                                <p class="text-sm text-gray-200 mb-3">精致法式甜点，口感层次丰富</p>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-4">
+                                        <span class="text-xs">⭐ 4.9</span>
+                                        <span class="text-xs">👥 1.2k</span>
+                                        <span class="text-xs">⏱️ 120分钟</span>
+                                    </div>
+                                    <button class="bg-white bg-opacity-20 px-4 py-2 rounded-full text-sm font-medium hover:bg-opacity-30 transition-all">查看详情</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 轮播项2 -->
+                    <div class="w-full flex-shrink-0 relative">
+                        <div class="relative rounded-xl overflow-hidden h-48">
+                            <!-- 产品图片作为背景 -->
+                            <img src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" alt="提拉米苏" class="w-full h-full object-cover">
+                            <!-- 渐变遮罩 -->
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
+                            <!-- 内容区域 -->
+                            <div class="absolute bottom-0 left-0 right-0 p-6 text-white">
+                                <div class="flex items-center space-x-2 mb-2">
+                                    <div class="w-8 h-8 rounded-full bg-white bg-opacity-20 flex items-center justify-center">
+                                        <i class="fas fa-star text-yellow-300 text-sm"></i>
+                                    </div>
+                                    <span class="text-sm font-medium">精选推荐</span>
+                                </div>
+                                <h3 class="text-xl font-bold mb-2">经典提拉米苏</h3>
+                                <p class="text-sm text-gray-200 mb-3">意式经典甜品，浓郁咖啡香</p>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-4">
+                                        <span class="text-xs">⭐ 4.8</span>
+                                        <span class="text-xs">👥 856</span>
+                                        <span class="text-xs">⏱️ 90分钟</span>
+                                    </div>
+                                    <button class="bg-white bg-opacity-20 px-4 py-2 rounded-full text-sm font-medium hover:bg-opacity-30 transition-all">查看详情</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 轮播项3 -->
+                    <div class="w-full flex-shrink-0 relative">
+                        <div class="relative rounded-xl overflow-hidden h-48">
+                            <!-- 产品图片作为背景 -->
+                            <img src="https://images.unsplash.com/photo-1571115764595-644a1f56a55c?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" alt="芝士蛋糕" class="w-full h-full object-cover">
+                            <!-- 渐变遮罩 -->
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
+                            <!-- 内容区域 -->
+                            <div class="absolute bottom-0 left-0 right-0 p-6 text-white">
+                                <div class="flex items-center space-x-2 mb-2">
+                                    <div class="w-8 h-8 rounded-full bg-white bg-opacity-20 flex items-center justify-center">
+                                        <i class="fas fa-heart text-red-300 text-sm"></i>
+                                    </div>
+                                    <span class="text-sm font-medium">用户喜爱</span>
+                                </div>
+                                <h3 class="text-xl font-bold mb-2">免烤芝士蛋糕</h3>
+                                <p class="text-sm text-gray-200 mb-3">免烤制作，新手友好</p>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-4">
+                                        <span class="text-xs">⭐ 4.7</span>
+                                        <span class="text-xs">👥 642</span>
+                                        <span class="text-xs">⏱️ 60分钟</span>
+                                    </div>
+                                    <button class="bg-white bg-opacity-20 px-4 py-2 rounded-full text-sm font-medium hover:bg-opacity-30 transition-all">查看详情</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 轮播指示器 -->
+                <div class="flex justify-center space-x-2 mt-4">
+                    <button class="recipe-dot w-2 h-2 rounded-full bg-blue-600 transition-all duration-300" data-index="0"></button>
+                    <button class="recipe-dot w-2 h-2 rounded-full bg-gray-300 transition-all duration-300" data-index="1"></button>
+                    <button class="recipe-dot w-2 h-2 rounded-full bg-gray-300 transition-all duration-300" data-index="2"></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 常用功能 -->
+        <div class="px-4 mt-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-gray-800">常用功能</h2>
+                <button class="text-sm text-orange-600" onclick="openSettings()">
+                    <i class="fas fa-cog text-xs mr-1"></i>设置
+                </button>
+            </div>
+            <div class="grid grid-cols-4 gap-4" id="functionsGrid">
+                <!-- 配方管理 (固定) -->
+                <a href="../../peifnagmokuai/mianbao/mianbaozhuye/peifang-zhuye.html" class="card bg-white rounded-xl p-4 text-center" data-fixed="true">
+                    <div class="icon-base icon-unified icon-orange">
+                        <i class="fas fa-book text-lg"></i>
+                    </div>
+                    <div class="text-xs text-gray-700 font-medium">配方管理</div>
+                </a>
+                
+                <!-- 消息中心 (固定) -->
+                <a href="#" class="card bg-white rounded-xl p-4 text-center relative" data-fixed="true">
+                    <div class="icon-base icon-unified icon-blue">
+                        <i class="fas fa-envelope text-lg"></i>
+                    </div>
+                    <div class="text-xs text-gray-700 font-medium">消息中心</div>
+                    <span class="message-badge" style="top: 8px; right: 8px;">3</span>
+                </a>
+                
+                <!-- 库存查看 (可删除) -->
+                <a href="../cangku-gongneng/kucun/kucunchaxunzhuye.html" class="card bg-white rounded-xl p-4 text-center" data-removable="true">
+                    <div class="icon-base icon-unified icon-blue">
+                        <i class="fas fa-boxes text-lg"></i>
+                    </div>
+                    <div class="text-xs text-gray-700 font-medium">库存查看</div>
+                </a>
+                
+                <!-- 快速入库 (可删除) -->
+                <a href="../cangku-gongneng/ruku/rukuye-zhuye.html" class="card bg-white rounded-xl p-4 text-center" data-removable="true">
+                    <div class="icon-base icon-unified icon-green">
+                        <i class="fas fa-plus-circle text-lg"></i>
+                    </div>
+                    <div class="text-xs text-gray-700 font-medium">快速入库</div>
+                </a>
+                
+                <!-- 要货申请 (可删除) -->
+                <a href="../yunying/yaohuo/yaohuo-zhuye.html" class="card bg-white rounded-xl p-4 text-center" data-removable="true">
+                    <div class="icon-base icon-unified icon-blue">
+                        <i class="fas fa-clipboard-list text-lg"></i>
+                    </div>
+                    <div class="text-xs text-gray-700 font-medium">要货申请</div>
+                </a>
+                
+                <!-- 生产配料 (可删除) -->
+                <a href="../yunying/shengchan/shengchan-zhuye.html" class="card bg-white rounded-xl p-4 text-center" data-removable="true">
+                    <div class="icon-base icon-unified icon-orange">
+                        <i class="fas fa-cogs text-lg"></i>
+                    </div>
+                    <div class="text-xs text-gray-700 font-medium">生产配料</div>
+                </a>
+            </div>
+        </div>
+
+        <div class="px-4 mt-6">
+            <div class="grid grid-cols-2 gap-3">
+                <div class="recipe-card pb-2">
+                    <div class="relative h-32">
+                        <img src="https://images.unsplash.com/photo-1560180474-e8563fd75bab?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" class="w-full h-full object-cover">
+                    </div>
+                    <div class="p-2.5">
+                        <h3 class="font-bold text-gray-800 text-sm mb-2 leading-snug">草莓纸杯蛋糕</h3>
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center space-x-1.5 overflow-hidden">
+                                <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80" class="w-5 h-5 rounded-full">
+                                <span class="text-xs text-gray-500 truncate">莎拉</span>
+                            </div>
+                            <button class="text-xs text-orange-500 bg-orange-50 px-2.5 py-1 rounded-full font-medium flex-shrink-0" onclick="toggleFollow(this)">关注</button>
+                        </div>
+                        <div class="flex items-center justify-between border-t border-gray-100 pt-2">
+                            <div class="flex items-center">
+                                <span class="text-[10px] text-orange-500 font-medium">🔥 近期热门</span>
+                            </div>
+                            <button class="text-gray-400 active:text-red-500">
+                                <i class="far fa-heart text-sm"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recipe-card pb-2">
+                    <div class="relative h-48">
+                        <img src="https://images.unsplash.com/photo-1582716401301-b2407dc7563d?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" class="w-full h-full object-cover">
+                        <div class="absolute bottom-2 left-2 bg-orange-500 text-white text-[10px] px-1.5 py-0.5 rounded">官方精选</div>
+                    </div>
+                    <div class="p-2.5">
+                        <h3 class="font-bold text-gray-800 text-sm mb-2 leading-snug">经典软曲奇</h3>
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center space-x-1.5 overflow-hidden">
+                                <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80" class="w-5 h-5 rounded-full">
+                                <span class="text-xs text-gray-500 truncate">杰克</span>
+                            </div>
+                            <button class="text-xs text-orange-500 bg-orange-50 px-2.5 py-1 rounded-full font-medium flex-shrink-0" onclick="toggleFollow(this)">关注</button>
+                        </div>
+                        <div class="flex items-center justify-between border-t border-gray-100 pt-2">
+                            <div class="flex items-center">
+                                <div class="face-pile">
+                                    <img src="https://randomuser.me/api/portraits/men/12.jpg">
+                                    <img src="https://randomuser.me/api/portraits/women/14.jpg">
+                                </div>
+                                <span class="text-[10px] text-gray-400 ml-1.5">200+跟做</span>
+                            </div>
+                            <button class="text-gray-400 active:text-red-500">
+                                <i class="far fa-heart text-sm"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="py-8 text-center">
+                <button class="text-gray-400 text-xs flex items-center justify-center w-full space-x-1">
+                    <span>加载更多美味</span>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 消息通知 -->
+        <div class="px-4 mt-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-gray-800">消息通知</h2>
+                <a href="#" class="text-sm text-orange-600">查看全部</a>
+            </div>
+            <div class="bg-white rounded-xl p-4">
+                <div class="space-y-3">
+                    <div class="flex items-start space-x-3 p-3 bg-red-50 rounded-lg">
+                        <div class="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-exclamation text-white text-xs"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="text-sm font-medium text-gray-800">库存预警</div>
+                            <div class="text-xs text-gray-600 mt-1">高筋面粉库存不足，当前库存仅剩15kg</div>
+                            <div class="text-xs text-gray-400 mt-1">2小时前</div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start space-x-3 p-3 bg-blue-50 rounded-lg">
+                        <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-info text-white text-xs"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="text-sm font-medium text-gray-800">系统通知</div>
+                            <div class="text-xs text-gray-600 mt-1">系统将于今晚23:00-01:00进行维护升级</div>
+                            <div class="text-xs text-gray-400 mt-1">1天前</div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start space-x-3 p-3 bg-green-50 rounded-lg">
+                        <div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-check text-white text-xs"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="text-sm font-medium text-gray-800">订单完成</div>
+                            <div class="text-xs text-gray-600 mt-1">订单#2023110801已完成制作，可安排配送</div>
+                            <div class="text-xs text-gray-400 mt-1">3天前</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 今日任务 -->
+        <div class="px-4 mt-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-gray-800">今日任务</h2>
+                <button class="text-sm text-orange-600" onclick="addNewTask()">
+                    <i class="fas fa-plus text-xs mr-1"></i>新增任务
+                </button>
+            </div>
+            <div class="space-y-3">
+                <div class="bg-white rounded-xl p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center space-x-3">
+                            <input type="checkbox" class="w-4 h-4 text-orange-600 rounded focus:ring-orange-500">
+                            <span class="text-sm font-medium text-gray-800">制作法式面包 x20</span>
+                        </div>
+                        <span class="text-xs text-orange-600 bg-orange-100 px-2 py-1 rounded-full">进行中</span>
+                    </div>
+                    <p class="text-xs text-gray-500 ml-7">预计完成时间: 14:30</p>
+                    <div class="ml-7 mt-2">
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-orange-600 h-2 rounded-full" style="width: 65%;"></div>
+                        </div>
+                        <span class="text-xs text-gray-500 mt-1">65% 完成</span>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center space-x-3">
+                            <input type="checkbox" class="w-4 h-4 text-orange-600 rounded focus:ring-orange-500">
+                            <span class="text-sm font-medium text-gray-800">检查库存状态</span>
+                        </div>
+                        <span class="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded-full">待开始</span>
+                    </div>
+                    <p class="text-xs text-gray-500 ml-7">预计完成时间: 16:00</p>
+                </div>
+                <div class="bg-white rounded-xl p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center space-x-3">
+                            <input type="checkbox" checked class="w-4 h-4 text-orange-600 rounded focus:ring-orange-500">
+                            <span class="text-sm font-medium text-gray-400 line-through">清洁烘焙设备</span>
+                        </div>
+                        <span class="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">已完成</span>
+                    </div>
+                    <p class="text-xs text-gray-400 ml-7">完成时间: 09:30</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 数据概览 -->
+        <div class="px-4 mt-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-gray-800">今日概览</h2>
+                <div class="flex items-center space-x-2">
+                    <!-- 数据导出按钮 -->
+                    <button onclick="exportData('overview')" class="text-xs text-gray-500 hover:text-orange-600 transition-colors duration-200 flex items-center space-x-1">
+                        <i class="fas fa-download text-xs"></i>
+                        <span>导出</span>
+                    </button>
+                    <a href="../cangku-gongneng/erp-zhuye-canku.html" class="text-xs text-orange-600 hover:text-orange-800 transition-colors duration-200 flex items-center space-x-1">
+                        <span>查看详细报表</span>
+                        <i class="fas fa-chevron-right text-xs"></i>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- 添加数据更新时间 -->
+            <div class="text-xs text-gray-500 mb-3 flex items-center">
+                <i class="fas fa-sync-alt mr-1"></i>
+                <span>数据更新于 5分钟前</span>
+            </div>
+            <!-- 骨架屏 -->
+            <div id="overviewSkeleton" class="grid grid-cols-2 gap-3 hidden">
+                <div class="bg-white rounded-xl p-4 shadow-sm animate-pulse">
+                    <div class="h-3 bg-gray-200 rounded mb-2"></div>
+                    <div class="h-6 bg-gray-200 rounded mb-1"></div>
+                    <div class="h-3 bg-gray-200 rounded w-1/2"></div>
+                </div>
+                <div class="bg-white rounded-xl p-4 shadow-sm animate-pulse">
+                    <div class="h-3 bg-gray-200 rounded mb-2"></div>
+                    <div class="h-6 bg-gray-200 rounded mb-1"></div>
+                    <div class="h-3 bg-gray-200 rounded w-1/2"></div>
+                </div>
+                <div class="bg-white rounded-xl p-4 shadow-sm animate-pulse">
+                    <div class="h-3 bg-gray-200 rounded mb-2"></div>
+                    <div class="h-6 bg-gray-200 rounded mb-1"></div>
+                    <div class="h-3 bg-gray-200 rounded w-1/2"></div>
+                </div>
+                <div class="bg-white rounded-xl p-4 shadow-sm animate-pulse">
+                    <div class="h-3 bg-gray-200 rounded mb-2"></div>
+                    <div class="h-6 bg-gray-200 rounded mb-1"></div>
+                    <div class="h-3 bg-gray-200 rounded w-1/2"></div>
+                </div>
+            </div>
+            
+            <div id="overviewData" class="grid grid-cols-2 gap-3">
+                <!-- 销售数据 -->
+                <div class="bg-white rounded-xl p-4 cursor-pointer hover:shadow-lg transition-all duration-200 transform hover:scale-105" onclick="window.location.href='#sales-detail'">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs text-gray-500">今日销售</span>
+                        <i class="fas fa-chart-line text-green-500 text-xs"></i>
+                    </div>
+                    <div class="text-xl font-bold text-gray-800">¥12,580</div>
+                    <div class="text-xs text-green-500 mt-1">↑ 15% 较昨日</div>
+                </div>
+                
+                <!-- 订单数据 -->
+                <div class="bg-white rounded-xl p-4 cursor-pointer hover:shadow-lg transition-all duration-200 transform hover:scale-105" onclick="window.location.href='#orders-detail'">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs text-gray-500">完成订单</span>
+                        <i class="fas fa-shopping-cart text-blue-500 text-xs"></i>
+                    </div>
+                    <div class="text-xl font-bold text-gray-800">68/75</div>
+                    <div class="text-xs text-gray-500 mt-1">完成率 91%</div>
+                </div>
+                
+                <!-- 库存预警 -->
+                <div class="bg-white rounded-xl p-4 cursor-pointer hover:shadow-lg transition-all duration-200 transform hover:scale-105" onclick="window.location.href='kucunyujingye-mobile.html'">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs text-gray-500">库存预警</span>
+                        <i class="fas fa-exclamation-triangle text-orange-500 text-xs"></i>
+                    </div>
+                    <div class="text-xl font-bold text-orange-600">5</div>
+                    <div class="text-xs text-gray-500 mt-1">种原料需补货</div>
+                </div>
+                
+                <!-- 过期提醒 -->
+                <div class="bg-white rounded-xl p-4 cursor-pointer hover:shadow-lg transition-all duration-200 transform hover:scale-105" onclick="window.location.href='#expiry-detail'">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs text-gray-500">即将过期</span>
+                        <i class="fas fa-clock text-red-500 text-xs"></i>
+                    </div>
+                    <div class="text-xl font-bold text-red-600">3</div>
+                    <div class="text-xs text-gray-500 mt-1">项原料3日内过期</div>
+                </div>
+            </div>
+            
+            <!-- 数据异常提示 -->
+            <div id="dataError" class="hidden bg-red-50 border border-red-200 rounded-lg p-3 mt-3">
+                <div class="flex items-center">
+                    <i class="fas fa-exclamation-circle text-red-500 mr-2"></i>
+                    <span class="text-sm text-red-700">数据加载失败，请稍后重试</span>
+                    <button class="ml-auto text-red-600 hover:text-red-800" onclick="retryLoadData()">
+                        <i class="fas fa-redo text-sm"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+
+
+        <!-- 数据趋势 -->
+        <div class="px-4 mt-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-gray-800">业务趋势</h2>
+                <div class="flex items-center space-x-2">
+                    <!-- 添加刷新按钮 -->
+                    <button class="text-gray-500 hover:text-orange-600 transition-colors" onclick="refreshTrendData()">
+                        <i class="fas fa-sync-alt text-sm"></i>
+                    </button>
+                    <select class="text-sm border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-orange-500">
+                        <option>近7天</option>
+                        <option>近30天</option>
+                        <option>本月</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- 使用标签页切换不同维度的数据 -->
+            <div class="flex space-x-4 mb-4 border-b">
+                <button id="salesTab" class="trend-tab pb-2 text-sm font-medium text-orange-600 border-b-2 border-orange-600" data-tab="sales">销售</button>
+                <button id="inventoryTab" class="trend-tab pb-2 text-sm font-medium text-gray-500" data-tab="inventory">库存</button>
+                <button id="productionTab" class="trend-tab pb-2 text-sm font-medium text-gray-500" data-tab="production">生产</button>
+            </div>
+            
+            <!-- 销售趋势内容 -->
+            <div id="salesContent" class="trend-content bg-white rounded-xl p-4">
+                <!-- 添加同比环比数据 -->
+                <div class="flex justify-around mb-4 p-3 bg-blue-50 rounded-lg">
+                    <div class="text-center">
+                        <div class="text-xs text-gray-600">同比上月</div>
+                        <div class="text-sm font-bold text-green-600">+23.5%</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-xs text-gray-600">环比上周</div>
+                        <div class="text-sm font-bold text-green-600">+12.3%</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-xs text-gray-600">目标完成率</div>
+                        <div class="text-sm font-bold text-blue-600">87.2%</div>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <h3 class="text-sm font-medium text-gray-800 mb-2">销售额趋势</h3>
+                    <div class="h-40 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg p-4 relative overflow-hidden">
+                        <!-- 销售额趋势图表 -->
+                        <svg class="w-full h-full" viewBox="0 0 300 120" xmlns="http://www.w3.org/2000/svg">
+                            <!-- 网格线 -->
+                            <defs>
+                                <pattern id="grid" width="30" height="24" patternUnits="userSpaceOnUse">
+                                    <path d="M 30 0 L 0 0 0 24" fill="none" stroke="#e5e7eb" stroke-width="0.5" opacity="0.5"/>
+                                </pattern>
+                                <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:0.3" />
+                                    <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:0.05" />
+                                </linearGradient>
+                            </defs>
+                            
+                            <!-- 背景网格 -->
+                            <rect width="100%" height="100%" fill="url(#grid)" />
+                            
+                            <!-- 数据点 -->
+                            <g>
+                                <!-- 面积填充 -->
+                                <path d="M 20 80 L 50 65 L 80 70 L 110 55 L 140 45 L 170 50 L 200 35 L 230 40 L 260 25 L 280 30 L 280 100 L 20 100 Z" 
+                                      fill="url(#areaGradient)" />
+                                
+                                <!-- 主线条 -->
+                                <path d="M 20 80 L 50 65 L 80 70 L 110 55 L 140 45 L 170 50 L 200 35 L 230 40 L 260 25 L 280 30" 
+                                      fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                
+                                <!-- 数据点圆圈 -->
+                                <circle cx="20" cy="80" r="3" fill="#3b82f6" stroke="white" stroke-width="2"/>
+                                <circle cx="50" cy="65" r="3" fill="#3b82f6" stroke="white" stroke-width="2"/>
+                                <circle cx="80" cy="70" r="3" fill="#3b82f6" stroke="white" stroke-width="2"/>
+                                <circle cx="110" cy="55" r="3" fill="#3b82f6" stroke="white" stroke-width="2"/>
+                                <circle cx="140" cy="45" r="3" fill="#3b82f6" stroke="white" stroke-width="2"/>
+                                <circle cx="170" cy="50" r="3" fill="#3b82f6" stroke="white" stroke-width="2"/>
+                                <circle cx="200" cy="35" r="3" fill="#3b82f6" stroke="white" stroke-width="2"/>
+                                <circle cx="230" cy="40" r="3" fill="#3b82f6" stroke="white" stroke-width="2"/>
+                                <circle cx="260" cy="25" r="3" fill="#3b82f6" stroke="white" stroke-width="2"/>
+                                <circle cx="280" cy="30" r="3" fill="#3b82f6" stroke="white" stroke-width="2"/>
+                            </g>
+                            
+                            <!-- Y轴标签 -->
+                            <g fill="#6b7280" font-size="10" font-family="Arial, sans-serif">
+                                <text x="5" y="25" text-anchor="start">50k</text>
+                                <text x="5" y="45" text-anchor="start">40k</text>
+                                <text x="5" y="65" text-anchor="start">30k</text>
+                                <text x="5" y="85" text-anchor="start">20k</text>
+                                <text x="5" y="105" text-anchor="start">10k</text>
+                            </g>
+                            
+                            <!-- X轴标签 -->
+                            <g fill="#6b7280" font-size="9" font-family="Arial, sans-serif">
+                                <text x="20" y="115" text-anchor="middle">1日</text>
+                                <text x="80" y="115" text-anchor="middle">5日</text>
+                                <text x="140" y="115" text-anchor="middle">10日</text>
+                                <text x="200" y="115" text-anchor="middle">15日</text>
+                                <text x="260" y="115" text-anchor="middle">20日</text>
+                            </g>
+                        </svg>
+                        
+                        <!-- 当前数值显示 -->
+                        <div class="absolute top-3 right-3 bg-white bg-opacity-90 rounded-lg px-3 py-1 shadow-sm">
+                            <div class="text-xs text-gray-600">今日销售额</div>
+                            <div class="text-sm font-bold text-blue-600">¥42,580</div>
+                        </div>
+                        
+                        <!-- 趋势指示器 -->
+                        <div class="absolute bottom-3 left-3 flex items-center space-x-2">
+                            <div class="flex items-center space-x-1 bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                                <i class="fas fa-arrow-up text-xs"></i>
+                                <span class="text-xs font-medium">+12.5%</span>
+                            </div>
+                            <span class="text-xs text-gray-600">较昨日</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 新增：今日利润快览 -->
+                <div class="mt-4 p-3 bg-gray-50 rounded-lg">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-gray-600">今日毛利</span>
+                        <span class="text-sm font-medium text-green-600">¥3,774</span>
+                    </div>
+                    <div class="flex items-center justify-between mt-2">
+                        <span class="text-xs text-gray-600">毛利率</span>
+                        <span class="text-sm font-medium">30%</span>
+                    </div>
+                </div>
+                
+                <!-- 热销产品排行 -->
+                <div class="mt-4 pt-4 border-t">
+                    <h3 class="text-sm font-medium text-gray-800 mb-2">热销TOP3</h3>
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-600">法式长棍面包</span>
+                            <span class="text-xs font-medium">128份</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-600">巧克力曲奇</span>
+                            <span class="text-xs font-medium">96份</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-600">草莓蛋糕</span>
+                            <span class="text-xs font-medium">82份</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 库存趋势内容 -->
+            <div id="inventoryContent" class="trend-content bg-white rounded-xl p-4 hidden">
+                <div class="mb-4">
+                    <h3 class="text-sm font-medium text-gray-800 mb-2">库存水平趋势</h3>
+                    <div class="h-40 bg-gradient-to-br from-orange-50 to-amber-100 rounded-lg p-4 relative overflow-hidden">
+                        <!-- 库存水平趋势图表 -->
+                        <svg class="w-full h-full" viewBox="0 0 300 120" xmlns="http://www.w3.org/2000/svg">
+                            <!-- 网格线 -->
+                            <defs>
+                                <pattern id="inventoryGrid" width="30" height="24" patternUnits="userSpaceOnUse">
+                                    <path d="M 30 0 L 0 0 0 24" fill="none" stroke="#e5e7eb" stroke-width="0.5" opacity="0.5"/>
+                                </pattern>
+                                <linearGradient id="inventoryGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:0.3" />
+                                    <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:0.05" />
+                                </linearGradient>
+                            </defs>
+                            
+                            <!-- 背景网格 -->
+                            <rect width="100%" height="100%" fill="url(#inventoryGrid)" />
+                            
+                            <!-- 库存数据柱状图 -->
+                            <g>
+                                <!-- 柱状图 -->
+                                <rect x="15" y="60" width="20" height="40" fill="#f59e0b" opacity="0.7" rx="2"/>
+                                <rect x="45" y="45" width="20" height="55" fill="#f59e0b" opacity="0.7" rx="2"/>
+                                <rect x="75" y="70" width="20" height="30" fill="#ef4444" opacity="0.7" rx="2"/>
+                                <rect x="105" y="50" width="20" height="50" fill="#f59e0b" opacity="0.7" rx="2"/>
+                                <rect x="135" y="35" width="20" height="65" fill="#10b981" opacity="0.7" rx="2"/>
+                                <rect x="165" y="55" width="20" height="45" fill="#f59e0b" opacity="0.7" rx="2"/>
+                                <rect x="195" y="75" width="20" height="25" fill="#ef4444" opacity="0.7" rx="2"/>
+                                <rect x="225" y="40" width="20" height="60" fill="#f59e0b" opacity="0.7" rx="2"/>
+                                <rect x="255" y="30" width="20" height="70" fill="#10b981" opacity="0.7" rx="2"/>
+                            </g>
+                            
+                            <!-- Y轴标签 -->
+                            <g fill="#6b7280" font-size="10" font-family="Arial, sans-serif">
+                                <text x="5" y="25" text-anchor="start">100%</text>
+                                <text x="5" y="45" text-anchor="start">80%</text>
+                                <text x="5" y="65" text-anchor="start">60%</text>
+                                <text x="5" y="85" text-anchor="start">40%</text>
+                                <text x="5" y="105" text-anchor="start">20%</text>
+                            </g>
+                            
+                            <!-- X轴标签 -->
+                            <g fill="#6b7280" font-size="9" font-family="Arial, sans-serif">
+                                <text x="25" y="115" text-anchor="middle">面粉</text>
+                                <text x="55" y="115" text-anchor="middle">糖</text>
+                                <text x="85" y="115" text-anchor="middle">黄油</text>
+                                <text x="115" y="115" text-anchor="middle">鸡蛋</text>
+                                <text x="145" y="115" text-anchor="middle">牛奶</text>
+                                <text x="175" y="115" text-anchor="middle">酵母</text>
+                                <text x="205" y="115" text-anchor="middle">盐</text>
+                                <text x="235" y="115" text-anchor="middle">香草</text>
+                                <text x="265" y="115" text-anchor="middle">巧克力</text>
+                            </g>
+                        </svg>
+                        
+                        <!-- 库存状态显示 -->
+                        <div class="absolute top-3 right-3 bg-white bg-opacity-90 rounded-lg px-3 py-1 shadow-sm">
+                            <div class="text-xs text-gray-600">平均库存率</div>
+                            <div class="text-sm font-bold text-orange-600">68.5%</div>
+                        </div>
+                        
+                        <!-- 预警指示器 -->
+                        <div class="absolute bottom-3 left-3 flex items-center space-x-2">
+                            <div class="flex items-center space-x-1 bg-red-100 text-red-700 px-2 py-1 rounded-full">
+                                <i class="fas fa-exclamation-triangle text-xs"></i>
+                                <span class="text-xs font-medium">2项预警</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 库存预警 -->
+                <div class="mt-4 pt-4 border-t">
+                    <h3 class="text-sm font-medium text-gray-800 mb-2">库存预警</h3>
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-600">高筋面粉</span>
+                            <span class="text-xs font-medium text-red-600">15kg (低库存)</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-600">黄油</span>
+                            <span class="text-xs font-medium text-orange-600">8kg (需补货)</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-600">鸡蛋</span>
+                            <span class="text-xs font-medium text-green-600">120个 (充足)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 生产趋势内容 -->
+            <div id="productionContent" class="trend-content bg-white rounded-xl p-4 hidden">
+                <div class="mb-4">
+                    <h3 class="text-sm font-medium text-gray-800 mb-2">生产效率趋势</h3>
+                    <div class="h-40 bg-gradient-to-br from-purple-50 to-indigo-100 rounded-lg p-4 relative overflow-hidden">
+                        <!-- 生产效率趋势图表 -->
+                        <svg class="w-full h-full" viewBox="0 0 300 120" xmlns="http://www.w3.org/2000/svg">
+                            <!-- 网格线 -->
+                            <defs>
+                                <pattern id="productionGrid" width="30" height="24" patternUnits="userSpaceOnUse">
+                                    <path d="M 30 0 L 0 0 0 24" fill="none" stroke="#e5e7eb" stroke-width="0.5" opacity="0.5"/>
+                                </pattern>
+                                <linearGradient id="productionGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:0.3" />
+                                    <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:0.05" />
+                                </linearGradient>
+                            </defs>
+                            
+                            <!-- 背景网格 -->
+                            <rect width="100%" height="100%" fill="url(#productionGrid)" />
+                            
+                            <!-- 生产效率数据线图 -->
+                            <g>
+                                <!-- 面积填充 -->
+                                <path d="M 30 80 L 60 65 L 90 70 L 120 55 L 150 45 L 180 50 L 210 40 L 240 35 L 270 30 L 270 100 L 30 100 Z" 
+                                      fill="url(#productionGradient)" />
+                                
+                                <!-- 主线条 -->
+                                <path d="M 30 80 L 60 65 L 90 70 L 120 55 L 150 45 L 180 50 L 210 40 L 240 35 L 270 30" 
+                                      fill="none" stroke="#8b5cf6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                
+                                <!-- 数据点 -->
+                                <circle cx="30" cy="80" r="3" fill="#8b5cf6" stroke="white" stroke-width="2"/>
+                                <circle cx="60" cy="65" r="3" fill="#8b5cf6" stroke="white" stroke-width="2"/>
+                                <circle cx="90" cy="70" r="3" fill="#8b5cf6" stroke="white" stroke-width="2"/>
+                                <circle cx="120" cy="55" r="3" fill="#8b5cf6" stroke="white" stroke-width="2"/>
+                                <circle cx="150" cy="45" r="3" fill="#8b5cf6" stroke="white" stroke-width="2"/>
+                                <circle cx="180" cy="50" r="3" fill="#8b5cf6" stroke="white" stroke-width="2"/>
+                                <circle cx="210" cy="40" r="3" fill="#8b5cf6" stroke="white" stroke-width="2"/>
+                                <circle cx="240" cy="35" r="3" fill="#8b5cf6" stroke="white" stroke-width="2"/>
+                                <circle cx="270" cy="30" r="4" fill="#6366f1" stroke="white" stroke-width="2"/>
+                            </g>
+                            
+                            <!-- Y轴标签 -->
+                            <g fill="#6b7280" font-size="10" font-family="Arial, sans-serif">
+                                <text x="5" y="25" text-anchor="start">100%</text>
+                                <text x="5" y="45" text-anchor="start">80%</text>
+                                <text x="5" y="65" text-anchor="start">60%</text>
+                                <text x="5" y="85" text-anchor="start">40%</text>
+                                <text x="5" y="105" text-anchor="start">20%</text>
+                            </g>
+                            
+                            <!-- X轴标签 -->
+                            <g fill="#6b7280" font-size="9" font-family="Arial, sans-serif">
+                                <text x="30" y="115" text-anchor="middle">8:00</text>
+                                <text x="60" y="115" text-anchor="middle">10:00</text>
+                                <text x="90" y="115" text-anchor="middle">12:00</text>
+                                <text x="120" y="115" text-anchor="middle">14:00</text>
+                                <text x="150" y="115" text-anchor="middle">16:00</text>
+                                <text x="180" y="115" text-anchor="middle">18:00</text>
+                                <text x="210" y="115" text-anchor="middle">20:00</text>
+                                <text x="240" y="115" text-anchor="middle">22:00</text>
+                                <text x="270" y="115" text-anchor="middle">24:00</text>
+                            </g>
+                        </svg>
+                        
+                        <!-- 当前效率显示 -->
+                        <div class="absolute top-3 right-3 bg-white bg-opacity-90 rounded-lg px-3 py-1 shadow-sm">
+                            <div class="text-xs text-gray-600">当前效率</div>
+                            <div class="text-sm font-bold text-purple-600">92.8%</div>
+                        </div>
+                        
+                        <!-- 趋势指示器 -->
+                        <div class="absolute bottom-3 left-3 flex items-center space-x-2">
+                            <div class="flex items-center space-x-1 bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                                <i class="fas fa-arrow-up text-xs"></i>
+                                <span class="text-xs font-medium">效率提升</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 生产统计 -->
+                <div class="mt-4 pt-4 border-t">
+                    <h3 class="text-sm font-medium text-gray-800 mb-2">今日生产</h3>
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-600">面包类</span>
+                            <span class="text-xs font-medium">85% (68/80)</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-600">蛋糕类</span>
+                            <span class="text-xs font-medium">92% (23/25)</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-600">饼干类</span>
+                            <span class="text-xs font-medium">100% (15/15)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+
+
+    </main>
+
+    <button class="floating-add-btn" onclick="showPublishMenu()">
+        <i class="fas fa-plus text-xl"></i>
+    </button>
+
+    <!-- 功能设置弹窗 -->
+    <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl max-h-[85vh] flex flex-col">
+            <!-- 弹窗头部 - 固定不滚动 -->
+            <div class="flex items-center justify-between p-6 pb-4 border-b border-gray-100 flex-shrink-0">
+                <h3 class="text-lg font-semibold text-gray-800">功能设置</h3>
+                <button id="closeSettings" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
+                    <i class="fas fa-times text-gray-600"></i>
+                </button>
+            </div>
+            
+            <!-- 弹窗内容 - 可滚动区域 -->
+            <div class="flex-1 overflow-y-auto px-6 pb-6" style="-webkit-overflow-scrolling: touch; scroll-behavior: smooth;">
+                <!-- 当前功能列表 -->
+                <div class="mb-6 mt-4">
+                    <h4 class="text-sm font-medium text-gray-600 mb-3 sticky top-0 bg-white py-2 z-10">当前显示功能</h4>
+                    <div id="currentFunctions" class="space-y-2">
+                        <!-- 动态生成当前功能列表 -->
+                    </div>
+                </div>
+                
+                <!-- 可添加功能列表 -->
+                <div class="pb-4">
+                    <h4 class="text-sm font-medium text-gray-600 mb-3 sticky top-0 bg-white py-2 z-10">可添加功能</h4>
+                    <div id="availableFunctions" class="space-y-2">
+                        <!-- 动态生成可添加功能列表 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部导航栏 -->
+    <nav class="bottom-nav" id="mainBottomNav">
+        <div class="grid grid-cols-4">
+            <a href="#" class="bottom-nav-item active">
+                <i class="fas fa-home"></i>
+                <span>首页</span>
+            </a>
+            <a href="../cangku-gongneng/erp-zhuye-canku.html" class="bottom-nav-item">
+                <i class="fas fa-chart-pie"></i>
+                <span>ERP</span>
+            </a>
+            <a href="../shequ/shequ-zhuye.html" class="bottom-nav-item">
+                <i class="fas fa-users"></i>
+                <span>社区</span>
+            </a>
+            <a href="../wode/wodezhuye.html" class="bottom-nav-item">
+                <i class="fas fa-user"></i>
+                <span>我的</span>
+            </a>
+        </div>
+    </nav>
+
+    <script>
+        function toggleFollow(btn) {
+            if (btn.innerText === '关注') {
+                btn.innerText = '已关注';
+                btn.classList.remove('text-orange-500', 'bg-orange-50');
+                btn.classList.add('text-gray-400', 'bg-gray-100');
+            } else {
+                btn.innerText = '关注';
+                btn.classList.add('text-orange-500', 'bg-orange-50');
+                btn.classList.remove('text-gray-400', 'bg-gray-100');
+            }
+        }
+        function showPublishMenu() {
+            if(confirm('你想发布什么？\n\n[确定] - 写食谱\n[取消] - 晒作品 (交作业)')) {
+                console.log('去写食谱');
+            } else {
+                console.log('去晒作品');
+            }
+        }
+        // 底部导航切换
+        document.addEventListener('DOMContentLoaded', function() {
+            const navItems = document.querySelectorAll('.bottom-nav-item');
+            
+            // 检测是否有重复的底部导航栏
+            const checkForDuplicateNavbar = function() {
+                const allNavbars = document.querySelectorAll('.bottom-nav');
+                if (allNavbars.length > 1) {
+                    // 保留当前页面的导航栏，移除其他导航栏
+                    for (let i = 1; i < allNavbars.length; i++) {
+                        if (allNavbars[i].id !== 'mainBottomNav') {
+                            allNavbars[i].remove();
+                        }
+                    }
+                }
+            };
+            
+            // 页面加载完成后执行检查
+            checkForDuplicateNavbar();
+            
+            // 也可以在一段时间后再次检查，以防动态加载的情况
+            setTimeout(checkForDuplicateNavbar, 500);
+            
+            navItems.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    // 如果是链接，不阻止默认行为
+                    if (this.getAttribute('href') !== '#') {
+                        return;
+                    }
+                    
+                    e.preventDefault();
+                    
+                    // 移除所有活动状态
+                    navItems.forEach(navItem => {
+                        navItem.classList.remove('active');
+                    });
+                    
+                    // 添加活动状态到当前点击项
+                    this.classList.add('active');
+                });
+            });
+            
+            // 卡片点击效果
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(card => {
+                card.addEventListener('touchstart', function() {
+                    this.style.transform = 'scale(0.98)';
+                });
+                
+                card.addEventListener('touchend', function() {
+                    this.style.transform = 'scale(1)';
+                });
+            });
+            
+            // 任务复选框处理
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const taskItem = this.closest('.flex');
+                    const taskText = taskItem.querySelector('.text-sm');
+                    const statusBadge = taskItem.querySelector('span:last-child');
+                    
+                    if (this.checked) {
+                        taskItem.classList.add('opacity-60');
+                        taskText.classList.add('line-through');
+                        statusBadge.textContent = '已完成';
+                        statusBadge.className = 'text-xs text-green-600 bg-green-100 px-2 py-1 rounded';
+                    } else {
+                        taskItem.classList.remove('opacity-60');
+                        taskText.classList.remove('line-through');
+                        statusBadge.textContent = '待完成';
+                        statusBadge.className = 'text-xs text-yellow-600 bg-yellow-100 px-2 py-1 rounded';
+                    }
+                });
+            });
+            
+            // 配方轮播图功能
+            const carousel = document.getElementById('recipeCarousel');
+            const dots = document.querySelectorAll('.carousel-dot');
+            let currentIndex = 0;
+            const totalSlides = 3;
+            
+            function updateCarousel() {
+                const translateX = -currentIndex * 100;
+                carousel.style.transform = `translateX(${translateX}%)`;
+                
+                // 更新指示器
+                dots.forEach((dot, index) => {
+                    if (index === currentIndex) {
+                        dot.classList.remove('bg-gray-300');
+                        dot.classList.add('bg-blue-600');
+                    } else {
+                        dot.classList.remove('bg-blue-600');
+                        dot.classList.add('bg-gray-300');
+                    }
+                });
+            }
+            
+            // 指示器点击事件
+            dots.forEach((dot, index) => {
+                dot.addEventListener('click', () => {
+                    currentIndex = index;
+                    updateCarousel();
+                });
+            });
+            
+            // 自动轮播
+            setInterval(() => {
+                currentIndex = (currentIndex + 1) % totalSlides;
+                updateCarousel();
+            }, 4000);
+            
+            // 数据趋势图轮播
+            let currentTrendSlide = 0;
+            const trendCarousel = document.getElementById('trendCarousel');
+            const trendDots = document.querySelectorAll('.trend-dot');
+            const trendCards = document.querySelectorAll('.trend-carousel > div');
+            const totalTrendSlides = trendCards.length;
+
+            function updateTrendCarousel() {
+                const cardWidth = 320; // 卡片宽度 + 间距
+                trendCarousel.style.transform = `translateX(-${currentTrendSlide * cardWidth}px)`;
+                trendDots.forEach((dot, index) => {
+                    dot.classList.toggle('bg-blue-600', index === currentTrendSlide);
+                    dot.classList.toggle('bg-gray-300', index !== currentTrendSlide);
+                });
+            }
+
+            function nextTrendSlide() {
+                currentTrendSlide = (currentTrendSlide + 1) % totalTrendSlides;
+                updateTrendCarousel();
+            }
+
+            // 趋势图指示器点击
+            trendDots.forEach((dot, index) => {
+                dot.addEventListener('click', () => {
+                    currentTrendSlide = index;
+                    updateTrendCarousel();
+                });
+            });
+
+            // 趋势图自动播放
+            setInterval(nextTrendSlide, 5000);
+
+            // 搜索功能
+            const searchInput = document.querySelector('input[placeholder*="搜索"]');
+            searchInput.addEventListener('focus', function() {
+                this.parentElement.classList.add('ring-2', 'ring-blue-500');
+            });
+            
+            searchInput.addEventListener('blur', function() {
+                this.parentElement.classList.remove('ring-2', 'ring-blue-500');
+            });
+            
+            searchInput.addEventListener('input', function() {
+                // 这里可以添加实时搜索逻辑
+                console.log('搜索内容:', this.value);
+            });
+            
+            // 触摸滑动支持
+            let startX = 0;
+            let isDragging = false;
+            
+            carousel.addEventListener('touchstart', (e) => {
+                startX = e.touches[0].clientX;
+                isDragging = true;
+            });
+            
+            carousel.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                e.preventDefault();
+            });
+            
+            carousel.addEventListener('touchend', (e) => {
+                 if (!isDragging) return;
+                 isDragging = false;
+                 
+                 const endX = e.changedTouches[0].clientX;
+                 const diffX = startX - endX;
+                 
+                 if (Math.abs(diffX) > 50) {
+                     if (diffX > 0 && currentIndex < totalSlides - 1) {
+                         currentIndex++;
+                     } else if (diffX < 0 && currentIndex > 0) {
+                         currentIndex--;
+                     }
+                     updateCarousel();
+                 }
+             });
+             
+             // 功能设置管理
+            const allFunctions = [
+                { name: '配方管理', icon: 'fas fa-book', gradient: 'gradient-recipe', href: '../peifnagmokuai/mianbao/mianbaozhuye/zhuye.html', id: 'peifang', fixed: true },
+                { name: '消息中心', icon: 'fas fa-envelope', gradient: 'gradient-message', href: '#', id: 'xiaoxi', fixed: true },
+                { name: '库存查看', icon: 'fas fa-boxes', gradient: 'gradient-inventory', href: 'cailiaokucun-mobile.html', id: 'kucun', removable: true },
+                { name: '快速入库', icon: 'fas fa-plus-circle', gradient: 'gradient-order', href: 'rukuye-mobile.html', id: 'ruku', removable: true },
+                { name: '要货申请', icon: 'fas fa-clipboard-list', gradient: 'bg-gradient-to-r from-indigo-500 to-purple-600', href: '#', id: 'yaohuo', removable: true },
+                { name: '生产配料', icon: 'fas fa-cogs', gradient: 'bg-gradient-to-r from-teal-500 to-cyan-600', href: '#', id: 'shengchan', removable: true },
+                { name: '出库管理', icon: 'fas fa-truck', gradient: 'gradient-primary', href: 'chukuye-mobile.html', id: 'chuku' },
+                { name: '库存预警', icon: 'fas fa-exclamation-triangle', gradient: 'gradient-inventory', href: 'kucunyujingye-mobile.html', id: 'yujing' },
+                { name: '数据统计', icon: 'fas fa-chart-bar', gradient: 'gradient-primary', href: '#', id: 'tongji' },
+                { name: '员工管理', icon: 'fas fa-users', gradient: 'gradient-recipe', href: '#', id: 'yuangong' },
+                { name: '订单管理', icon: 'fas fa-clipboard-list', gradient: 'gradient-message', href: '#', id: 'dingdan' },
+                { name: '财务报表', icon: 'fas fa-file-invoice-dollar', gradient: 'gradient-order', href: '#', id: 'caiwu' }
+            ];
+             
+             // 获取当前显示的功能
+             function getCurrentFunctions() {
+                 const grid = document.getElementById('functionsGrid');
+                 const currentItems = grid.querySelectorAll('.card');
+                 const current = [];
+                 
+                 currentItems.forEach(item => {
+                     const link = item.querySelector('a');
+                     const icon = item.querySelector('i').className;
+                     const name = item.querySelector('.text-xs').textContent;
+                     const href = link ? link.getAttribute('href') : '#';
+                     
+                     // 查找对应的功能ID
+                     const func = allFunctions.find(f => f.name === name);
+                     if (func) {
+                         current.push(func);
+                     }
+                 });
+                 
+                 return current;
+             }
+             
+             // 获取可添加的功能
+             function getAvailableFunctions() {
+                 const current = getCurrentFunctions();
+                 const currentIds = current.map(f => f.id);
+                 return allFunctions.filter(f => !currentIds.includes(f.id));
+             }
+             
+             // 打开设置弹窗
+             window.openSettings = function() {
+                 const modal = document.getElementById('settingsModal');
+                 const currentContainer = document.getElementById('currentFunctions');
+                 const availableContainer = document.getElementById('availableFunctions');
+                 
+                 // 清空容器
+                 currentContainer.innerHTML = '';
+                 availableContainer.innerHTML = '';
+                 
+                 // 填充当前功能
+                 const currentFunctions = getCurrentFunctions();
+                 currentFunctions.forEach(func => {
+                     const item = document.createElement('div');
+                     item.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg';
+                     
+                     // 检查是否为固定功能（不可删除）
+                     const isFixed = func.fixed || func.name === '配方管理' || func.name === '消息中心';
+                     
+                     item.innerHTML = `
+                         <div class="flex items-center space-x-3">
+                             <div class="w-8 h-8 ${func.gradient} rounded-lg flex items-center justify-center">
+                                 <i class="${func.icon} text-white text-sm"></i>
+                             </div>
+                             <span class="text-sm font-medium">${func.name}</span>
+                             ${isFixed ? '<span class="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded-full ml-2">固定</span>' : ''}
+                         </div>
+                         ${isFixed ? 
+                             '<span class="text-gray-400"><i class="fas fa-lock text-sm"></i></span>' : 
+                             `<button class="text-red-500 hover:text-red-700" onclick="removeFunction('${func.id}')"><i class="fas fa-trash text-sm"></i></button>`
+                         }
+                     `;
+                     currentContainer.appendChild(item);
+                 });
+                 
+                 // 填充可添加功能
+                 const availableFunctions = getAvailableFunctions();
+                 availableFunctions.forEach(func => {
+                     const item = document.createElement('div');
+                     item.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg';
+                     item.innerHTML = `
+                         <div class="flex items-center space-x-3">
+                             <div class="w-8 h-8 ${func.gradient} rounded-lg flex items-center justify-center">
+                                 <i class="${func.icon} text-white text-sm"></i>
+                             </div>
+                             <span class="text-sm font-medium">${func.name}</span>
+                         </div>
+                         <button class="text-blue-500 hover:text-blue-700" onclick="addFunction('${func.id}')">
+                             <i class="fas fa-plus text-sm"></i>
+                         </button>
+                     `;
+                     availableContainer.appendChild(item);
+                 });
+                 
+                 modal.classList.remove('hidden');
+             };
+             
+             // 数据加载和刷新功能
+             let isRefreshing = false;
+             let startY = 0;
+             let currentY = 0;
+             let pullDistance = 0;
+             const maxPullDistance = 80;
+             
+             // 下拉刷新功能
+             function initPullToRefresh() {
+                 const container = document.querySelector('main');
+                 const refreshIndicator = document.createElement('div');
+                 refreshIndicator.id = 'refreshIndicator';
+                 refreshIndicator.className = 'fixed top-0 left-0 right-0 bg-blue-500 text-white text-center py-2 transform -translate-y-full transition-transform duration-300 z-50';
+                 refreshIndicator.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>下拉刷新数据';
+                 document.body.appendChild(refreshIndicator);
+                 
+                 container.addEventListener('touchstart', function(e) {
+                     if (window.scrollY === 0 && !isRefreshing) {
+                         startY = e.touches[0].clientY;
+                     }
+                 });
+                 
+                 container.addEventListener('touchmove', function(e) {
+                     if (window.scrollY === 0 && !isRefreshing && startY > 0) {
+                         currentY = e.touches[0].clientY;
+                         pullDistance = Math.max(0, currentY - startY);
+                         
+                         if (pullDistance > 0) {
+                             e.preventDefault();
+                             const progress = Math.min(pullDistance / maxPullDistance, 1);
+                             refreshIndicator.style.transform = `translateY(${progress * 100 - 100}%)`;
+                             
+                             if (pullDistance >= maxPullDistance) {
+                                 refreshIndicator.innerHTML = '<i class="fas fa-sync-alt mr-2 animate-spin"></i>释放刷新';
+                             } else {
+                                 refreshIndicator.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>下拉刷新数据';
+                             }
+                         }
+                     }
+                 });
+                 
+                 container.addEventListener('touchend', function(e) {
+                     if (pullDistance >= maxPullDistance && !isRefreshing) {
+                         triggerRefresh();
+                     } else {
+                         refreshIndicator.style.transform = 'translateY(-100%)';
+                     }
+                     startY = 0;
+                     pullDistance = 0;
+                 });
+             }
+             
+             // 触发刷新
+             function triggerRefresh() {
+                 if (isRefreshing) return;
+                 
+                 isRefreshing = true;
+                 const refreshIndicator = document.getElementById('refreshIndicator');
+                 refreshIndicator.innerHTML = '<i class="fas fa-sync-alt mr-2 animate-spin"></i>正在刷新...';
+                 refreshIndicator.style.transform = 'translateY(0%)';
+                 
+                 // 显示骨架屏
+                 showSkeleton();
+                 
+                 // 模拟数据加载
+                 setTimeout(() => {
+                     loadOverviewData();
+                     refreshIndicator.style.transform = 'translateY(-100%)';
+                     isRefreshing = false;
+                 }, 2000);
+             }
+             
+             // 显示骨架屏
+             function showSkeleton() {
+                 document.getElementById('overviewData').classList.add('hidden');
+                 document.getElementById('overviewSkeleton').classList.remove('hidden');
+                 document.getElementById('dataError').classList.add('hidden');
+             }
+             
+             // 隐藏骨架屏
+             function hideSkeleton() {
+                 document.getElementById('overviewSkeleton').classList.add('hidden');
+                 document.getElementById('overviewData').classList.remove('hidden');
+             }
+             
+             // 显示错误信息
+             function showError() {
+                 document.getElementById('overviewSkeleton').classList.add('hidden');
+                 document.getElementById('overviewData').classList.add('hidden');
+                 document.getElementById('dataError').classList.remove('hidden');
+             }
+             
+             // 加载概览数据
+             function loadOverviewData() {
+                 // 模拟网络请求
+                 const success = Math.random() > 0.1; // 90% 成功率
+                 
+                 setTimeout(() => {
+                     if (success) {
+                         // 更新数据时间
+                         const timeElement = document.querySelector('.text-xs.text-gray-500 span');
+                         if (timeElement) {
+                             timeElement.textContent = '数据更新于 刚刚';
+                         }
+                         
+                         // 模拟数据更新
+                         updateOverviewNumbers();
+                         hideSkeleton();
+                         
+                         // 显示成功提示
+                         showToast('数据刷新成功', 'success');
+                     } else {
+                         showError();
+                         showToast('数据加载失败', 'error');
+                     }
+                 }, 1000);
+             }
+             
+             // 更新概览数字
+             function updateOverviewNumbers() {
+                 const salesAmount = document.querySelector('#overviewData .text-xl:first-of-type');
+                 const ordersCount = document.querySelector('#overviewData .text-xl:nth-of-type(2)');
+                 const warningCount = document.querySelector('#overviewData .text-xl:nth-of-type(3)');
+                 const expiryCount = document.querySelector('#overviewData .text-xl:nth-of-type(4)');
+                 
+                 if (salesAmount) {
+                     const newAmount = (Math.random() * 5000 + 10000).toFixed(0);
+                     salesAmount.textContent = `¥${newAmount.toLocaleString()}`;
+                 }
+                 
+                 if (ordersCount) {
+                     const completed = Math.floor(Math.random() * 20 + 60);
+                     const total = Math.floor(Math.random() * 10 + 75);
+                     ordersCount.textContent = `${completed}/${total}`;
+                 }
+                 
+                 if (warningCount) {
+                     warningCount.textContent = Math.floor(Math.random() * 8 + 2);
+                 }
+                 
+                 if (expiryCount) {
+                     expiryCount.textContent = Math.floor(Math.random() * 5 + 1);
+                 }
+             }
+             
+             // 重试加载数据
+             window.retryLoadData = function() {
+                 showSkeleton();
+                 loadOverviewData();
+             };
+             
+             // 刷新趋势数据
+             window.refreshTrendData = function() {
+                 const button = event.target.closest('button');
+                 const icon = button.querySelector('i');
+                 
+                 icon.classList.add('animate-spin');
+                 
+                 setTimeout(() => {
+                     icon.classList.remove('animate-spin');
+                     showToast('趋势数据已更新', 'success');
+                 }, 1500);
+             };
+             
+             // 显示提示消息
+             function showToast(message, type = 'info') {
+                 const toast = document.createElement('div');
+                 const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
+                 toast.className = `fixed top-4 left-1/2 transform -translate-x-1/2 ${bgColor} text-white px-4 py-2 rounded-lg z-50 transition-all duration-300`;
+                 toast.textContent = message;
+                 document.body.appendChild(toast);
+                 
+                 setTimeout(() => {
+                     toast.style.opacity = '0';
+                     toast.style.transform = 'translate(-50%, -100%)';
+                     setTimeout(() => {
+                         if (document.body.contains(toast)) {
+                             document.body.removeChild(toast);
+                         }
+                     }, 300);
+                 }, 2000);
+             }
+             
+             // 添加触觉反馈
+             function addHapticFeedback() {
+                 if ('vibrate' in navigator) {
+                     // 为卡片点击添加触觉反馈
+                     document.querySelectorAll('#overviewData .cursor-pointer').forEach(card => {
+                         card.addEventListener('touchstart', () => {
+                             navigator.vibrate(10); // 轻微震动
+                         });
+                     });
+                     
+                     // 为按钮添加触觉反馈
+                     document.querySelectorAll('button').forEach(button => {
+                         button.addEventListener('touchstart', () => {
+                             navigator.vibrate(5);
+                         });
+                     });
+                 }
+             }
+             
+             // 初始化所有功能
+             function initMobileFeatures() {
+                 initPullToRefresh();
+                 addHapticFeedback();
+                 
+                 // 初始加载数据
+                 setTimeout(() => {
+                     loadOverviewData();
+                 }, 500);
+             }
+             
+             // 页面加载完成后初始化
+             initMobileFeatures();
+             
+             // 数据导出功能
+             window.exportData = function(type) {
+                 showToast('正在准备导出数据...', 'info');
+                 
+                 setTimeout(() => {
+                     const data = {
+                         exportTime: new Date().toLocaleString(),
+                         type: type,
+                         data: {
+                             sales: '¥12,580',
+                             orders: '68/75',
+                             warnings: '5',
+                             expiry: '3'
+                         }
+                     };
+                     
+                     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                     const url = URL.createObjectURL(blob);
+                     const a = document.createElement('a');
+                     a.href = url;
+                     a.download = `${type}_data_${new Date().getTime()}.json`;
+                     document.body.appendChild(a);
+                     a.click();
+                     document.body.removeChild(a);
+                     URL.revokeObjectURL(url);
+                     
+                     showToast('数据导出成功', 'success');
+                 }, 1000);
+             };
+             
+             // 关闭设置弹窗
+             window.closeSettings = function() {
+                 const modal = document.getElementById('settingsModal');
+                 modal.classList.add('hidden');
+             };
+             
+             // 添加功能
+             window.addFunction = function(functionId) {
+                 const func = allFunctions.find(f => f.id === functionId);
+                 if (!func) return;
+                 
+                 const grid = document.getElementById('functionsGrid');
+                 const newFunction = document.createElement('a');
+                 newFunction.href = func.href;
+                 newFunction.className = 'card bg-white rounded-xl p-4 text-center';
+                 
+                 // 根据功能是否可删除添加相应属性
+                 if (func.removable) {
+                     newFunction.setAttribute('data-removable', 'true');
+                 } else if (func.fixed) {
+                     newFunction.setAttribute('data-fixed', 'true');
+                 }
+                 
+                 newFunction.innerHTML = `
+                     <div class="feature-icon ${func.gradient} mx-auto mb-2">
+                         <i class="${func.icon} text-white"></i>
+                     </div>
+                     <div class="text-xs text-gray-700 font-medium">${func.name}</div>
+                 `;
+                 grid.appendChild(newFunction);
+                 
+                 // 刷新弹窗内容
+                 openSettings();
+             };
+             
+             // 删除功能
+             window.removeFunction = function(functionId) {
+                 const func = allFunctions.find(f => f.id === functionId);
+                 if (!func) return;
+                 
+                 // 检查是否为固定功能，不允许删除
+                 if (func.fixed || func.name === '配方管理' || func.name === '消息中心') {
+                     alert('此功能为系统核心功能，不可删除');
+                     return;
+                 }
+                 
+                 const grid = document.getElementById('functionsGrid');
+                 const items = grid.querySelectorAll('.card');
+                 
+                 items.forEach(item => {
+                     const name = item.querySelector('.text-xs').textContent;
+                     if (name === func.name) {
+                         item.remove();
+                     }
+                 });
+                 
+                 // 刷新弹窗内容
+                 openSettings();
+             };
+             
+             // 绑定关闭按钮事件
+             document.getElementById('closeSettings').addEventListener('click', closeSettings);
+             
+             // 点击弹窗外部关闭
+             document.getElementById('settingsModal').addEventListener('click', function(e) {
+                 if (e.target === this) {
+                     closeSettings();
+                 }
+             });
+             
+             // 业务趋势标签页切换功能
+             const trendTabs = document.querySelectorAll('.trend-tab');
+             const trendContents = document.querySelectorAll('.trend-content');
+
+             trendTabs.forEach(tab => {
+                 tab.addEventListener('click', function() {
+                     const targetTab = this.getAttribute('data-tab');
+                     
+                     // 移除所有标签页的激活状态
+                     trendTabs.forEach(t => {
+                         t.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600');
+                         t.classList.add('text-gray-500');
+                     });
+                     
+                     // 激活当前点击的标签页
+                     this.classList.remove('text-gray-500');
+                     this.classList.add('text-blue-600', 'border-b-2', 'border-blue-600');
+                     
+                     // 隐藏所有内容区域
+                     trendContents.forEach(content => {
+                         content.classList.add('hidden');
+                     });
+                     
+                     // 显示对应的内容区域
+                     const targetContent = document.getElementById(targetTab + 'Content');
+                     if (targetContent) {
+                         targetContent.classList.remove('hidden');
+                     }
+                 });
+             });
+             
+             // 新增任务功能
+             window.addNewTask = function() {
+                 const modal = document.createElement('div');
+                 modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center';
+                 modal.innerHTML = `
+                     <div class="bg-white rounded-xl p-6 m-4 max-w-sm w-full">
+                         <h3 class="text-lg font-semibold mb-4">新增任务</h3>
+                         <div class="space-y-4">
+                             <div>
+                                 <label class="block text-sm font-medium text-gray-700 mb-2">任务名称</label>
+                                 <input type="text" id="taskName" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="请输入任务名称">
+                             </div>
+                             <div>
+                                 <label class="block text-sm font-medium text-gray-700 mb-2">预计完成时间</label>
+                                 <div class="space-y-2">
+                                     <input type="date" id="taskDate" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                     <input type="time" id="taskTime" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                 </div>
+                             </div>
+                             <div>
+                                 <label class="block text-sm font-medium text-gray-700 mb-2">优先级</label>
+                                 <select id="taskPriority" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                     <option value="normal">普通</option>
+                                     <option value="high">重要</option>
+                                     <option value="urgent">紧急</option>
+                                 </select>
+                             </div>
+                         </div>
+                         <div class="flex space-x-3 mt-6">
+                             <button class="flex-1 py-2 px-4 bg-gray-200 rounded-lg" onclick="closeTaskModal()">取消</button>
+                             <button class="flex-1 py-2 px-4 bg-blue-600 text-white rounded-lg" onclick="saveNewTask()">保存</button>
+                         </div>
+                     </div>
+                 `;
+                 document.body.appendChild(modal);
+                 
+                 window.saveNewTask = function() {
+                     const taskName = document.getElementById('taskName').value.trim();
+                     const taskDate = document.getElementById('taskDate').value;
+                     const taskTime = document.getElementById('taskTime').value;
+                     const taskPriority = document.getElementById('taskPriority').value;
+                     
+                     if (!taskName) {
+                         alert('请输入任务名称');
+                         return;
+                     }
+                     
+                     const taskContainer = document.querySelector('.px-4:last-child .space-y-3');
+                     const newTask = document.createElement('div');
+                     newTask.className = 'bg-white rounded-xl p-4';
+                     
+                     let priorityClass = 'text-gray-600 bg-gray-100';
+                     let priorityText = '待开始';
+                     
+                     if (taskPriority === 'high') {
+                         priorityClass = 'text-orange-600 bg-orange-100';
+                         priorityText = '重要';
+                     } else if (taskPriority === 'urgent') {
+                         priorityClass = 'text-red-600 bg-red-100';
+                         priorityText = '紧急';
+                     }
+                     
+                     // 格式化日期时间显示
+                     let timeDisplay = '待设定';
+                     if (taskDate || taskTime) {
+                         let dateStr = '';
+                         let timeStr = '';
+                         
+                         if (taskDate) {
+                             const date = new Date(taskDate);
+                             const month = date.getMonth() + 1;
+                             const day = date.getDate();
+                             dateStr = `${month}月${day}日`;
+                         }
+                         
+                         if (taskTime) {
+                             timeStr = taskTime;
+                         }
+                         
+                         if (dateStr && timeStr) {
+                             timeDisplay = `${dateStr} ${timeStr}`;
+                         } else if (dateStr) {
+                             timeDisplay = dateStr;
+                         } else if (timeStr) {
+                             timeDisplay = timeStr;
+                         }
+                     }
+                     
+                     newTask.innerHTML = `
+                         <div class="flex items-center justify-between mb-2">
+                             <div class="flex items-center space-x-3">
+                                 <input type="checkbox" class="w-4 h-4 text-blue-600 rounded">
+                                 <span class="text-sm font-medium text-gray-800">${taskName}</span>
+                             </div>
+                             <span class="text-xs ${priorityClass} px-2 py-1 rounded-full">${priorityText}</span>
+                         </div>
+                         <p class="text-xs text-gray-500 ml-7">预计完成时间: ${timeDisplay}</p>
+                     `;
+                     
+                     // 添加到待开始任务之前（已完成任务之前）
+                     const completedTasks = taskContainer.querySelectorAll('input[type="checkbox"]:checked');
+                     if (completedTasks.length > 0) {
+                         const lastCompletedTask = completedTasks[completedTasks.length - 1].closest('.bg-white');
+                         taskContainer.insertBefore(newTask, lastCompletedTask);
+                     } else {
+                         taskContainer.appendChild(newTask);
+                     }
+                     
+                     // 为新任务添加复选框事件监听
+                     const newCheckbox = newTask.querySelector('input[type="checkbox"]');
+                     newCheckbox.addEventListener('change', function() {
+                         const taskItem = this.closest('.flex');
+                         const taskText = taskItem.querySelector('.text-sm');
+                         const statusBadge = taskItem.querySelector('span:last-child');
+                         
+                         if (this.checked) {
+                             taskItem.classList.add('opacity-60');
+                             taskText.classList.add('line-through');
+                             statusBadge.textContent = '已完成';
+                             statusBadge.className = 'text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full';
+                         } else {
+                             taskItem.classList.remove('opacity-60');
+                             taskText.classList.remove('line-through');
+                             statusBadge.textContent = priorityText;
+                             statusBadge.className = `text-xs ${priorityClass} px-2 py-1 rounded-full`;
+                         }
+                     });
+                     
+                     closeTaskModal();
+                     
+                     // 显示成功提示
+                     const toast = document.createElement('div');
+                     toast.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-lg z-50';
+                     toast.textContent = '任务添加成功！';
+                     document.body.appendChild(toast);
+                     setTimeout(() => {
+                         document.body.removeChild(toast);
+                     }, 2000);
+                 };
+                 
+                 window.closeTaskModal = function() {
+                     document.body.removeChild(modal);
+                 };
+             };
+        });
+    </script>
+</body>
+</html>
