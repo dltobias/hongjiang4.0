@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新建设备记录 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+            --bg-light: #f7f7f5;
+            --bg-white: #ffffff;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+            -webkit-tap-highlight-color: transparent;
+        }
+        .form-input {
+            width: 100%;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-input:focus {
+            border-color: var(--primary-orange);
+        }
+        .section-title {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 1rem;
+            background-color: var(--primary-orange);
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- Header -->
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="px-4 h-14 flex items-center justify-between">
+            <a href="shebei-taizhang-list.html" class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            <h1 class="text-lg font-bold text-gray-800">新建设备记录</h1>
+            <div class="w-10"></div>
+        </div>
+    </nav>
+
+    <!-- Form -->
+    <form id="createForm" class="p-4 space-y-4">
+        
+        <!-- Basic Info -->
+        <div class="bg-white rounded-xl p-4 shadow-sm">
+            <h3 class="section-title">基本信息</h3>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">设备编号 (自动生成)</label>
+                    <input type="text" id="deviceId" class="form-input bg-gray-50 text-gray-500" readonly>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">设备名称 *</label>
+                    <input type="text" id="name" class="form-input" placeholder="例如：和面机" required>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">型号 *</label>
+                    <input type="text" id="model" class="form-input" placeholder="例如：HM-200" required>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">当前状态 *</label>
+                    <select id="status" class="form-input bg-white">
+                        <option value="normal">正常</option>
+                        <option value="maintenance">维护中</option>
+                        <option value="fault">故障</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Maintenance Info -->
+        <div class="bg-white rounded-xl p-4 shadow-sm">
+            <h3 class="section-title">维护信息</h3>
+            <div class="grid grid-cols-2 gap-3 mb-3">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">上次维护</label>
+                    <input type="date" id="lastMaintenance" class="form-input">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">下次维护</label>
+                    <input type="date" id="nextMaintenance" class="form-input">
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">存放位置</label>
+                <input type="text" id="location" class="form-input" placeholder="例如：后厨烘焙区">
+            </div>
+        </div>
+
+    </form>
+
+    <!-- Bottom Actions -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white p-4 border-t border-gray-100 flex gap-3 z-50">
+        <button onclick="history.back()" class="flex-1 py-3 bg-white border border-gray-200 text-gray-600 rounded-xl font-bold text-sm">取消</button>
+        <button onclick="saveRecord()" class="flex-1 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-orange-200">保存记录</button>
+    </div>
+
+    <script src="../js/common.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('deviceId').value = LedgerUtils.generateBatchId('EQ');
+            document.getElementById('lastMaintenance').value = LedgerUtils.getLocalDateStr();
+        });
+
+        function saveRecord() {
+            const form = document.getElementById('createForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const recordData = {
+                id: document.getElementById('deviceId').value,
+                name: document.getElementById('name').value,
+                model: document.getElementById('model').value,
+                status: document.getElementById('status').value,
+                lastMaintenance: document.getElementById('lastMaintenance').value,
+                nextMaintenance: document.getElementById('nextMaintenance').value || '待定',
+                location: document.getElementById('location').value,
+                timestamp: new Date().getTime()
+            };
+            
+            // Check SafeStorage availability (although common.js is loaded, just good practice or use directly)
+            // Using direct LedgerUtils.SafeStorage
+            try {
+                const ledgers = LedgerUtils.SafeStorage.get('ledger_equipment', []);
+                ledgers.unshift(recordData);
+                LedgerUtils.SafeStorage.set('ledger_equipment', ledgers);
+                
+                LedgerUtils.showToast('保存成功');
+                setTimeout(() => window.location.href = 'shebei-taizhang-list.html', 1000);
+            } catch (e) {
+                console.error(e);
+                LedgerUtils.showToast('保存失败', 'error');
+            }
+        }
+    </script>
+</body>
+</html>

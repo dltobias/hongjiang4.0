@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生产台账 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+            --bg-light: #f7f7f5;
+            --bg-white: #ffffff;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+            -webkit-tap-highlight-color: transparent;
+        }
+        .card {
+            background: var(--bg-white);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            border: 1px solid rgba(0,0,0,0.03);
+            transition: transform 0.2s;
+        }
+        .card:active {
+            transform: scale(0.98);
+        }
+        /* Custom Scrollbar */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+
+    <!-- Header -->
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="px-4 h-14 flex items-center justify-between">
+            <a href="../taizhang-zhuye.html" class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            <h1 class="text-lg font-bold text-gray-800">生产台账</h1>
+            <button class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors">
+                <i class="fas fa-filter"></i>
+            </button>
+        </div>
+        
+        <!-- Filters (Scrollable) inside Header or just below? Original design had it inside the header block but below title. Let's keep it sticky if possible or just below nav. The original had one big header block. Let's split it: Nav (sticky) + Search/Filter (scrollable).
+        Actually, the user wants unified "Nav Bar". The search bar and filters can be below it.
+        Let's make the Nav Bar separate and sticky. The rest (filters/search) can scroll or be in a sub-header.
+        To match `taizhang-zhuye.html`, the sticky part is just the top row.
+        -->
+    </nav>
+
+    <!-- Sub-Header: Filters & Search -->
+    <div class="bg-white px-4 pb-3 shadow-sm border-b border-gray-100 z-40">
+        <!-- Filters (Scrollable) -->
+        <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1 mb-2">
+            <button class="px-3 py-1.5 bg-orange-100 text-orange-600 rounded-full text-xs font-bold whitespace-nowrap">全部日期</button>
+            <button class="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-xs font-bold whitespace-nowrap">本周</button>
+            <button class="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-xs font-bold whitespace-nowrap">本月</button>
+            <button class="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-xs font-bold whitespace-nowrap">自定义</button>
+        </div>
+        
+        <!-- Search Bar -->
+        <div class="relative">
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+            <input type="text" placeholder="搜索批次号 / 产品名称" class="w-full bg-gray-50 border border-gray-200 rounded-lg py-2 pl-8 pr-4 text-xs focus:outline-none focus:border-orange-400">
+        </div>
+    </div>
+
+    <!-- List Content -->
+    <div class="flex-1 overflow-y-auto p-4 space-y-3" id="ledger-list">
+        <!-- Dynamic Content -->
+    </div>
+
+    <!-- Loading State -->
+    <div id="loading-state" class="hidden absolute inset-0 bg-white bg-opacity-80 flex flex-col items-center justify-center z-10">
+        <i class="fas fa-spinner fa-spin text-2xl text-orange-500 mb-2"></i>
+        <p class="text-gray-400 text-sm">加载中...</p>
+    </div>
+
+    <!-- Empty State -->
+    <div id="empty-state" class="hidden flex flex-col items-center justify-center py-20 px-4">
+        <div class="w-20 h-20 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center mb-4">
+            <i class="fas fa-inbox text-3xl text-orange-500"></i>
+        </div>
+        <h3 class="text-lg font-bold text-gray-800 mb-2">还没有生产记录</h3>
+        <p class="text-sm text-gray-500 text-center mb-6 max-w-xs">开始记录您的第一笔生产数据吧！<br>只需填写基本信息即可完成</p>
+        <div class="flex flex-col gap-3 w-full max-w-xs">
+            <a href="shengchan-taizhang-create.html" class="w-full py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-orange-200 flex items-center justify-center">
+                <i class="fas fa-plus mr-2"></i> 创建第一条记录
+            </a>
+            <a href="shengchan-taizhang-quick-create.html" class="w-full py-3 bg-white border-2 border-purple-200 text-purple-600 rounded-xl font-bold text-sm flex items-center justify-center">
+                <i class="fas fa-bolt mr-2"></i> 快速批量录入
+            </a>
+            <button onclick="showExample()" class="w-full py-2 text-gray-500 text-xs">
+                <i class="fas fa-eye mr-1"></i> 查看示例数据
+            </button>
+        </div>
+    </div>
+
+    <!-- Footer Actions (Batch) -->
+    <div class="bg-white border-t border-gray-100 p-3 flex justify-between items-center text-xs text-gray-500 shadow-[0_-2px_10px_rgba(0,0,0,0.03)] z-50">
+        <div class="flex items-center gap-2">
+            <input type="checkbox" id="select-all" class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
+            <span id="record-count">共 0 条记录</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <button onclick="batchDelete()" class="flex items-center gap-1 text-red-600 font-bold px-3 py-1.5 bg-red-50 rounded hover:bg-red-100 transition-colors">
+                <i class="fas fa-trash"></i> 批量删除
+            </button>
+            <button onclick="batchExport()" class="flex items-center gap-1 text-orange-600 font-bold px-3 py-1.5 bg-orange-50 rounded hover:bg-orange-100 transition-colors">
+                <i class="fas fa-file-export"></i> 批量导出
+            </button>
+        </div>
+    </div>
+
+    <!-- Floating Add Button -->
+    <a href="shengchan-taizhang-create.html" class="fixed bottom-20 right-4 w-14 h-14 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-full shadow-lg flex items-center justify-center z-40 hover:scale-105 transition-transform">
+        <i class="fas fa-plus text-2xl"></i>
+    </a>
+
+    <!-- Quick Entry Button -->
+    <a href="shengchan-taizhang-quick-create.html" class="fixed bottom-36 right-4 w-14 h-14 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-full shadow-lg flex items-center justify-center z-40 hover:scale-105 transition-transform" title="快速录入">
+        <i class="fas fa-bolt text-xl"></i>
+    </a>
+    
+    <script src="../../js/common.js"></script>
+    <script>
+        window.onerror = function(message, source, lineno, colno, error) {
+            console.error('Global Error:', error);
+            if (LedgerUtils && typeof LedgerUtils.showToast === 'function') {
+                LedgerUtils.showToast('系统发生错误，请刷新重试', 'error');
+            }
+            return false;
+        };
+
+        // Data Store
+        let ledgers = [];
+        let currentFilter = 'all'; // all, week, month, custom
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            initData();
+            loadLedgers();
+            setupEventListeners();
+        });
+
+        function initData() {
+            // Initialize with dummy data if empty for demonstration
+            const stored = LedgerUtils.SafeStorage.get('ledger_production', null);
+            if (!stored) {
+                const dummyData = [
+                    {
+                        id: 'BATCH20231026001',
+                        productName: '基础甜面团',
+                        productionDate: '2023-10-26',
+                        operator: '张三',
+                        planAmount: '80kg',
+                        actualAmount: '80kg',
+                        status: 'qualified', // qualified, diff
+                        timestamp: new Date('2023-10-26').getTime()
+                    },
+                    {
+                        id: 'BATCH20231026002',
+                        productName: '法式牛角包',
+                        productionDate: '2023-10-26',
+                        operator: '李四',
+                        planAmount: '50个',
+                        actualAmount: '45个',
+                        status: 'diff',
+                        timestamp: new Date('2023-10-26').getTime()
+                    }
+                ];
+                LedgerUtils.SafeStorage.set('ledger_production', dummyData);
+            }
+        }
+
+        function loadLedgers() {
+            showLoading(true);
+            
+            // Simulate network delay
+            setTimeout(() => {
+                try {
+                    const rawData = LedgerUtils.SafeStorage.get('ledger_production', []);
+                    ledgers = LedgerUtils.validateLedgerData(rawData);
+                    // Sort by date desc
+                    ledgers.sort((a, b) => b.timestamp - a.timestamp);
+                    renderList(ledgers);
+                } catch (e) {
+                    console.error('Failed to load data:', e);
+                    LedgerUtils.showToast('数据加载失败，请刷新重试', 'error');
+                } finally {
+                    showLoading(false);
+                }
+            }, 500);
+        }
+
+        function renderList(data) {
+            const listEl = document.getElementById('ledger-list');
+            const emptyEl = document.getElementById('empty-state');
+            const countEl = document.getElementById('record-count');
+            
+            listEl.innerHTML = '';
+            countEl.innerText = `共 ${data.length} 条记录`;
+
+            if (data.length === 0) {
+                listEl.classList.add('hidden');
+                emptyEl.classList.remove('hidden');
+                return;
+            }
+
+            listEl.classList.remove('hidden');
+            emptyEl.classList.add('hidden');
+
+            data.forEach(item => {
+                const isDiff = item.status === 'diff';
+                const statusBadge = isDiff 
+                    ? `<span class="px-2 py-1 bg-yellow-50 text-yellow-600 text-[10px] font-bold rounded border border-yellow-100">有差异</span>`
+                    : `<span class="px-2 py-1 bg-green-50 text-green-600 text-[10px] font-bold rounded border border-green-100">质检合格</span>`;
+                
+                const amountClass = isDiff ? 'text-red-500 font-bold' : 'text-gray-700 font-bold';
+
+                const html = `
+                    <div class="card p-4 relative group">
+                        <div class="absolute top-4 left-3 z-10" onclick="event.stopPropagation()">
+                            <input type="checkbox" value="${item.id}" class="item-checkbox rounded border-gray-300 text-orange-500 focus:ring-orange-500 w-4 h-4">
+                        </div>
+                        <div class="pl-6" onclick="window.location.href='shengchan-taizhang-detail.html?id=${item.id}'">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <div class="text-xs text-orange-500 font-bold mb-1">${item.id}</div>
+                                    <div class="font-bold text-gray-800">${item.productName}</div>
+                                </div>
+                                ${statusBadge}
+                            </div>
+                            
+                            <div class="bg-gray-50 rounded-lg p-3 mb-3 text-xs text-gray-500 space-y-1">
+                                <div class="flex justify-between">
+                                    <span>生产日期:</span>
+                                    <span class="text-gray-700">${item.productionDate}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>操作人员:</span>
+                                    <span class="text-gray-700">${item.operator}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>计划/实际:</span>
+                                    <span class="${amountClass}">${item.planAmount} / ${item.actualAmount}</span>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-end gap-2">
+                                <button class="px-3 py-1.5 bg-white border border-gray-200 rounded text-xs text-gray-600 font-medium active:scale-95 transition-transform hover:bg-gray-50" onclick="exportLedger('${item.id}', event)">导出</button>
+                                <button class="px-3 py-1.5 bg-orange-50 text-orange-600 rounded text-xs font-bold active:scale-95 transition-transform hover:bg-orange-100">查看详情</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                listEl.insertAdjacentHTML('beforeend', html);
+            });
+            
+            // Re-bind checkboxes to update "Select All" state if needed
+            document.querySelectorAll('.item-checkbox').forEach(cb => {
+                cb.addEventListener('change', updateSelectAllState);
+            });
+        }
+
+        function setupEventListeners() {
+            // Search
+            const searchInput = document.querySelector('input[placeholder*="搜索"]');
+            searchInput.addEventListener('input', LedgerUtils.debounce((e) => {
+                const keyword = e.target.value.toLowerCase();
+                filterData(keyword, currentFilter);
+            }, 300));
+
+            // Filters
+            const filterBtns = document.querySelectorAll('.flex.gap-2 button');
+            filterBtns.forEach((btn, index) => {
+                btn.addEventListener('click', () => {
+                    // Update UI
+                    filterBtns.forEach(b => {
+                        b.classList.remove('bg-orange-100', 'text-orange-600');
+                        b.classList.add('bg-gray-100', 'text-gray-600');
+                    });
+                    btn.classList.remove('bg-gray-100', 'text-gray-600');
+                    btn.classList.add('bg-orange-100', 'text-orange-600');
+
+                    // Set filter
+                    const filters = ['all', 'week', 'month', 'custom'];
+                    currentFilter = filters[index];
+                    
+                    const keyword = searchInput.value.toLowerCase();
+                    filterData(keyword, currentFilter);
+                });
+            });
+
+            // Select All
+            const selectAll = document.getElementById('select-all');
+            selectAll.addEventListener('change', (e) => {
+                const checkboxes = document.querySelectorAll('.item-checkbox');
+                checkboxes.forEach(cb => cb.checked = e.target.checked);
+            });
+        }
+
+
+
+        function filterData(keyword, filter) {
+            let filtered = ledgers;
+
+            // Keyword filter
+            if (keyword) {
+                filtered = filtered.filter(item => 
+                    item.id.toLowerCase().includes(keyword) || 
+                    item.productName.toLowerCase().includes(keyword)
+                );
+            }
+
+            // Date filter
+            if (filter !== 'all') {
+                const now = new Date();
+                filtered = filtered.filter(item => {
+                    const date = new Date(item.productionDate);
+                    if (filter === 'week') {
+                        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                        return date >= weekAgo;
+                    } else if (filter === 'month') {
+                        return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+                    }
+                    return true;
+                });
+            }
+
+            renderList(filtered);
+        }
+
+        function updateSelectAllState() {
+            const all = document.querySelectorAll('.item-checkbox');
+            const checked = document.querySelectorAll('.item-checkbox:checked');
+            const selectAll = document.getElementById('select-all');
+            selectAll.checked = all.length > 0 && all.length === checked.length;
+            selectAll.indeterminate = checked.length > 0 && checked.length < all.length;
+        }
+
+        function showLoading(show) {
+            const loading = document.getElementById('loading-state');
+            if (show) loading.classList.remove('hidden');
+            else loading.classList.add('hidden');
+        }
+
+        async function batchDelete() {
+            const selected = Array.from(document.querySelectorAll('.item-checkbox:checked'))
+                .map(cb => cb.value)
+                .filter(Boolean);
+                
+            if (selected.length === 0) {
+                LedgerUtils.showToast('请选择要删除的记录', 'error');
+                return;
+            }
+                
+            const confirmed = await LedgerUtils.showConfirm({
+                title: '批量删除',
+                message: `确定要删除选中的 ${selected.length} 条记录吗？\n此操作无法撤销。`,
+                type: 'danger'
+            });
+
+            if (confirmed) {
+                try {
+                    const ledgers = LedgerUtils.SafeStorage.get('ledger_production', []);
+                    const newLedgers = ledgers.filter(l => !selected.includes(l.id));
+                    LedgerUtils.SafeStorage.set('ledger_production', newLedgers);
+                    
+                    LedgerUtils.showToast(`成功删除 ${selected.length} 条记录`);
+                    // Reload data
+                    loadLedgers();
+                    updateSelectAllState();
+                } catch (e) {
+                    console.error(e);
+                    LedgerUtils.showToast('删除失败', 'error');
+                }
+            }
+        }
+
+        function batchExport() {
+            const selected = document.querySelectorAll('.item-checkbox:checked');
+            if (selected.length === 0) {
+                LedgerUtils.showToast('请至少选择一条记录', 'error');
+                return;
+            }
+            
+            const ids = Array.from(selected).map(cb => cb.value);
+            const selectedLedgers = ledgers.filter(l => ids.includes(l.id));
+
+            if (typeof XLSX === 'undefined') {
+                LedgerUtils.showToast('请先加载 SheetJS 库', 'error');
+                return;
+            }
+
+            const btn = document.querySelector('button[onclick="batchExport()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 导出中...`;
+            btn.disabled = true;
+
+            setTimeout(() => {
+                try {
+                    const wb = XLSX.utils.book_new();
+                    const ws = XLSX.utils.json_to_sheet(selectedLedgers.map(item => ({
+                        '批次号': item.id,
+                        '产品名称': item.productName,
+                        '生产日期': item.productionDate,
+                        '操作人员': item.operator,
+                        '计划数量': item.planAmount,
+                        '实际数量': item.actualAmount,
+                        '状态': item.status === 'qualified' ? '合格' : '有差异'
+                    })));
+
+                    XLSX.utils.book_append_sheet(wb, ws, "生产台账");
+                    XLSX.writeFile(wb, `生产台账_${new Date().toISOString().split('T')[0]}.xlsx`);
+                    
+                    LedgerUtils.showToast(`成功导出 ${selectedLedgers.length} 条记录！`);
+                } catch (e) {
+                    console.error('导出失败', e);
+                    LedgerUtils.showToast('导出失败，请重试', 'error');
+                } finally {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            }, 500);
+        }
+
+
+
+        function exportLedger(id, event) {
+            event.stopPropagation();
+            
+            const item = ledgers.find(l => l.id === id);
+            if (!item) {
+                LedgerUtils.showToast('未找到记录', 'error');
+                return;
+            }
+
+            if (typeof XLSX === 'undefined') {
+                LedgerUtils.showToast('请先加载 SheetJS 库', 'error');
+                return;
+            }
+
+            const btn = event.target;
+            const originalText = btn.innerText;
+            btn.innerText = '导出中...';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                try {
+                    const wb = XLSX.utils.book_new();
+                    const ws = XLSX.utils.json_to_sheet([{
+                        '批次号': item.id,
+                        '产品名称': item.productName,
+                        '生产日期': item.productionDate,
+                        '操作人员': item.operator,
+                        '计划数量': item.planAmount,
+                        '实际数量': item.actualAmount,
+                        '状态': item.status === 'qualified' ? '合格' : '有差异'
+                    }]);
+
+                    XLSX.utils.book_append_sheet(wb, ws, "生产台账详情");
+                    XLSX.writeFile(wb, `生产台账_${item.id}.xlsx`);
+                    
+                    LedgerUtils.showToast(`成功导出记录 ${item.id}！`);
+                } catch (e) {
+                    console.error('导出失败', e);
+                    LedgerUtils.showToast('导出失败，请重试', 'error');
+                } finally {
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }
+            }, 500);
+        }
+    </script>
+
+</body>
+</html>

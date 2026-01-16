@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新建质检记录 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-green: #10b981;
+            --primary-dark: #059669;
+            --bg-light: #f7f7f5;
+            --bg-white: #ffffff;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+            -webkit-tap-highlight-color: transparent;
+        }
+        .form-input {
+            width: 100%;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-input:focus {
+            border-color: var(--primary-green);
+        }
+        .section-title {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 1rem;
+            background-color: var(--primary-green);
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- Header -->
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="px-4 h-14 flex items-center justify-between">
+            <a href="zhiliang-jy-list.html" class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            <h1 class="text-lg font-bold text-gray-800">新建质检记录</h1>
+            <div class="w-10"></div>
+        </div>
+    </nav>
+
+    <!-- Form -->
+    <form id="createForm" class="p-4 space-y-4">
+        
+        <!-- Basic Info -->
+        <div class="bg-white rounded-xl p-4 shadow-sm">
+            <h3 class="section-title">基本信息</h3>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">检验单号 (自动生成)</label>
+                    <input type="text" id="recordId" class="form-input bg-gray-50 text-gray-500" readonly>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">检验类型 *</label>
+                    <select id="type" class="form-input bg-white" onchange="toggleFields()" required>
+                        <option value="incoming">来料检验</option>
+                        <option value="process">过程检验</option>
+                        <option value="finished">成品检验</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1" id="nameLabel">物料名称 *</label>
+                    <input type="text" id="name" class="form-input" placeholder="请输入名称" required>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">关联批次号 *</label>
+                    <button type="button" onclick="selectBatch()" class="form-input text-left flex items-center justify-between bg-white w-full">
+                        <span id="batchDisplay" class="truncate text-gray-500">请选择关联批次号</span>
+                        <i class="fas fa-chevron-down text-gray-400 flex-shrink-0"></i>
+                    </button>
+                    <input type="hidden" id="batch" required>
+                </div>
+                <!-- Optional Supplier for Incoming -->
+                <div id="supplierField">
+                    <label class="block text-xs text-gray-500 mb-1">供应商</label>
+                    <button type="button" onclick="selectSupplier()" class="form-input text-left flex items-center justify-between bg-white w-full">
+                        <span id="supplierDisplay" class="truncate text-gray-500">请选择供应商</span>
+                        <i class="fas fa-chevron-down text-gray-400 flex-shrink-0"></i>
+                    </button>
+                    <input type="hidden" id="supplier">
+                </div>
+            </div>
+        </div>
+
+        <!-- Result Info -->
+        <div class="bg-white rounded-xl p-4 shadow-sm">
+            <h3 class="section-title">检验结果</h3>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">检验结果 *</label>
+                    <select id="status" class="form-input bg-white" onchange="toggleReason()" required>
+                        <option value="qualified">合格</option>
+                        <option value="unqualified">不合格</option>
+                    </select>
+                </div>
+                
+                <div id="unqualifiedFields" class="hidden space-y-3 p-3 bg-red-50 rounded-lg border border-red-100">
+                    <div>
+                        <label class="block text-xs text-red-500 mb-1">不合格原因 *</label>
+                        <textarea id="reason" class="form-input" rows="2" placeholder="描述不合格的具体原因"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-red-500 mb-1">处理方式 *</label>
+                        <select id="disposal" class="form-input bg-white">
+                            <option value="return">退货</option>
+                            <option value="scrap">报废</option>
+                            <option value="rework">返工</option>
+                            <option value="concession">让步接收</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">检验时间 *</label>
+                        <input type="datetime-local" id="time" class="form-input" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">检验员 *</label>
+                        <input type="text" id="inspector" class="form-input" placeholder="请输入姓名" required>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </form>
+
+    <!-- Bottom Actions -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white p-4 border-t border-gray-100 flex gap-3 z-50">
+        <button onclick="history.back()" class="flex-1 py-3 bg-white border border-gray-200 text-gray-600 rounded-xl font-bold text-sm">取消</button>
+        <button onclick="saveRecord()" class="flex-1 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-green-200">保存记录</button>
+    </div>
+
+    <script src="../js/common.js"></script>
+    <script src="../js/select-modal.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const id = LedgerUtils.getQueryParam('id');
+            if (id) {
+                document.querySelector('h1').textContent = '编辑质检记录';
+                loadRecordForEdit(id);
+            } else {
+                document.getElementById('recordId').value = LedgerUtils.generateBatchId('QC');
+                
+                // Set default time to now
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                document.getElementById('time').value = `${year}-${month}-${day}T${hours}:${minutes}`;
+
+                // Pre-fill from URL params
+                const batch = LedgerUtils.getQueryParam('batch');
+                const name = LedgerUtils.getQueryParam('name');
+                
+                if (batch) {
+                    document.getElementById('batch').value = batch;
+                    document.getElementById('batchDisplay').textContent = batch;
+                    document.getElementById('batchDisplay').classList.remove('text-gray-500');
+                    document.getElementById('batchDisplay').classList.add('text-gray-800');
+                    
+                    // Auto-detect type
+                    if (batch.startsWith('MAT')) {
+                        document.getElementById('type').value = 'incoming';
+                    } else {
+                        document.getElementById('type').value = 'process';
+                    }
+                    toggleFields();
+                }
+                
+                if (name) {
+                    document.getElementById('name').value = decodeURIComponent(name);
+                }
+            }
+        });
+
+        function selectBatch() {
+            const type = document.getElementById('type').value;
+            let filter = 'all';
+            if (type === 'incoming') filter = 'material';
+            if (type === 'process' || type === 'finished') filter = 'production';
+
+            showBatchSelector((b) => {
+                document.getElementById('batch').value = b.id;
+                document.getElementById('batchDisplay').textContent = b.id; // Or b.name if preferred, but ID is key
+                document.getElementById('batchDisplay').classList.remove('text-gray-500');
+                document.getElementById('batchDisplay').classList.add('text-gray-800');
+                
+                // Auto-fill name if not set
+                if (!document.getElementById('name').value && b.name) {
+                    document.getElementById('name').value = b.name;
+                }
+            }, filter);
+        }
+
+        function selectSupplier() {
+            showSupplierSelector((s) => {
+                document.getElementById('supplier').value = s.name;
+                document.getElementById('supplierDisplay').textContent = s.name;
+                document.getElementById('supplierDisplay').classList.remove('text-gray-500');
+                document.getElementById('supplierDisplay').classList.add('text-gray-800');
+            });
+        }
+
+        function loadRecordForEdit(id) {
+            const ledgers = JSON.parse(localStorage.getItem('ledger_quality') || '[]');
+            const record = ledgers.find(l => l.id === id);
+            
+            if (!record) {
+                LedgerUtils.showToast('记录不存在', 'error');
+                setTimeout(() => window.location.href = 'zhiliang-jy-list.html', 1500);
+                return;
+            }
+
+            document.getElementById('recordId').value = record.id;
+            document.getElementById('type').value = record.type;
+            toggleFields();
+            
+            document.getElementById('name').value = record.name;
+            document.getElementById('batch').value = record.batch;
+            document.getElementById('batchDisplay').textContent = record.batch;
+            document.getElementById('batchDisplay').classList.remove('text-gray-500');
+            document.getElementById('batchDisplay').classList.add('text-gray-800');
+            
+            if (record.supplier) {
+                document.getElementById('supplier').value = record.supplier;
+                document.getElementById('supplierDisplay').textContent = record.supplier;
+                document.getElementById('supplierDisplay').classList.remove('text-gray-500');
+                document.getElementById('supplierDisplay').classList.add('text-gray-800');
+            }
+
+            document.getElementById('status').value = record.status;
+            toggleReason();
+            document.getElementById('time').value = record.time.replace(' ', 'T');
+            document.getElementById('inspector').value = record.inspector;
+
+
+
+            if (record.status === 'unqualified') {
+                document.getElementById('reason').value = record.detail.replace('原因: ', '');
+                document.getElementById('disposal').value = record.disposal;
+            }
+        }
+
+        function toggleFields() {
+            const type = document.getElementById('type').value;
+            const supplierField = document.getElementById('supplierField');
+            const nameLabel = document.getElementById('nameLabel');
+
+            if (type === 'incoming') {
+                supplierField.classList.remove('hidden');
+                nameLabel.textContent = '原料名称 *';
+            } else {
+                supplierField.classList.add('hidden');
+                nameLabel.textContent = '产品名称 *';
+            }
+        }
+
+        function toggleReason() {
+            const status = document.getElementById('status').value;
+            const div = document.getElementById('unqualifiedFields');
+            const reason = document.getElementById('reason');
+            
+            if (status === 'unqualified') {
+                div.classList.remove('hidden');
+                reason.setAttribute('required', 'required');
+            } else {
+                div.classList.add('hidden');
+                reason.removeAttribute('required');
+            }
+        }
+
+        function saveRecord() {
+            const form = document.getElementById('createForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const type = document.getElementById('type').value;
+            const status = document.getElementById('status').value;
+            
+            const recordData = {
+                id: document.getElementById('recordId').value,
+                type: type,
+                name: document.getElementById('name').value,
+                batch: document.getElementById('batch').value,
+                status: status,
+                time: document.getElementById('time').value.replace('T', ' '),
+                inspector: document.getElementById('inspector').value,
+                timestamp: new Date().getTime()
+            };
+
+            if (type === 'incoming') {
+                recordData.supplier = document.getElementById('supplier').value;
+            }
+
+            if (status === 'unqualified') {
+                recordData.detail = `原因: ${document.getElementById('reason').value}`;
+                recordData.disposal = document.getElementById('disposal').value;
+            } else {
+                recordData.detail = '检验合格';
+            }
+
+            const validation = LedgerUtils.validateQualityRecord(recordData);
+            if (!validation.valid) {
+                LedgerUtils.showToast(validation.errors.join('；'), 'error');
+                return;
+            }
+
+            // Validate batch relation
+            if (recordData.batch) {
+                const prodLedgers = LedgerUtils.SafeStorage.get('ledger_production', []);
+                const matLedgers = LedgerUtils.SafeStorage.get('ledger_material', []);
+                
+                const batchExists = prodLedgers.some(p => p.id === recordData.batch) || 
+                                    matLedgers.some(m => m.id === recordData.batch || m.batchNo === recordData.batch);
+                
+                if (!batchExists) {
+                    // Just a warning or strict check? User requirement said "validate associated batch exists"
+                    // Let's make it a toast but allow save if user insists? Or block?
+                    // "创建质检记录时，验证关联批次是否存在" - usually implies strict validation.
+                    // But for demo data it might block testing. Let's block with clear message.
+                    LedgerUtils.showToast(`关联批次号 ${recordData.batch} 不存在`, 'error');
+                    // return; // Uncomment to strictly block. For flexibility in demo, maybe we just warn?
+                    // User instruction: "创建质检记录时，验证关联批次是否存在" - Priority 1.
+                    // Let's block it to fulfill requirement strictly.
+                    return;
+                }
+            }
+
+            try {
+                let ledgers = LedgerUtils.SafeStorage.get('ledger_quality', []);
+                
+                // Check if updating
+                const id = recordData.id;
+                const existingIndex = ledgers.findIndex(l => l.id === id);
+                
+                if (existingIndex >= 0) {
+                    recordData.timestamp = ledgers[existingIndex].timestamp;
+                    ledgers[existingIndex] = recordData;
+                    LedgerUtils.showToast('更新成功');
+                } else {
+                    ledgers.unshift(recordData);
+                    LedgerUtils.showToast('保存成功');
+                }
+                
+                LedgerUtils.SafeStorage.set('ledger_quality', ledgers);
+                
+                setTimeout(() => window.location.href = 'zhiliang-jy-list.html', 1000);
+            } catch (e) {
+                console.error(e);
+                LedgerUtils.showToast('保存失败', 'error');
+            }
+        }
+    </script>
+</body>
+</html>

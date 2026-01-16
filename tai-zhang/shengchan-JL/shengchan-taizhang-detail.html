@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生产台账详情 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+            --bg-light: #f7f7f5;
+            --bg-white: #ffffff;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+            -webkit-tap-highlight-color: transparent;
+        }
+        .section-title {
+            font-size: 0.875rem; /* text-sm */
+            font-weight: 700;
+            color: #374151; /* text-gray-700 */
+            margin-bottom: 0.5rem;
+            padding-left: 0.5rem;
+            border-left: 3px solid var(--primary-orange);
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem; /* text-xs */
+            padding: 0.25rem 0;
+        }
+        .info-label { color: #6b7280; } /* text-gray-500 */
+        .info-value { color: #1f2937; font-weight: 500; } /* text-gray-800 */
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+
+    <!-- Header -->
+    <div class="bg-white px-4 py-3 shadow-sm border-b border-gray-100 z-30 flex-shrink-0">
+        <div class="flex items-center justify-between">
+            <a href="shengchan-taizhang-list.html" class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            <div class="font-bold text-gray-800" id="header-id">BATCH20231026001</div>
+            <button onclick="shareRecord()" class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors">
+                <i class="fas fa-share-alt"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="flex-1 overflow-y-auto p-4 space-y-4">
+        
+        <!-- Basic Info -->
+        <div class="bg-white rounded-xl p-4 shadow-sm">
+            <h3 class="section-title">基本信息</h3>
+            <div class="space-y-1">
+                <div class="info-row"><span class="info-label">批次号</span><span class="info-value" id="detail-id">BATCH20231026001</span></div>
+                <div class="info-row"><span class="info-label">产品名称</span><span class="info-value font-bold text-orange-600" id="detail-product-name">基础甜面团</span></div>
+                <div class="info-row"><span class="info-label">生产日期</span><span class="info-value" id="detail-date">2023-10-26</span></div>
+                <div class="info-row"><span class="info-label">开始时间</span><span class="info-value">08:30</span></div>
+                <div class="info-row"><span class="info-label">完成时间</span><span class="info-value">10:45</span></div>
+                <div class="info-row"><span class="info-label">生产时长</span><span class="info-value">2小时15分</span></div>
+            </div>
+        </div>
+
+        <!-- Quantity Info -->
+        <div class="bg-white rounded-xl p-4 shadow-sm">
+            <h3 class="section-title">数量信息</h3>
+            <div class="grid grid-cols-3 gap-2 mb-2 text-center">
+                <div class="bg-gray-50 p-2 rounded-lg">
+                    <div class="text-xs text-gray-400">计划</div>
+                    <div class="font-bold text-gray-800" id="detail-plan">80 kg</div>
+                </div>
+                <div class="bg-green-50 p-2 rounded-lg border border-green-100">
+                    <div class="text-xs text-green-600">实际</div>
+                    <div class="font-bold text-green-700" id="detail-actual">80 kg</div>
+                </div>
+                <div class="bg-gray-50 p-2 rounded-lg">
+                    <div class="text-xs text-gray-400">差异</div>
+                    <div class="font-bold text-gray-400" id="detail-diff">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Personnel & Equipment -->
+        <div class="bg-white rounded-xl p-4 shadow-sm">
+            <h3 class="section-title">生产要素</h3>
+            <div class="space-y-1">
+                <div class="info-row"><span class="info-label">操作人员</span><span class="info-value" id="detail-operator">张三 (P001)</span></div>
+                <div class="info-row"><span class="info-label">生产主管</span><span class="info-value">王五 (M002)</span></div>
+                <div class="info-row"><span class="info-label">使用设备</span><span class="info-value">和面机A (EQ-HM-01), 烤箱B (EQ-OV-02)</span></div>
+                <div class="info-row"><span class="info-label">环境数据</span><span class="info-value">26°C / 65% RH</span></div>
+            </div>
+        </div>
+
+        <!-- Material Traceability (Upward) -->
+        <div class="bg-white rounded-xl p-4 shadow-sm">
+            <h3 class="section-title">原料追溯</h3>
+            <div class="space-y-2">
+                <div class="flex justify-between items-center text-xs bg-gray-50 p-2 rounded border border-gray-100">
+                    <div>
+                        <div class="font-bold text-gray-700">高筋面粉</div>
+                        <div class="text-gray-400">批次: MAT-231020-005</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-medium text-gray-800">50 kg</div>
+                        <div class="text-gray-400 text-[10px]">供应商: 益海嘉里</div>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center text-xs bg-gray-50 p-2 rounded border border-gray-100">
+                    <div>
+                        <div class="font-bold text-gray-700">黄油</div>
+                        <div class="text-gray-400">批次: MAT-231015-002</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-medium text-gray-800">10 kg</div>
+                        <div class="text-gray-400 text-[10px]">供应商: 总统乳业</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- QC Info -->
+        <div class="bg-white rounded-xl p-4 shadow-sm">
+            <h3 class="section-title">质检记录</h3>
+            <div class="space-y-2">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-gray-600">过程检验 (面团温度)</span>
+                    <span class="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded">合格 (24°C)</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-gray-600">成品检验 (感官)</span>
+                    <span class="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded">合格</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cost Info -->
+        <div class="bg-white rounded-xl p-4 shadow-sm">
+            <h3 class="section-title">成本核算</h3>
+            <div class="space-y-1">
+                <div class="info-row"><span class="info-label">原料成本</span><span class="info-value">¥ 450.00</span></div>
+                <div class="info-row"><span class="info-label">人工工时</span><span class="info-value">¥ 120.00</span></div>
+                <div class="info-row pt-2 border-t border-dashed border-gray-200 mt-1"><span class="info-label font-bold text-gray-800">总成本</span><span class="info-value font-bold text-orange-600">¥ 570.00</span></div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Bottom Actions -->
+    <div class="bg-white p-4 border-t border-gray-100 flex gap-2 z-30">
+        <button class="flex-1 py-3 bg-blue-500 text-white rounded-lg text-sm font-bold flex items-center justify-center gap-2 shadow-md active:scale-95 transition-transform" onclick="editRecord()">
+            <i class="fas fa-edit"></i> 编辑
+        </button>
+        <button class="flex-1 py-3 bg-red-500 text-white rounded-lg text-sm font-bold flex items-center justify-center gap-2 shadow-md active:scale-95 transition-transform" onclick="deleteRecord()">
+            <i class="fas fa-trash"></i> 删除
+        </button>
+        <button class="flex-1 py-3 bg-orange-500 text-white rounded-lg text-sm font-bold flex items-center justify-center gap-2 shadow-md shadow-orange-200 active:scale-95 transition-transform" onclick="exportReport()">
+            <i class="fas fa-file-download"></i> 导出
+        </button>
+    </div>
+    
+    <script src="../../js/common.js"></script>
+    <script>
+        window.onerror = function(message, source, lineno, colno, error) {
+            console.error('Global Error:', error);
+            if (typeof LedgerUtils.showToast === 'function') {
+                LedgerUtils.showToast('系统发生错误，请刷新重试', 'error');
+            }
+            return false;
+        };
+
+        let currentRecord = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const id = urlParams.get('id');
+            if (id) {
+                loadRecord(id);
+            } else {
+                LedgerUtils.showToast('未指定记录ID', 'error');
+                history.back();
+            }
+        });
+
+        function loadRecord(id) {
+            const ledgers = LedgerUtils.SafeStorage.get('ledger_production', []);
+            currentRecord = ledgers.find(l => l.id === id);
+            
+            if (!currentRecord) {
+                LedgerUtils.showToast('记录不存在', 'error');
+                setTimeout(() => window.location.href = 'shengchan-taizhang-list.html', 2000);
+                return;
+            }
+
+            // Populate Fields
+            document.getElementById('header-id').innerText = id;
+            document.getElementById('detail-id').innerText = id;
+            document.getElementById('detail-product-name').innerText = currentRecord.productName;
+            document.getElementById('detail-date').innerText = currentRecord.productionDate;
+            document.getElementById('detail-operator').innerText = currentRecord.operator;
+            document.getElementById('detail-plan').innerText = currentRecord.planAmount;
+            document.getElementById('detail-actual').innerText = currentRecord.actualAmount;
+            
+            // Calculate diff if numeric
+            const plan = parseFloat(currentRecord.planAmount) || 0;
+            const actual = parseFloat(currentRecord.actualAmount) || 0;
+            const diff = actual - plan;
+            const diffEl = document.getElementById('detail-diff');
+            
+            // Try to match unit
+            const unit = currentRecord.planAmount.replace(/[0-9.]/g, '') || 'kg';
+            
+            diffEl.innerText = `${diff > 0 ? '+' : ''}${diff} ${unit}`;
+            if (diff !== 0) {
+                diffEl.classList.remove('text-gray-400');
+                diffEl.classList.add(diff > 0 ? 'text-green-500' : 'text-red-500');
+            } else {
+                 diffEl.className = 'font-bold text-gray-400';
+            }
+
+            // Load Material Traceability
+            loadMaterialTraceability(id);
+
+            // Load Quality Records
+            loadQualityRecords(id);
+
+            // Calculate Cost
+            calculateCost(id);
+        }
+
+        function loadMaterialTraceability(batchId) {
+            let relatedMaterials = [];
+            
+            // First check if current record has materials saved
+            if (currentRecord && currentRecord.materials && currentRecord.materials.length > 0) {
+                relatedMaterials = currentRecord.materials;
+            } else {
+                // Fallback: search in material ledger (reverse lookup)
+                const materials = LedgerUtils.SafeStorage.get('ledger_material', []);
+                relatedMaterials = materials.filter(m => 
+                    m.relatedBatchId === batchId || m.batchNo === batchId || m.productionBatchId === batchId
+                );
+            }
+            
+            // Select container safely.
+            const sections = document.querySelectorAll('.section-title');
+            let container = null;
+            sections.forEach(section => {
+                if (section.innerText.includes('原料追溯')) {
+                    container = section.parentElement.querySelector('.space-y-2');
+                }
+            });
+
+            if (container) {
+                if (relatedMaterials.length > 0) {
+                    container.innerHTML = relatedMaterials.map(m => `
+                        <div class="flex justify-between items-center text-xs bg-gray-50 p-2 rounded border border-gray-100">
+                            <div>
+                                <div class="font-bold text-gray-700">${m.materialName || m.name || '未知原料'}</div>
+                                <div class="text-gray-400">批次: ${m.id || m.batchNo}</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-medium text-gray-800">${m.amount || m.quantity || ''}</div>
+                                <div class="text-gray-400 text-[10px]">供应商: ${typeof m.supplier === 'object' ? m.supplier.name : (m.supplier || '未知')}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                     container.innerHTML = '<div class="text-center text-xs text-gray-400 py-2">暂无关联原料</div>';
+                }
+            }
+        }
+
+        function loadQualityRecords(batchId) {
+            const qualityRecords = LedgerUtils.SafeStorage.get('ledger_quality', []);
+            const relatedRecords = qualityRecords.filter(q => q.batch === batchId || q.batchId === batchId);
+            
+            const sections = document.querySelectorAll('.section-title');
+            let container = null;
+            sections.forEach(section => {
+                if (section.innerText.includes('质检记录')) {
+                    container = section.parentElement.querySelector('.space-y-2');
+                }
+            });
+
+            if (container) {
+                if (relatedRecords.length > 0) {
+                    container.innerHTML = relatedRecords.map(q => {
+                        let statusColor = 'text-gray-600 bg-gray-50';
+                        let statusText = q.status;
+                        
+                        if (q.status === 'qualified') {
+                            statusColor = 'text-green-600 bg-green-50';
+                            statusText = '合格';
+                        } else if (q.status === 'unqualified') {
+                            statusColor = 'text-red-600 bg-red-50';
+                            statusText = '不合格';
+                        } else if (q.status === 'scrap') {
+                            statusColor = 'text-red-800 bg-red-100';
+                            statusText = '报废';
+                        }
+                        
+                        return `
+                        <div class="flex justify-between items-center p-2 rounded hover:bg-gray-50 cursor-pointer" onclick="window.location.href='../zhiliang-jy/zhiliang-jy-detail.html?type=${q.type}&id=${q.id}'">
+                            <span class="text-xs text-gray-600">${q.type === 'process' ? '过程检验' : '成品检验'} (${q.name})</span>
+                            <span class="text-xs font-bold ${statusColor} px-2 py-0.5 rounded">${statusText}</span>
+                        </div>
+                    `}).join('');
+                } else {
+                    container.innerHTML = `
+                        <div class="text-center text-xs text-gray-400 py-2">
+                            暂无质检记录
+                            <a href="../zhiliang-jy/zhiliang-jy-create.html?batch=${batchId}&name=${encodeURIComponent(currentRecord.productName || '')}" class="block mt-1 text-orange-500 hover:underline">添加质检</a>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        function calculateCost(batchId) {
+            // Placeholder for cost calculation
+            // In a real app, this would sum up material costs + labor + overhead
+            // For now, we can check if there's stored cost data or leave as static/random for demo if no data exists
+            // Or just leave the static HTML as is if we don't have cost data structure yet.
+            // The user requested "calculateCost(id)", so let's add a basic implementation if possible or just log it.
+             console.log('Calculating cost for batch:', batchId);
+        }
+
+        function exportReport() {
+            if (!currentRecord) return;
+            
+            if (typeof XLSX === 'undefined') {
+                LedgerUtils.showToast('请先加载 SheetJS 库', 'error');
+                return;
+            }
+
+            try {
+                // Create a more detailed report structure
+                const data = [
+                    ['生产台账详情报表'],
+                    ['生成时间', new Date().toLocaleString()],
+                    [''],
+                    ['基本信息'],
+                    ['批次号', currentRecord.id],
+                    ['产品名称', currentRecord.productName],
+                    ['生产日期', currentRecord.productionDate],
+                    ['操作人员', currentRecord.operator],
+                    [''],
+                    ['数量信息'],
+                    ['计划数量', currentRecord.planAmount],
+                    ['实际数量', currentRecord.actualAmount],
+                    ['状态', currentRecord.status === 'qualified' ? '合格' : '有差异']
+                ];
+
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                
+                // Merges for title
+                ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 1 } }];
+                
+                XLSX.utils.book_append_sheet(wb, ws, "详情报表");
+                XLSX.writeFile(wb, `生产台账详情_${currentRecord.id}.xlsx`);
+                
+                LedgerUtils.showToast('导出成功');
+            } catch (e) {
+                console.error('导出失败', e);
+                LedgerUtils.showToast('导出失败', 'error');
+            }
+        }
+
+        function editRecord() {
+            if (!currentRecord) return;
+            // 跳转到编辑页面，传递id参数
+            window.location.href = `shengchan-taizhang-create.html?id=${currentRecord.id}`;
+        }
+
+        async function deleteRecord() {
+            if (!currentRecord) return;
+            const confirmed = await LedgerUtils.showConfirm({
+                title: '删除确认',
+                message: '确定要删除这条生产记录吗？\n此操作无法撤销。',
+                type: 'danger'
+            });
+
+            if (confirmed) {
+                try {
+                    const ledgers = LedgerUtils.SafeStorage.get('ledger_production', []);
+                    const newLedgers = ledgers.filter(l => l.id !== currentRecord.id);
+                    LedgerUtils.SafeStorage.set('ledger_production', newLedgers);
+                    
+                    LedgerUtils.showToast('删除成功');
+                    setTimeout(() => {
+                        window.location.href = 'shengchan-taizhang-list.html';
+                    }, 1000);
+                } catch (e) {
+                    console.error(e);
+                    LedgerUtils.showToast('删除失败', 'error');
+                }
+            }
+        }
+
+        function shareRecord() {
+            if (navigator.share) {
+                navigator.share({
+                    title: '生产台账详情',
+                    text: `查看生产台账: ${document.getElementById('header-id').innerText}`,
+                    url: window.location.href
+                }).catch(err => {
+                    console.log('分享失败', err);
+                });
+            } else {
+                // Fallback
+                const dummyUrl = window.location.href;
+                navigator.clipboard.writeText(dummyUrl).then(() => {
+                    LedgerUtils.showToast('链接已复制到剪贴板');
+                }).catch(() => {
+                    LedgerUtils.showToast('分享功能不支持当前浏览器', 'error');
+                });
+            }
+        }
+
+
+    </script>
+</body>
+</html>

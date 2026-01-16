@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>检验详情 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-green: #10b981;
+            --bg-light: #f7f7f5;
+            --bg-white: #ffffff;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+            -webkit-tap-highlight-color: transparent;
+        }
+        .card {
+            background: var(--bg-white);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            border: 1px solid rgba(0,0,0,0.03);
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+
+    <!-- Header -->
+    <div class="bg-white px-4 py-3 shadow-sm border-b border-gray-100 z-30 flex-shrink-0">
+        <div class="flex items-center space-x-3">
+            <a href="zhiliang-jy-list.html" class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            <div class="flex-1">
+                <h1 class="text-lg font-bold text-gray-800">检验详情</h1>
+                <div class="text-xs text-gray-500 font-mono">QC-FN-231026-008</div>
+            </div>
+            <button class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors">
+                <i class="fas fa-share-alt"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="flex-1 overflow-y-auto p-4 space-y-4">
+        
+        <!-- Status Card -->
+        <div class="card p-6 flex flex-col items-center justify-center bg-gradient-to-br from-green-50 to-white border-green-100">
+            <div class="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center text-white text-3xl shadow-lg mb-3">
+                <i class="fas fa-check"></i>
+            </div>
+            <h2 class="text-xl font-bold text-green-600">检验合格</h2>
+            <p class="text-xs text-green-500 mt-1">所有指标符合标准</p>
+        </div>
+
+        <!-- Basic Info -->
+        <div class="card p-4">
+            <h3 class="text-sm font-bold text-gray-800 mb-3 border-l-4 border-green-500 pl-2">基本信息</h3>
+            <div class="grid grid-cols-2 gap-y-3 gap-x-2 text-xs">
+                <div>
+                    <div class="text-gray-400 mb-0.5">检验类型</div>
+                    <div class="font-bold text-gray-700">成品检验</div>
+                </div>
+                <div>
+                    <div class="text-gray-400 mb-0.5">检验日期</div>
+                    <div class="font-bold text-gray-700">2023-10-26 16:30</div>
+                </div>
+                <div>
+                    <div class="text-gray-400 mb-0.5">检验人员</div>
+                    <div class="font-bold text-gray-700">李质检 (003)</div>
+                </div>
+                <div>
+                    <div class="text-gray-400 mb-0.5">关联单号</div>
+                    <div class="font-bold text-gray-700 font-mono">BATCH20231026008</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product Info -->
+        <div class="card p-4">
+            <h3 class="text-sm font-bold text-gray-800 mb-3 border-l-4 border-blue-500 pl-2">检验对象</h3>
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 text-xl">
+                    <i class="fas fa-bread-slice"></i>
+                </div>
+                <div>
+                    <div class="font-bold text-gray-800 text-base">全麦吐司</div>
+                    <div class="text-xs text-gray-500">生产批次: BATCH20231026008</div>
+                    <div class="text-xs text-gray-500">送检数量: 50个</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inspection Items -->
+        <div class="card overflow-hidden">
+            <h3 class="text-sm font-bold text-gray-800 p-4 border-b border-gray-50 bg-gray-50">检验项目</h3>
+            
+            <div class="divide-y divide-gray-50">
+                <!-- Item 1 -->
+                <div class="p-3 flex items-center justify-between">
+                    <div>
+                        <div class="text-xs font-bold text-gray-700">外观检查</div>
+                        <div class="text-xs text-gray-400">标准: 表面金黄，无焦糊</div>
+                    </div>
+                    <span class="text-green-600 font-bold text-xs"><i class="fas fa-check mr-1"></i>合格</span>
+                </div>
+
+                <!-- Item 2 -->
+                <div class="p-3 flex items-center justify-between">
+                    <div>
+                        <div class="text-xs font-bold text-gray-700">重量检查</div>
+                        <div class="text-xs text-gray-400">标准: 450g ±5g</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-green-600 font-bold text-xs">合格</div>
+                        <div class="text-xs text-gray-500">实测: 452g</div>
+                    </div>
+                </div>
+
+                <!-- Item 3 -->
+                <div class="p-3 flex items-center justify-between">
+                    <div>
+                        <div class="text-xs font-bold text-gray-700">中心温度</div>
+                        <div class="text-xs text-gray-400">标准: 出炉温度 >96°C</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-green-600 font-bold text-xs">合格</div>
+                        <div class="text-xs text-gray-500">实测: 98°C</div>
+                    </div>
+                </div>
+
+                <!-- Item 4 -->
+                <div class="p-3 flex items-center justify-between">
+                    <div>
+                        <div class="text-xs font-bold text-gray-700">口感/组织</div>
+                        <div class="text-xs text-gray-400">标准: 组织细腻，回弹好</div>
+                    </div>
+                    <span class="text-green-600 font-bold text-xs"><i class="fas fa-check mr-1"></i>合格</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Attachments -->
+        <div class="card p-4">
+            <h3 class="text-sm font-bold text-gray-800 mb-3 border-l-4 border-gray-500 pl-2">附件/报告</h3>
+            <div class="flex gap-2">
+                <div class="w-16 h-16 bg-gray-50 rounded-lg border border-gray-200 flex flex-col items-center justify-center text-gray-400">
+                    <i class="fas fa-file-pdf text-xl mb-1"></i>
+                    <span class="text-[10px]">报告.pdf</span>
+                </div>
+                <div class="w-16 h-16 bg-gray-50 rounded-lg border border-gray-200 flex flex-col items-center justify-center text-gray-400">
+                    <i class="fas fa-image text-xl mb-1"></i>
+                    <span class="text-[10px]">现场.jpg</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Bottom Actions -->
+    <div class="bg-white p-4 border-t border-gray-100 z-30 flex gap-3">
+        <button onclick="editRecord()" class="flex-1 bg-white border border-gray-200 text-gray-700 py-3 rounded-xl font-bold text-sm hover:bg-gray-50 transition-colors">
+            <i class="fas fa-edit mr-1"></i> 编辑
+        </button>
+        <button onclick="deleteRecord()" class="flex-1 bg-red-500 text-white py-3 rounded-xl font-bold text-sm hover:bg-red-600 transition-colors shadow-lg shadow-red-200">
+            <i class="fas fa-trash-alt mr-1"></i> 删除
+        </button>
+    </div>
+
+    <script src="../js/common.js"></script>
+    <script>
+        const id = LedgerUtils.getQueryParam('id');
+        let currentRecord = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadRecord();
+        });
+
+        function loadRecord() {
+            const ledgers = JSON.parse(localStorage.getItem('ledger_quality') || '[]');
+            currentRecord = ledgers.find(l => l.id === id);
+
+            if (!currentRecord) {
+                // If not found in local storage, maybe it's a static demo page? 
+                // But let's assume dynamic now.
+                // Or if id is missing, just show static demo content if we want, but better to handle properly.
+                // For now, if no ID, we might be viewing the static demo.
+                if (id) {
+                    LedgerUtils.showToast('记录不存在', 'error');
+                    setTimeout(() => window.location.href = 'zhiliang-jy-list.html', 1500);
+                }
+                return;
+            }
+            
+            // Render Dynamic Content
+            // Update Header
+            document.querySelector('.font-mono').textContent = currentRecord.id;
+            
+            // Update Status Card
+            const statusCard = document.querySelector('.card.p-6'); // First card
+            const icon = statusCard.querySelector('.w-16');
+            const title = statusCard.querySelector('h2');
+            const desc = statusCard.querySelector('p');
+            
+            if (currentRecord.status === 'qualified') {
+                statusCard.className = 'card p-6 flex flex-col items-center justify-center bg-gradient-to-br from-green-50 to-white border-green-100';
+                icon.className = 'w-16 h-16 rounded-full bg-green-500 flex items-center justify-center text-white text-3xl shadow-lg mb-3';
+                icon.innerHTML = '<i class="fas fa-check"></i>';
+                title.className = 'text-xl font-bold text-green-600';
+                title.textContent = '检验合格';
+                desc.className = 'text-xs text-green-500 mt-1';
+                desc.textContent = '所有指标符合标准';
+            } else {
+                statusCard.className = 'card p-6 flex flex-col items-center justify-center bg-gradient-to-br from-red-50 to-white border-red-100';
+                icon.className = 'w-16 h-16 rounded-full bg-red-500 flex items-center justify-center text-white text-3xl shadow-lg mb-3';
+                icon.innerHTML = '<i class="fas fa-times"></i>';
+                title.className = 'text-xl font-bold text-red-600';
+                title.textContent = '检验不合格';
+                desc.className = 'text-xs text-red-500 mt-1';
+                desc.textContent = currentRecord.detail || '存在不合格项';
+            }
+
+            // Update Basic Info
+            const basicInfoGrid = document.querySelectorAll('.card.p-4')[0].querySelectorAll('.font-bold.text-gray-700');
+            const typeMap = { 'incoming': '来料检验', 'process': '过程检验', 'finished': '成品检验' };
+            basicInfoGrid[0].textContent = typeMap[currentRecord.type] || currentRecord.type;
+            basicInfoGrid[1].textContent = currentRecord.time;
+            basicInfoGrid[2].textContent = currentRecord.inspector;
+            basicInfoGrid[3].textContent = currentRecord.batch;
+
+            // Update Object Info
+            const objCard = document.querySelectorAll('.card.p-4')[1];
+            objCard.querySelector('.text-base').textContent = currentRecord.name;
+            objCard.querySelectorAll('.text-xs.text-gray-500')[0].textContent = `批次: ${currentRecord.batch}`;
+            // If supplier exists, show it
+            if (currentRecord.supplier) {
+                objCard.querySelectorAll('.text-xs.text-gray-500')[1].textContent = `供应商: ${currentRecord.supplier}`;
+            } else {
+                 objCard.querySelectorAll('.text-xs.text-gray-500')[1].textContent = '';
+            }
+        }
+
+        function editRecord() {
+            if (!currentRecord) return;
+            window.location.href = `zhiliang-jy-create.html?id=${currentRecord.id}`;
+        }
+
+        async function deleteRecord() {
+            if (!currentRecord) return;
+            const confirmed = await LedgerUtils.showConfirm({
+                title: '删除记录',
+                message: '确定要删除这条检验记录吗？此操作无法撤销。',
+                type: 'danger',
+                confirmText: '删除',
+                cancelText: '取消'
+            });
+            if (confirmed) {
+                const ledgers = LedgerUtils.SafeStorage.get('ledger_quality', []);
+                const newLedgers = ledgers.filter(l => l.id !== currentRecord.id);
+                LedgerUtils.SafeStorage.set('ledger_quality', newLedgers);
+                LedgerUtils.showToast('删除成功');
+                setTimeout(() => window.location.href = 'zhiliang-jy-list.html', 1000);
+            }
+        }
+    </script>

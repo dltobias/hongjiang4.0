@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>质检台账 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 pb-20">
+    <!-- 顶部导航栏 -->
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="px-4 h-14 flex items-center justify-between">
+            <a href="taizhang-zhuye.html" class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            <h1 class="text-lg font-bold text-gray-800">质检台账</h1>
+            <div class="w-10"></div>
+        </div>
+    </nav>
+
+    <!-- 标签页切换 -->
+    <div class="bg-white border-b border-gray-100 sticky top-14 z-40 overflow-x-auto">
+        <div class="flex px-4 min-w-max">
+            <button onclick="switchTab('incoming')" class="nav-tab active px-4 py-3 text-sm font-medium border-b-2 border-orange-500 text-orange-600">来料检验</button>
+            <button onclick="switchTab('process')" class="nav-tab px-4 py-3 text-sm font-medium text-gray-500">过程检验</button>
+            <button onclick="switchTab('finished')" class="nav-tab px-4 py-3 text-sm font-medium text-gray-500">成品检验</button>
+            <button onclick="switchTab('unqualified')" class="nav-tab px-4 py-3 text-sm font-medium text-gray-500">不合格品</button>
+        </div>
+    </div>
+
+    <!-- 筛选区域 -->
+    <div class="p-4 pb-0">
+        <div class="flex gap-2">
+            <select class="flex-1 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600">
+                <option>全部结果</option>
+                <option>合格</option>
+                <option>不合格</option>
+            </select>
+            <input type="date" class="flex-1 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600">
+        </div>
+    </div>
+
+    <!-- 列表区域 -->
+    <div class="p-4 space-y-3" id="list-container">
+        <!-- Dynamic Content -->
+        <div class="text-center py-10 text-gray-400">
+            <i class="fas fa-spinner fa-spin mb-2"></i> 加载中...
+        </div>
+    </div>
+
+    <script>
+        let currentTab = 'incoming';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData('incoming');
+        });
+
+        function switchTab(tab) {
+            currentTab = tab;
+            // Update UI
+            document.querySelectorAll('.nav-tab').forEach(btn => {
+                btn.classList.remove('active', 'border-orange-500', 'text-orange-600');
+                btn.classList.add('text-gray-500');
+            });
+            event.target.classList.add('active', 'border-orange-500', 'text-orange-600');
+            event.target.classList.remove('text-gray-500');
+            
+            loadData(tab);
+        }
+
+        function loadData(tab) {
+            const container = document.getElementById('list-container');
+            let data = [];
+
+            // Fetch data based on tab
+            if (tab === 'incoming') {
+                data = JSON.parse(localStorage.getItem('materialInspectionRecords') || '[]');
+                if (data.length === 0) {
+                    // Fallback to traceability ledger for demo if empty
+                    const trace = JSON.parse(localStorage.getItem('materialTraceRecords') || '[]');
+                    data = trace.map(t => ({
+                        id: t.inboundOrderId,
+                        date: t.inboundDate,
+                        name: t.materialName,
+                        batch: t.materialBatchNumber,
+                        result: t.inspectionStatus || '合格'
+                    }));
+                }
+            } else if (tab === 'process') {
+                data = JSON.parse(localStorage.getItem('processInspectionRecords') || '[]');
+            } else if (tab === 'finished') {
+                data = JSON.parse(localStorage.getItem('finishedInspectionRecords') || '[]');
+            } else if (tab === 'unqualified') {
+                data = JSON.parse(localStorage.getItem('unqualifiedProductRecords') || '[]');
+            }
+
+            if (data.length === 0) {
+                container.innerHTML = '<div class="text-center py-10 text-gray-400">暂无记录</div>';
+                return;
+            }
+
+            container.innerHTML = data.map(item => renderItem(item, tab)).join('');
+        }
+
+        function renderItem(item, tab) {
+            const isUnqualified = (item.result || item.inspectionResult) !== '合格';
+            const statusClass = isUnqualified ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700';
+            const statusText = item.result || item.inspectionResult || '合格';
+            
+            // Normalize fields
+            const id = item.id || item.inspectionId || item.inboundOrderId;
+            const date = item.date || item.inspectionDate;
+            const name = item.name || item.productName || item.materialName;
+            const batch = item.batch || item.productionBatchNumber || item.materialBatchNumber;
+
+            return `
+                <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <div class="text-xs text-gray-400 mb-1">单号: ${id}</div>
+                            <div class="font-bold text-gray-800">${name}</div>
+                        </div>
+                        <span class="px-2 py-1 rounded text-xs font-bold ${statusClass}">${statusText}</span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs text-gray-500 mt-2 bg-gray-50 p-2 rounded">
+                        <span>批次: ${batch}</span>
+                        <span>${date}</span>
+                    </div>
+                    ${isUnqualified ? `
+                        <div class="mt-2 text-xs text-red-500 flex items-start gap-1">
+                            <i class="fas fa-exclamation-circle mt-0.5"></i>
+                            <span>原因: ${item.unqualifiedReason || '未知'}</span>
+                        </div>
+                    ` : ''}
+                    <div class="mt-3 flex justify-end">
+                        <button class="px-3 py-1.5 border border-gray-200 rounded text-xs text-gray-600">查看详情</button>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

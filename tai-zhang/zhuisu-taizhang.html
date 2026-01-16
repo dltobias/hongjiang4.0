@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>追溯查询 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        .node {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .node:hover {
+            border-color: #f97316;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .arrow-down {
+            display: flex;
+            justify-content: center;
+            padding: 0.5rem 0;
+            color: #9ca3af;
+        }
+        .node-active {
+            border-color: #f97316;
+            background-color: #fff7ed;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 pb-20">
+    <!-- 顶部导航栏 -->
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="px-4 h-14 flex items-center justify-between">
+            <a href="taizhang-zhuye.html" class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            <h1 class="text-lg font-bold text-gray-800">追溯查询</h1>
+            <div class="w-10"></div>
+        </div>
+    </nav>
+
+    <div class="p-4 space-y-4">
+        <!-- 搜索区域 -->
+        <div class="bg-white rounded-xl shadow-sm p-4">
+            <div class="relative mb-3">
+                <input type="text" id="searchInput" placeholder="输入批次号或原料名称" class="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-100 focus:border-orange-300">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i class="fas fa-search text-gray-400"></i>
+                </div>
+                <button onclick="search()" class="absolute inset-y-0 right-0 px-4 text-orange-500 font-bold text-sm">搜索</button>
+            </div>
+            
+            <!-- Controls -->
+            <div class="flex justify-between items-center pt-3 border-t border-gray-100">
+                <div class="flex items-center gap-2">
+                    <button onclick="toggleVersion()" id="versionBtn" class="px-3 py-1.5 bg-gray-200 text-gray-600 rounded-lg text-xs font-bold transition-colors">
+                        <i class="fas fa-toggle-off mr-1"></i> 免费版视图
+                    </button>
+                </div>
+                <button onclick="exportReport()" class="flex items-center gap-1 text-gray-400 hover:text-orange-500 transition-colors text-xs font-bold" id="exportBtn">
+                    <i class="fas fa-file-export"></i> 导出报告 <i class="fas fa-lock text-xs ml-0.5"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 追溯链条展示区域 -->
+        <div id="trace-container" class="hidden">
+            <h3 class="text-sm font-bold text-gray-600 mb-3 ml-1">追溯链条</h3>
+            
+            <div class="space-y-2 relative" id="chain-list">
+                <!-- Dynamic Nodes -->
+            </div>
+        </div>
+
+        <!-- 详细信息展示区域 -->
+        <div id="detail-panel" class="hidden fixed inset-x-0 bottom-0 bg-white rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.1)] transform transition-transform duration-300 z-40 max-h-[80vh] overflow-y-auto">
+            <div class="p-4">
+                <div class="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-4"></div>
+                <div id="detail-content">
+                    <!-- Dynamic Detail Content -->
+                </div>
+                <button onclick="closeDetail()" class="mt-4 w-full py-3 bg-gray-100 text-gray-600 rounded-xl font-bold">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/common.js"></script>
+    <script>
+        let isPaidVersion = false;
+
+        function toggleVersion() {
+            isPaidVersion = !isPaidVersion;
+            const btn = document.getElementById('versionBtn');
+            const exportBtn = document.getElementById('exportBtn');
+            
+            if (isPaidVersion) {
+                btn.innerHTML = '<i class="fas fa-toggle-on mr-1"></i> 专业版 (全链路)';
+                btn.className = 'px-3 py-1.5 bg-orange-100 text-orange-600 rounded-lg text-xs font-bold transition-colors';
+                exportBtn.className = 'flex items-center gap-1 text-orange-600 hover:text-orange-700 transition-colors text-xs font-bold';
+                exportBtn.innerHTML = '<i class="fas fa-file-export"></i> 导出完整报告';
+            } else {
+                btn.innerHTML = '<i class="fas fa-toggle-off mr-1"></i> 免费版视图';
+                btn.className = 'px-3 py-1.5 bg-gray-200 text-gray-600 rounded-lg text-xs font-bold transition-colors';
+                exportBtn.className = 'flex items-center gap-1 text-gray-400 hover:text-orange-500 transition-colors text-xs font-bold';
+                exportBtn.innerHTML = '<i class="fas fa-file-export"></i> 导出报告 <i class="fas fa-lock text-xs ml-0.5"></i>';
+            }
+
+            // Re-render if showing
+            const container = document.getElementById('trace-container');
+            if (!container.classList.contains('hidden')) {
+                search();
+            }
+        }
+
+        async function exportReport() {
+            if (!isPaidVersion) {
+                const confirmUpgrade = await LedgerUtils.showConfirm({
+                    title: '付费功能',
+                    message: '这是付费功能。\n升级到专业版可解锁：\n1. 全链路可视化追溯\n2. 导出详细追溯报告\n3. 多级原料/销售去向查询\n\n是否模拟升级？',
+                    type: 'info'
+                });
+                if (confirmUpgrade) {
+                    toggleVersion();
+                    LedgerUtils.showToast('已模拟升级到专业版');
+                }
+                return;
+            }
+            LedgerUtils.showToast('正在生成全链路追溯报告...', 'info');
+        }
+
+        function search() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) {
+                // If empty, hide container and show tip
+                const container = document.getElementById('trace-container');
+                container.classList.add('hidden');
+                
+                if (!document.getElementById('search-tip')) {
+                    const tip = document.createElement('div');
+                    tip.id = 'search-tip';
+                    tip.className = 'bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs text-blue-600 mt-3';
+                    tip.innerHTML = '<i class="fas fa-info-circle mr-1"></i> 请输入批次号或原料名称进行查询';
+                    document.querySelector('.p-4').insertBefore(tip, container);
+                }
+                return;
+            }
+
+            // Remove tip if exists
+            const tip = document.getElementById('search-tip');
+            if (tip) tip.remove();
+
+            const actualQuery = query;
+
+            const container = document.getElementById('trace-container');
+            container.classList.remove('hidden');
+            
+            if (actualQuery.toUpperCase().startsWith('MAT') || actualQuery.includes('面粉')) {
+                renderMaterialTrace(actualQuery);
+            } else {
+                renderProductionTrace(actualQuery);
+            }
+        }
+
+        // Helper to create nodes
+        function createNode(data) {
+             const activeClass = data.active ? 'node-active ring-2 ring-orange-200' : 'hover:border-orange-300';
+             const colorClass = `text-${data.color}-600`;
+             const bgClass = `bg-${data.color}-100`;
+             
+             return `
+                <div class="node ${activeClass} transform transition-all duration-300" onclick="showDetail('${data.type}')">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full ${bgClass} ${colorClass} flex items-center justify-center flex-shrink-0">
+                            <i class="fas ${data.icon}"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-xs text-gray-500 truncate">${data.title}</div>
+                            <div class="font-bold text-gray-800 truncate">${data.desc}</div>
+                            ${data.sub ? `<div class="text-xs text-gray-400 truncate">${data.sub}</div>` : ''}
+                        </div>
+                        ${data.isNew ? '<span class="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold">New</span>' : ''}
+                    </div>
+                </div>
+             `;
+        }
+        
+        function createArrow() {
+            return '<div class="arrow-down"><i class="fas fa-arrow-down"></i></div>';
+        }
+
+        function createLockedNode(text) {
+            return `
+                <div class="p-3 border-2 border-dashed border-gray-200 rounded-xl text-center bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors group" onclick="toggleVersion()">
+                    <div class="text-gray-400 text-sm mb-1 group-hover:text-orange-500 transition-colors"><i class="fas fa-lock"></i></div>
+                    <div class="text-xs font-bold text-gray-400 group-hover:text-gray-600 transition-colors">${text}</div>
+                </div>
+            `;
+        }
+
+        function renderProductionTrace(batchNo) {
+            const list = document.getElementById('chain-list');
+            let html = '';
+
+            // Data Loading
+            const prodLedgers = LedgerUtils.SafeStorage.get('ledger_production', []);
+            const materialLedgers = LedgerUtils.SafeStorage.get('ledger_material', []);
+            const qualityLedgers = LedgerUtils.SafeStorage.get('ledger_quality', []);
+            
+            const production = prodLedgers.find(p => p.id === batchNo);
+            
+            if (!production) {
+                // Keep demo behavior if not found but has format
+                if (!batchNo.startsWith('BATCH')) {
+                     list.innerHTML = '<div class="text-center text-gray-400 py-4">未找到该批次记录</div>';
+                     return;
+                }
+            }
+
+            // 1. Level -2: Upstream Material (Paid Only)
+            if (isPaidVersion) {
+                html += createNode({
+                    type: 'supplier_tier2',
+                    title: '上游种植基地',
+                    desc: '河南小麦种植示范区',
+                    sub: '批号: AGRI-2023-HN01',
+                    icon: 'fa-seedling',
+                    color: 'green',
+                    isNew: true
+                });
+                html += createArrow();
+            } else {
+                html += createLockedNode('查看上游原料来源 (付费)');
+                html += createArrow();
+            }
+
+            // 2. Level -1: Materials
+            // Find related materials
+            let usedMaterials = production ? (production.materials || []) : [];
+            if (usedMaterials.length === 0) {
+                 // Try reverse lookup
+                 usedMaterials = materialLedgers.filter(m => m.relatedBatchId === batchNo || m.productionBatchId === batchNo);
+            }
+
+            if (usedMaterials.length > 0) {
+                usedMaterials.forEach(m => {
+                     html += createNode({
+                        type: 'supplier',
+                        title: '原料: ' + (m.materialName || m.name),
+                        desc: typeof m.supplier === 'string' ? m.supplier : (m.supplier?.name || '未知供应商'),
+                        sub: '批号: ' + (m.id || m.batchNo),
+                        icon: 'fa-truck',
+                        color: 'purple'
+                    });
+                    html += createArrow();
+                });
+            } else {
+                // Fallback / Demo data
+                html += createNode({
+                    type: 'supplier',
+                    title: '直接供应商',
+                    desc: '益海嘉里 (王后T55)',
+                    sub: '入库单: IN20231025001',
+                    icon: 'fa-truck',
+                    color: 'purple'
+                });
+                html += createArrow();
+            }
+
+            // 3. Level 0: Production (Free - Current)
+            html += createNode({
+                type: 'production',
+                title: '生产加工 (当前批次)',
+                desc: production ? production.productName : '法式牛角包',
+                sub: production ? `批次: ${production.id}` : ('批次: ' + batchNo),
+                icon: 'fa-industry',
+                color: 'orange',
+                active: true
+            });
+            
+            // 3.5 Quality Check (New)
+            const qualityRecs = qualityLedgers.filter(q => q.batch === batchNo || q.batchId === batchNo);
+            if (qualityRecs.length > 0) {
+                html += createArrow();
+                qualityRecs.forEach(q => {
+                    const isPass = q.status === 'qualified';
+                    html += createNode({
+                        type: 'quality',
+                        title: '质量检验',
+                        desc: isPass ? '合格' : '不合格',
+                        sub: `检验员: ${q.inspector || '-'}`,
+                        icon: isPass ? 'fa-check-circle' : 'fa-exclamation-triangle',
+                        color: isPass ? 'green' : 'red'
+                    });
+                });
+            } else {
+                // Demo quality node if none found but demo batch
+                if (!production && batchNo.startsWith('BATCH')) {
+                    html += createArrow();
+                    html += createNode({
+                        type: 'quality',
+                        title: '质量检验',
+                        desc: '合格',
+                        sub: '检验员: 系统自动',
+                        icon: 'fa-check-circle',
+                        color: 'green'
+                    });
+                }
+            }
+
+            html += createArrow();
+
+            // 4. Level +1: Sales Store (Free)
+            html += createNode({
+                type: 'sales',
+                title: '销售出库',
+                desc: '市中心旗舰店',
+                sub: '订单: PO-' + batchNo.slice(-6),
+                icon: 'fa-store',
+                color: 'blue'
+            });
+
+            // 5. Level +2: Customer (Paid Only)
+            if (isPaidVersion) {
+                html += createArrow();
+                html += createNode({
+                    type: 'customer',
+                    title: '终端消费者',
+                    desc: '会员: 张三',
+                    sub: '消费时间: ' + new Date().toLocaleDateString(),
+                    icon: 'fa-user',
+                    color: 'pink',
+                    isNew: true
+                });
+            } else {
+                html += createArrow();
+                html += createLockedNode('查看终端销售去向 (付费)');
+            }
+
+            list.innerHTML = html;
+        }
+
+        function renderMaterialTrace(query) {
+             const list = document.getElementById('chain-list');
+             let html = '';
+             
+             // Level -1: Supplier (Free)
+             html += createNode({
+                 type: 'supplier',
+                 title: '原料来源 (当前查询)',
+                 desc: '益海嘉里',
+                 sub: query,
+                 icon: 'fa-truck',
+                 color: 'purple',
+                 active: true
+             });
+             html += createArrow();
+             
+             // Level 0: Usage (Free)
+             html += createNode({
+                 type: 'usage',
+                 title: '领料使用',
+                 desc: '2023-10-26 08:30',
+                 sub: '用于: 法式牛角包生产',
+                 icon: 'fa-hand-holding',
+                 color: 'yellow'
+             });
+
+             // Level +1: Product (Paid)
+             if (isPaidVersion) {
+                 html += createArrow();
+                 html += createNode({
+                     type: 'production',
+                     title: '生产成品',
+                     desc: '法式牛角包',
+                     sub: '批次: BATCH20231026001',
+                     icon: 'fa-industry',
+                     color: 'orange',
+                     isNew: true
+                 });
+             } else {
+                 html += createArrow();
+                 html += createLockedNode('查看成品流向 (付费)');
+             }
+
+             list.innerHTML = html;
+        }
+
+        function showDetail(type) {
+            const panel = document.getElementById('detail-panel');
+            const content = document.getElementById('detail-content');
+            
+            let html = '';
+            if (type === 'production') {
+                html = `
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">生产详情</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between border-b pb-2"><span class="text-gray-500">产品</span><span>法式牛角包</span></div>
+                        <div class="flex justify-between border-b pb-2"><span class="text-gray-500">批次</span><span>BATCH20231026001</span></div>
+                        <div class="flex justify-between border-b pb-2"><span class="text-gray-500">数量</span><span>100 个</span></div>
+                        <div class="flex justify-between border-b pb-2"><span class="text-gray-500">操作人</span><span>张师傅</span></div>
+                        <div class="flex justify-between border-b pb-2"><span class="text-gray-500">质检</span><span class="text-green-500 font-bold">合格</span></div>
+                    </div>
+                    <button class="mt-4 w-full py-2 border border-orange-500 text-orange-500 rounded-lg" onclick="location.href='shengchan-taizhang-detail.html?batchNo=BATCH20231026001'">查看完整台账</button>
+                `;
+            } else if (type === 'supplier') {
+                html = `
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">供应商信息</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between border-b pb-2"><span class="text-gray-500">名称</span><span>益海嘉里食品营销有限公司</span></div>
+                        <div class="flex justify-between border-b pb-2"><span class="text-gray-500">资质</span><span>913100006072899999</span></div>
+                        <div class="flex justify-between border-b pb-2"><span class="text-gray-500">联系人</span><span>李经理</span></div>
+                        <div class="flex justify-between border-b pb-2"><span class="text-gray-500">电话</span><span>13800138000</span></div>
+                    </div>
+                `;
+            } else {
+                html = `<div class="text-center py-4 text-gray-500">暂无更多详细信息</div>`;
+            }
+
+            content.innerHTML = html;
+            panel.classList.remove('hidden');
+            panel.classList.remove('translate-y-full');
+        }
+
+        function closeDetail() {
+            const panel = document.getElementById('detail-panel');
+            panel.classList.add('hidden');
+        }
+    </script>
+</body>
+</html>

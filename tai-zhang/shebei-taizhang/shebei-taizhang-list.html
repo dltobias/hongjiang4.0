@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>设备台账 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+            --bg-light: #f7f7f5;
+            --bg-white: #ffffff;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+            -webkit-tap-highlight-color: transparent;
+        }
+        .card {
+            background: var(--bg-white);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            border: 1px solid rgba(0,0,0,0.03);
+            transition: transform 0.2s;
+        }
+        .card:active {
+            transform: scale(0.98);
+        }
+        /* Custom Scrollbar */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+
+    <!-- Header -->
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="px-4 h-14 flex items-center justify-between">
+            <a href="../taizhang-zhuye.html" class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            <h1 class="text-lg font-bold text-gray-800">设备台账</h1>
+            <button class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors">
+                <i class="fas fa-filter"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Sub-Header: Filters & Search -->
+    <div class="bg-white px-4 pb-3 shadow-sm border-b border-gray-100 z-40">
+        <!-- Filters (Scrollable) -->
+        <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1 mb-2">
+            <button class="px-3 py-1.5 bg-orange-100 text-orange-600 rounded-full text-xs font-bold whitespace-nowrap">全部</button>
+            <button class="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-xs font-bold whitespace-nowrap">正常</button>
+            <button class="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-xs font-bold whitespace-nowrap">维护中</button>
+            <button class="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-xs font-bold whitespace-nowrap">故障</button>
+        </div>
+        
+        <!-- Search Bar -->
+        <div class="relative">
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+            <input type="text" placeholder="搜索设备名称 / 编号" class="w-full bg-gray-50 border border-gray-200 rounded-lg py-2 pl-8 pr-4 text-xs focus:outline-none focus:border-orange-400">
+        </div>
+    </div>
+
+    <!-- Batch Actions -->
+    <div class="bg-gray-50 px-4 py-2 border-b border-gray-200 flex justify-between items-center" id="batch-action-bar">
+        <label class="flex items-center gap-2 text-xs text-gray-600 font-medium">
+            <input type="checkbox" id="select-all" class="rounded text-orange-500 focus:ring-orange-500">
+            全选
+        </label>
+        <div class="flex gap-2">
+            <button id="batch-export-btn" onclick="batchExport()" class="hidden text-orange-600 text-xs font-bold flex items-center gap-1 bg-orange-50 px-2 py-1 rounded hover:bg-orange-100 transition-colors">
+                <i class="fas fa-file-export"></i> 导出
+            </button>
+            <button id="batch-delete-btn" onclick="batchDelete()" class="hidden text-red-500 text-xs font-bold flex items-center gap-1 bg-red-50 px-2 py-1 rounded hover:bg-red-100 transition-colors">
+                <i class="fas fa-trash-alt"></i> 删除
+            </button>
+        </div>
+    </div>
+
+    <!-- List Content -->
+    <div class="flex-1 overflow-y-auto p-4 space-y-3" id="ledger-list">
+        <!-- Dynamic Content -->
+    </div>
+
+    <!-- Loading State -->
+    <div id="loading-state" class="hidden absolute inset-0 bg-white bg-opacity-80 flex flex-col items-center justify-center z-10">
+        <i class="fas fa-spinner fa-spin text-2xl text-orange-500 mb-2"></i>
+        <p class="text-gray-400 text-sm">加载中...</p>
+    </div>
+
+    <!-- Empty State -->
+    <div id="empty-state" class="hidden flex flex-col items-center justify-center py-20">
+        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+            <i class="fas fa-blender text-2xl text-gray-300"></i>
+        </div>
+        <p class="text-gray-500 text-sm font-medium">暂无设备记录</p>
+        <p class="text-gray-400 text-xs mt-1">添加您的第一台设备吧</p>
+    </div>
+
+    <!-- Footer Actions -->
+    <div class="bg-white border-t border-gray-100 p-3 flex justify-between items-center text-xs text-gray-500 shadow-[0_-2px_10px_rgba(0,0,0,0.03)] z-50">
+        <span id="record-count">共 0 台设备</span>
+        <a href="shebei-taizhang-create.html" class="flex items-center gap-1 text-orange-600 font-bold px-3 py-1.5 bg-orange-50 rounded hover:bg-orange-100 transition-colors">
+            <i class="fas fa-plus"></i> 新增设备
+        </a>
+    </div>
+
+    <!-- Floating Add Button -->
+    <a href="shebei-taizhang-create.html" class="fixed bottom-20 right-4 w-14 h-14 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-full shadow-lg flex items-center justify-center z-40 hover:scale-105 transition-transform">
+        <i class="fas fa-plus text-2xl"></i>
+    </a>
+    
+    <script src="../js/common.js"></script>
+    <script>
+        // Data Store
+        let devices = [];
+        let currentStatus = 'all'; // all, normal, maintenance, fault
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            initData();
+            loadDevices();
+            setupEventListeners();
+        });
+
+        function initData() {
+            // Initialize with dummy data if empty
+            const stored = LedgerUtils.SafeStorage.get('ledger_equipment', null);
+            if (!stored) {
+                const dummyData = [
+                    {
+                        id: 'EQ001',
+                        name: '和面机 A-01',
+                        model: 'HM-200',
+                        status: 'normal', // normal, maintenance, fault
+                        lastMaintenance: '2023-10-15',
+                        nextMaintenance: '2023-11-15'
+                    },
+                    {
+                        id: 'EQ002',
+                        name: '层炉 B-02',
+                        model: 'CL-500',
+                        status: 'maintenance',
+                        reason: '定期清洁',
+                        expectedCompletion: '今天 16:00'
+                    }
+                ];
+                LedgerUtils.SafeStorage.set('ledger_equipment', dummyData);
+            }
+        }
+
+        function loadDevices() {
+            showLoading(true);
+            setTimeout(() => {
+                try {
+                    devices = LedgerUtils.SafeStorage.get('ledger_equipment', []);
+                    renderList(devices);
+                } catch (e) {
+                    console.error('Failed to load data:', e);
+                    LedgerUtils.showToast('数据加载失败', 'error');
+                } finally {
+                    showLoading(false);
+                }
+            }, 500);
+        }
+
+        function updateSelectAllState() {
+            const all = document.querySelectorAll('.item-checkbox');
+            const checked = document.querySelectorAll('.item-checkbox:checked');
+            const selectAll = document.getElementById('select-all');
+            const batchDelBtn = document.getElementById('batch-delete-btn');
+            const batchExpBtn = document.getElementById('batch-export-btn');
+            
+            if (all.length > 0) {
+                selectAll.checked = all.length === checked.length;
+                selectAll.indeterminate = checked.length > 0 && checked.length < all.length;
+            } else {
+                selectAll.checked = false;
+                selectAll.indeterminate = false;
+            }
+
+            if (checked.length > 0) {
+                batchDelBtn.classList.remove('hidden');
+                batchExpBtn.classList.remove('hidden');
+            } else {
+                batchDelBtn.classList.add('hidden');
+                batchExpBtn.classList.add('hidden');
+            }
+        }
+
+        function batchExport() {
+            const selectedIds = Array.from(document.querySelectorAll('.item-checkbox:checked'))
+                .map(cb => cb.value)
+                .filter(Boolean);
+                
+            if (selectedIds.length === 0) {
+                LedgerUtils.showToast('请选择要导出的记录', 'error');
+                return;
+            }
+
+            const allDevices = LedgerUtils.SafeStorage.get('ledger_equipment', []);
+            const selectedData = allDevices.filter(d => selectedIds.includes(d.id));
+            
+            const headerMap = {
+                id: '设备编号',
+                name: '设备名称',
+                model: '型号规格',
+                status: '状态',
+                lastMaintenance: '上次维护',
+                nextMaintenance: '下次维护',
+                reason: '维护原因',
+                expectedCompletion: '预计完成'
+            };
+            
+            // Transform status for export
+            const exportData = selectedData.map(item => {
+                let statusStr = item.status;
+                if (item.status === 'normal') statusStr = '正常';
+                else if (item.status === 'maintenance') statusStr = '维护中';
+                else if (item.status === 'fault') statusStr = '故障';
+                
+                return {
+                    ...item,
+                    status: statusStr
+                };
+            });
+            
+            LedgerUtils.exportToExcel(exportData, '设备台账', headerMap);
+        }
+
+        async function batchDelete() {
+            const selected = Array.from(document.querySelectorAll('.item-checkbox:checked'))
+                .map(cb => cb.value)
+                .filter(Boolean);
+                
+            if (selected.length === 0) {
+                LedgerUtils.showToast('请选择要删除的记录', 'error');
+                return;
+            }
+                
+            const confirmed = await LedgerUtils.showConfirm({
+                title: '批量删除',
+                message: `确定要删除选中的 ${selected.length} 台设备吗？\n此操作无法撤销。`,
+                type: 'danger'
+            });
+
+            if (confirmed) {
+                try {
+                    const ledgers = LedgerUtils.SafeStorage.get('ledger_equipment', []);
+                    const newLedgers = ledgers.filter(l => !selected.includes(l.id));
+                    LedgerUtils.SafeStorage.set('ledger_equipment', newLedgers);
+                    
+                    LedgerUtils.showToast(`成功删除 ${selected.length} 台设备`);
+                    
+                    // Refresh data
+                    devices = newLedgers;
+                    
+                    // Re-apply filters
+                    const searchInput = document.querySelector('input[placeholder*="搜索"]');
+                    const keyword = searchInput.value.toLowerCase();
+                    filterData(keyword, currentStatus);
+                    
+                    updateSelectAllState();
+                } catch (e) {
+                    console.error(e);
+                    LedgerUtils.showToast('删除失败', 'error');
+                }
+            }
+        }
+
+        function renderList(data) {
+            const listEl = document.getElementById('ledger-list');
+            const emptyEl = document.getElementById('empty-state');
+            const countEl = document.getElementById('record-count');
+            
+            listEl.innerHTML = '';
+            countEl.innerText = `共 ${data.length} 台设备`;
+
+            if (data.length === 0) {
+                listEl.classList.add('hidden');
+                emptyEl.classList.remove('hidden');
+                return;
+            }
+
+            listEl.classList.remove('hidden');
+            emptyEl.classList.add('hidden');
+
+            data.forEach(item => {
+                let statusBadge = '';
+                if (item.status === 'normal') {
+                    statusBadge = `<span class="px-2 py-1 bg-green-50 text-green-600 text-[10px] font-bold rounded border border-green-100">正常</span>`;
+                } else if (item.status === 'maintenance') {
+                    statusBadge = `<span class="px-2 py-1 bg-yellow-50 text-yellow-600 text-[10px] font-bold rounded border border-yellow-100">维护中</span>`;
+                } else if (item.status === 'fault') {
+                    statusBadge = `<span class="px-2 py-1 bg-red-50 text-red-600 text-[10px] font-bold rounded border border-red-100">故障</span>`;
+                }
+
+                // Dynamic details based on status
+                let details = '';
+                if (item.status === 'maintenance') {
+                    details = `
+                        <div class="flex justify-between">
+                            <span>维护原因:</span>
+                            <span class="text-gray-700">${item.reason || '-'}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>预计完成:</span>
+                            <span class="text-gray-700 font-bold">${item.expectedCompletion || '-'}</span>
+                        </div>
+                    `;
+                } else {
+                    details = `
+                        <div class="flex justify-between">
+                            <span>上次维护:</span>
+                            <span class="text-gray-700">${item.lastMaintenance || '-'}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>下次维护:</span>
+                            <span class="text-gray-700 font-bold">${item.nextMaintenance || '-'}</span>
+                        </div>
+                    `;
+                }
+
+                const html = `
+                    <div class="card p-4 flex gap-3" onclick="window.location.href='shebei-taizhang-detail.html?id=${item.id}'">
+                        <div class="flex items-start pt-1" onclick="event.stopPropagation()">
+                            <input type="checkbox" value="${item.id}" class="item-checkbox rounded text-orange-500 focus:ring-orange-500 w-5 h-5" onchange="updateSelectAllState()">
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <div class="text-xs text-orange-500 font-bold mb-1">${item.id}</div>
+                                    <div class="font-bold text-gray-800">${item.name}</div>
+                                </div>
+                                ${statusBadge}
+                            </div>
+                            
+                            <div class="bg-gray-50 rounded-lg p-3 mb-3 text-xs text-gray-500 space-y-1">
+                                <div class="flex justify-between">
+                                    <span>型号:</span>
+                                    <span class="text-gray-700">${item.model}</span>
+                                </div>
+                                ${details}
+                            </div>
+
+                            <div class="flex justify-end gap-2">
+                                <button class="px-3 py-1.5 bg-white border border-gray-200 rounded text-xs text-gray-600 font-medium active:scale-95 transition-transform" onclick="event.stopPropagation()">维护记录</button>
+                                <button class="px-3 py-1.5 bg-orange-50 text-orange-600 rounded text-xs font-bold active:scale-95 transition-transform">查看详情</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                listEl.insertAdjacentHTML('beforeend', html);
+            });
+            
+            // Update select all state after render
+            updateSelectAllState();
+        }
+
+        function setupEventListeners() {
+            // Select All
+            const selectAll = document.getElementById('select-all');
+            selectAll.addEventListener('change', (e) => {
+                const checkboxes = document.querySelectorAll('.item-checkbox');
+                checkboxes.forEach(cb => cb.checked = e.target.checked);
+                updateSelectAllState();
+            });
+
+            // Search
+            const searchInput = document.querySelector('input[placeholder*="搜索"]');
+            searchInput.addEventListener('input', (e) => {
+                const keyword = e.target.value.toLowerCase();
+                filterData(keyword, currentStatus);
+            });
+
+            // Filters
+            const filterBtns = document.querySelectorAll('.flex.gap-2 button');
+            filterBtns.forEach((btn, index) => {
+                btn.addEventListener('click', () => {
+                    // Update UI
+                    filterBtns.forEach(b => {
+                        b.classList.remove('bg-orange-100', 'text-orange-600');
+                        b.classList.add('bg-gray-100', 'text-gray-600');
+                    });
+                    btn.classList.remove('bg-gray-100', 'text-gray-600');
+                    btn.classList.add('bg-orange-100', 'text-orange-600');
+
+                    // Set filter
+                    const statuses = ['all', 'normal', 'maintenance', 'fault'];
+                    currentStatus = statuses[index];
+                    
+                    const keyword = searchInput.value.toLowerCase();
+                    filterData(keyword, currentStatus);
+                });
+            });
+        }
+
+        function filterData(keyword, status) {
+            let filtered = devices;
+
+            // Keyword filter
+            if (keyword) {
+                filtered = filtered.filter(item => 
+                    item.id.toLowerCase().includes(keyword) || 
+                    item.name.toLowerCase().includes(keyword)
+                );
+            }
+
+            // Status filter
+            if (status !== 'all') {
+                filtered = filtered.filter(item => item.status === status);
+            }
+
+            renderList(filtered);
+        }
+
+        function showLoading(show) {
+            const loading = document.getElementById('loading-state');
+            if (show) loading.classList.remove('hidden');
+            else loading.classList.add('hidden');
+        }
+    </script>
+
+</body>
+</html>

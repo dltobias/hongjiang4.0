@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>原料追溯详情 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-green: #10b981;
+            --primary-dark: #059669;
+            --bg-light: #f7f7f5;
+            --bg-white: #ffffff;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+            -webkit-tap-highlight-color: transparent;
+        }
+        .card {
+            background: var(--bg-white);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            border: 1px solid rgba(0,0,0,0.03);
+        }
+        .step-connector {
+            position: absolute;
+            top: 24px;
+            left: 20px;
+            bottom: -24px;
+            width: 2px;
+            background-color: #e5e7eb;
+            z-index: 0;
+        }
+        .step-item:last-child .step-connector {
+            display: none;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+
+    <!-- Header -->
+    <div class="bg-white px-4 py-3 shadow-sm border-b border-gray-100 z-30 flex-shrink-0">
+        <div class="flex items-center space-x-3 mb-2">
+            <a href="yuanliao-zs-list.html" class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            <div class="flex-1">
+                <h1 class="text-lg font-bold text-gray-800">追溯详情</h1>
+            </div>
+        </div>
+        <!-- Search Bar -->
+        <div class="relative">
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+            <input type="text" value="MAT-231020-005" class="w-full bg-gray-50 border border-gray-200 rounded-lg py-2 pl-8 pr-4 text-xs focus:outline-none focus:border-green-400 font-medium text-gray-700">
+        </div>
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-4 space-y-4">
+        
+        <!-- Basic Info Card -->
+        <div class="card p-4">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center text-green-600 text-xl">
+                    <i class="fas fa-leaf"></i>
+                </div>
+                <div>
+                    <h2 class="text-lg font-bold text-gray-800">高筋面粉</h2>
+                    <div class="text-xs text-gray-500 font-mono">MAT-231020-005</div>
+                </div>
+                <div class="ml-auto">
+                    <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">正常</span>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-3 text-xs">
+                <div class="bg-gray-50 p-2 rounded-lg">
+                    <div class="text-gray-400 mb-1">规格</div>
+                    <div class="font-bold text-gray-700">25kg/袋</div>
+                </div>
+                <div class="bg-gray-50 p-2 rounded-lg">
+                    <div class="text-gray-400 mb-1">当前库存</div>
+                    <div class="font-bold text-gray-700">50kg (2袋)</div>
+                </div>
+                <div class="bg-gray-50 p-2 rounded-lg">
+                    <div class="text-gray-400 mb-1">有效期至</div>
+                    <div class="font-bold text-gray-700">2024-10-19</div>
+                </div>
+                <div class="bg-gray-50 p-2 rounded-lg">
+                    <div class="text-gray-400 mb-1">存放位置</div>
+                    <div class="font-bold text-gray-700">A区-03货架</div>
+                </div>
+            </div>
+
+             <div class="mt-3 pt-3 border-t border-gray-100 flex gap-2">
+                <button class="flex-1 bg-white border border-gray-200 text-gray-600 py-2 rounded-lg text-xs font-bold hover:bg-gray-50">
+                    <i class="fas fa-file-alt mr-1"></i> 检验报告
+                </button>
+                <button class="flex-1 bg-white border border-gray-200 text-gray-600 py-2 rounded-lg text-xs font-bold hover:bg-gray-50">
+                    <i class="fas fa-certificate mr-1"></i> 供应商资质
+                </button>
+            </div>
+        </div>
+
+        <!-- Traceability Chain Visualization -->
+        <div>
+            <h3 class="text-sm font-bold text-gray-800 mb-3 flex items-center">
+                <i class="fas fa-link text-green-500 mr-2"></i> 追溯链条
+            </h3>
+            
+            <!-- Tabs -->
+            <div class="flex p-1 bg-gray-100 rounded-lg mb-4">
+                <button class="flex-1 py-1.5 rounded-md bg-white shadow-sm text-xs font-bold text-green-600">向上追溯 (来源)</button>
+                <button class="flex-1 py-1.5 rounded-md text-xs font-bold text-gray-500">向下追溯 (去向)</button>
+            </div>
+
+            <!-- Upward Chain (Source) -->
+            <div class="card p-4">
+                <div class="space-y-6 relative">
+                    
+                    <!-- Step 3: Supplier -->
+                    <div class="step-item relative pl-10">
+                        <div class="step-connector left-5"></div>
+                        <div class="absolute left-0 top-0 w-10 h-10 rounded-full bg-blue-50 border-2 border-blue-100 flex items-center justify-center text-blue-500 z-10">
+                            <i class="fas fa-truck"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs text-blue-500 font-bold mb-0.5">源头供应商</div>
+                            <div class="font-bold text-gray-800" id="detail-supplier">益海嘉里食品营销有限公司</div>
+                            <div class="text-xs text-gray-500 mt-1">
+                                <i class="fas fa-map-marker-alt mr-1"></i>上海市浦东新区
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Inbound -->
+                    <div class="step-item relative pl-10">
+                        <div class="step-connector left-5"></div>
+                        <div class="absolute left-0 top-0 w-10 h-10 rounded-full bg-orange-50 border-2 border-orange-100 flex items-center justify-center text-orange-500 z-10">
+                            <i class="fas fa-box-open"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs text-orange-500 font-bold mb-0.5">入库记录</div>
+                            <div class="font-bold text-gray-800">单号: IN-20231020-003</div>
+                            <div class="text-xs text-gray-500 mt-1" id="detail-inbound-date">2023-10-20 09:30 | 操作员: 张仓管</div>
+                            <div class="mt-1 inline-block bg-orange-50 text-orange-600 text-xs px-2 py-0.5 rounded" id="detail-inbound-amount">入库量: 100kg</div>
+                        </div>
+                    </div>
+
+                    <!-- Step 1: Current Batch -->
+                    <div class="step-item relative pl-10">
+                        <div class="absolute left-0 top-0 w-10 h-10 rounded-full bg-green-500 border-4 border-green-100 flex items-center justify-center text-white z-10 shadow-lg">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs text-green-600 font-bold mb-0.5">当前批次</div>
+                            <div class="font-bold text-gray-800" id="detail-batch-id">MAT-231020-005</div>
+                            <div class="text-xs text-gray-500 mt-1">状态: 在库/部分使用</div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Downward Chain (Usage) - Hidden by default for demo, or we can show both sections -->
+            <div class="mt-4">
+                <div class="flex items-center justify-between mb-2">
+                     <h4 class="text-xs font-bold text-gray-500 uppercase">去向追踪 (最近3条)</h4>
+                     <button class="text-xs text-green-600 font-bold">查看全部</button>
+                </div>
+               
+                <div class="card overflow-hidden">
+                    <div class="p-3 border-b border-gray-50 flex items-center gap-3">
+                        <div class="w-8 h-8 rounded bg-gray-50 flex items-center justify-center text-gray-400 text-xs">
+                            <i class="fas fa-hand-holding-box"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="text-xs font-bold text-gray-800">领料: OUT-231021-001</div>
+                            <div class="text-xs text-gray-400">2023-10-21 08:00 -> 甜面包组</div>
+                        </div>
+                        <div class="text-xs font-bold text-gray-800">-20kg</div>
+                    </div>
+                    <div class="p-3 border-b border-gray-50 flex items-center gap-3">
+                        <div class="w-8 h-8 rounded bg-purple-50 flex items-center justify-center text-purple-500 text-xs">
+                            <i class="fas fa-industry"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="text-xs font-bold text-gray-800">生产: BATCH20231021005</div>
+                            <div class="text-xs text-gray-400">产出: 菠萝包 (200个)</div>
+                        </div>
+                        <div class="text-xs text-green-600 font-bold">已完成</div>
+                    </div>
+                     <div class="p-3 flex items-center gap-3">
+                        <div class="w-8 h-8 rounded bg-indigo-50 flex items-center justify-center text-indigo-500 text-xs">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="text-xs font-bold text-gray-800">销售: SO-231022-089</div>
+                            <div class="text-xs text-gray-400">门店销售 (部分)</div>
+                        </div>
+                         <div class="text-xs text-gray-400">2023-10-22</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    
+    <!-- Footer Actions -->
+    <div class="bg-white p-4 border-t border-gray-100 z-30 flex gap-3">
+        <button onclick="editRecord()" class="flex-1 bg-white border border-gray-200 text-gray-700 py-3 rounded-xl font-bold text-sm hover:bg-gray-50 transition-colors">
+            <i class="fas fa-edit mr-1"></i> 编辑
+        </button>
+        <button onclick="deleteRecord()" class="flex-1 bg-red-500 text-white py-3 rounded-xl font-bold text-sm hover:bg-red-600 transition-colors shadow-lg shadow-red-200">
+            <i class="fas fa-trash-alt mr-1"></i> 删除
+        </button>
+    </div>
+
+    <script src="../js/common.js"></script>
+    <script>
+        const id = LedgerUtils.getQueryParam('id');
+        let currentRecord = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadRecord();
+        });
+
+        function loadRecord() {
+            const ledgers = JSON.parse(localStorage.getItem('ledger_material') || '[]');
+            currentRecord = ledgers.find(l => l.id === id);
+
+            if (!currentRecord) {
+                if (id) {
+                    LedgerUtils.showToast('记录不存在', 'error');
+                    setTimeout(() => window.location.href = 'yuanliao-zs-list.html', 1500);
+                }
+                return;
+            }
+
+            // Update Header
+            // Assuming search input shows current batch? Or title?
+            // The search input in header has value="MAT-231020-005"
+            document.querySelector('input').value = currentRecord.id;
+
+            // Update Basic Info Card
+            const card = document.querySelector('.card.p-4');
+            card.querySelector('h2').textContent = currentRecord.materialName;
+            card.querySelector('.font-mono').textContent = currentRecord.id;
+
+            const grids = card.querySelectorAll('.bg-gray-50 .font-bold');
+            // 0: Spec, 1: Inventory, 2: Expiry, 3: Location
+            // Spec is not in data model explicitly, using amount as inventory
+            grids[1].textContent = currentRecord.amount; 
+            grids[2].textContent = currentRecord.expiryDate || '未设置';
+            grids[3].textContent = currentRecord.location || '未设置';
+
+            // Update Traceability Chain (Upward)
+            const supplierDiv = document.getElementById('detail-supplier');
+            if (supplierDiv) supplierDiv.textContent = currentRecord.supplier;
+
+            const inboundDateDiv = document.getElementById('detail-inbound-date');
+            if (inboundDateDiv) inboundDateDiv.textContent = `${currentRecord.inboundDate} | 操作员: 系统`;
+
+            const inboundAmountDiv = document.getElementById('detail-inbound-amount');
+            if (inboundAmountDiv) inboundAmountDiv.textContent = `入库量: ${currentRecord.amount}`;
+
+            const batchIdDiv = document.getElementById('detail-batch-id');
+            if (batchIdDiv) batchIdDiv.textContent = currentRecord.id;
+        }
+
+        function editRecord() {
+            if (!currentRecord) return;
+            window.location.href = `yuanliao-zs-create.html?id=${currentRecord.id}`;
+        }
+
+        async function deleteRecord() {
+            if (!currentRecord) return;
+            const confirmed = await LedgerUtils.showConfirm({
+                title: '删除记录',
+                message: '确定要删除这条原料记录吗？此操作无法撤销。',
+                type: 'danger',
+                confirmText: '删除',
+                cancelText: '取消'
+            });
+            if (confirmed) {
+                const ledgers = LedgerUtils.SafeStorage.get('ledger_material', []);
+                const newLedgers = ledgers.filter(l => l.id !== currentRecord.id);
+                LedgerUtils.SafeStorage.set('ledger_material', newLedgers);
+                LedgerUtils.showToast('删除成功');
+                setTimeout(() => window.location.href = 'yuanliao-zs-list.html', 1000);
+            }
+        }
+    </script>
+</body>
+</html>

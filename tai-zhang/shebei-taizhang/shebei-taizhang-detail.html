@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>设备详情 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+            --bg-light: #f7f7f5;
+            --bg-white: #ffffff;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+            -webkit-tap-highlight-color: transparent;
+        }
+        .card {
+            background: var(--bg-white);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            border: 1px solid rgba(0,0,0,0.03);
+        }
+        .tab-active {
+            color: #ff9f43;
+            border-bottom: 2px solid #ff9f43;
+            font-weight: bold;
+        }
+        .tab-inactive {
+            color: #6b7280;
+            border-bottom: 2px solid transparent;
+            font-weight: 500;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+
+    <!-- Header -->
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="px-4 h-14 flex items-center justify-between">
+            <a href="shebei-taizhang-list.html" class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            <h1 class="text-lg font-bold text-gray-800" id="header-title">设备详情</h1>
+            <button onclick="shareRecord()" class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors">
+                <i class="fas fa-share-alt"></i>
+            </button>
+        </div>
+        
+        <!-- Tabs -->
+        <div class="flex overflow-x-auto no-scrollbar px-2">
+            <button onclick="switchTab('basic')" id="tab-basic" class="tab-active flex-1 py-3 text-sm whitespace-nowrap px-4">基本信息</button>
+            <button onclick="switchTab('usage')" id="tab-usage" class="tab-inactive flex-1 py-3 text-sm whitespace-nowrap px-4">使用记录</button>
+            <button onclick="switchTab('maintenance')" id="tab-maintenance" class="tab-inactive flex-1 py-3 text-sm whitespace-nowrap px-4">维护记录</button>
+            <button onclick="switchTab('fault')" id="tab-fault" class="tab-inactive flex-1 py-3 text-sm whitespace-nowrap px-4">故障记录</button>
+        </div>
+    </nav>
+
+    <!-- Content Area -->
+    <div class="flex-1 overflow-y-auto p-4" id="content-area">
+        <!-- Dynamic Content -->
+    </div>
+
+    <!-- Bottom Actions -->
+    <div class="bg-white p-4 border-t border-gray-100 flex gap-2 z-30">
+        <button onclick="editDevice()" class="flex-1 py-3 bg-blue-500 text-white rounded-lg text-sm font-bold flex items-center justify-center gap-2 shadow-md active:scale-95 transition-transform">
+            <i class="fas fa-edit"></i> 编辑
+        </button>
+        <button onclick="deleteDevice()" class="flex-1 py-3 bg-red-500 text-white rounded-lg text-sm font-bold flex items-center justify-center gap-2 shadow-md active:scale-95 transition-transform">
+            <i class="fas fa-trash"></i> 删除
+        </button>
+    </div>
+
+    <script src="../js/common.js"></script>
+    <script src="../js/confirm-modal.js"></script>
+    <script>
+        let currentDevice = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDeviceDetail();
+        });
+
+        function loadDeviceDetail() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const id = urlParams.get('id');
+            
+            if (!id) {
+                LedgerUtils.showToast('未找到设备ID', 'error');
+                setTimeout(() => window.location.href = 'shebei-taizhang-list.html', 1500);
+                return;
+            }
+
+            const devices = LedgerUtils.SafeStorage.get('ledger_equipment', []);
+            const device = devices.find(d => d.id === id);
+
+            if (!device) {
+                // Fallback for demo
+                if (id === 'EQ001') {
+                     // Static fallback
+                } else {
+                     LedgerUtils.showToast('设备不存在', 'error');
+                     setTimeout(() => window.location.href = 'shebei-taizhang-list.html', 1500);
+                     return;
+                }
+            }
+            
+            currentDevice = device || {
+                id: id,
+                name: '未知设备',
+                model: 'Unknown',
+                status: 'unknown',
+                lastMaintenance: '-',
+                nextMaintenance: '-'
+            };
+
+            const renderDevice = currentDevice;
+
+            document.getElementById('header-title').innerText = renderDevice.name;
+
+            let statusColor = 'gray';
+            let statusText = '未知状态';
+            
+            if (renderDevice.status === 'normal') {
+                statusColor = 'green';
+                statusText = '正常运行';
+            } else if (renderDevice.status === 'maintenance') {
+                statusColor = 'yellow';
+                statusText = '维护中';
+            } else if (renderDevice.status === 'fault') {
+                statusColor = 'red';
+                statusText = '故障';
+            }
+
+            const html = `
+                <!-- Basic Info Tab -->
+                <div id="content-basic" class="space-y-4">
+                    <div class="card p-4 flex items-center gap-4">
+                        <div class="w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 text-2xl font-bold">
+                            <i class="fas fa-blender"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-800">${renderDevice.name}</h2>
+                            <div class="text-sm text-gray-500">型号: ${renderDevice.model}</div>
+                            <span class="bg-${statusColor}-100 text-${statusColor}-700 px-2 py-0.5 rounded text-[10px] font-bold mt-1 inline-block">${statusText}</span>
+                        </div>
+                    </div>
+
+                    <div class="card p-4">
+                        <h3 class="text-sm font-bold text-gray-800 mb-3 border-l-4 border-orange-500 pl-2">设备信息</h3>
+                        <div class="space-y-3 text-xs">
+                            <div>
+                                <div class="text-gray-400 mb-0.5">设备编号</div>
+                                <div class="font-bold text-gray-700 font-mono">${renderDevice.id}</div>
+                            </div>
+                            <div>
+                                <div class="text-gray-400 mb-0.5">生产厂家</div>
+                                <div class="font-bold text-gray-700">${renderDevice.manufacturer || '未知厂家'}</div>
+                            </div>
+                            <div>
+                                <div class="text-gray-400 mb-0.5">购置日期</div>
+                                <div class="font-bold text-gray-700">${renderDevice.purchaseDate || '-'}</div>
+                            </div>
+                            <div>
+                                <div class="text-gray-400 mb-0.5">所在位置</div>
+                                <div class="font-bold text-gray-700">${renderDevice.location || '未知位置'}</div>
+                            </div>
+                             <div>
+                                <div class="text-gray-400 mb-0.5">上次维护</div>
+                                <div class="font-bold text-gray-700">${renderDevice.lastMaintenance || '-'}</div>
+                            </div>
+                             <div>
+                                <div class="text-gray-400 mb-0.5">下次维护</div>
+                                <div class="font-bold text-gray-700">${renderDevice.nextMaintenance || '-'}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Usage Records Tab -->
+                <div id="content-usage" class="hidden space-y-3">
+                     <div class="bg-gray-50 rounded-lg p-2 mb-2 text-xs text-gray-500 flex justify-between items-center">
+                        <span>最近30天记录</span>
+                        <i class="fas fa-filter"></i>
+                    </div>
+                    <!-- Empty State for Usage -->
+                    <div class="text-center py-10">
+                        <i class="fas fa-clipboard-list text-gray-300 text-3xl mb-2"></i>
+                        <p class="text-gray-400 text-xs">暂无使用记录</p>
+                    </div>
+                </div>
+
+                <!-- Maintenance Records Tab -->
+                <div id="content-maintenance" class="hidden space-y-3">
+                    <!-- Empty State for Maintenance -->
+                    <div class="text-center py-10">
+                        <i class="fas fa-tools text-gray-300 text-3xl mb-2"></i>
+                        <p class="text-gray-400 text-xs">暂无维护记录</p>
+                    </div>
+                     <button class="w-full py-3 border border-dashed border-gray-300 text-gray-500 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-plus mr-2"></i> 添加维护记录
+                    </button>
+                </div>
+
+                <!-- Fault Records Tab -->
+                <div id="content-fault" class="hidden space-y-3">
+                     <!-- Empty State for Fault -->
+                    <div class="text-center py-10">
+                        <i class="fas fa-exclamation-circle text-gray-300 text-3xl mb-2"></i>
+                        <p class="text-gray-400 text-xs">暂无故障记录</p>
+                    </div>
+                     <button class="w-full py-3 border border-dashed border-gray-300 text-gray-500 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-plus mr-2"></i> 报告故障
+                    </button>
+                </div>
+            `;
+            
+            document.getElementById('content-area').innerHTML = html;
+        }
+
+        async function editDevice() {
+            if (!currentDevice) return;
+            window.location.href = `shebei-taizhang-create.html?id=${currentDevice.id}`;
+        }
+
+        async function deleteDevice() {
+            if (!currentDevice) return;
+            
+            const confirmed = await showConfirm({
+                title: '删除设备',
+                message: `确定要删除设备 "${currentDevice.name}" 吗？此操作无法撤销。`,
+                type: 'danger',
+                confirmText: '删除',
+                cancelText: '取消'
+            });
+            
+            if (confirmed) {
+                try {
+                    const devices = LedgerUtils.SafeStorage.get('ledger_equipment', []);
+                    const newDevices = devices.filter(d => d.id !== currentDevice.id);
+                    LedgerUtils.SafeStorage.set('ledger_equipment', newDevices);
+                    
+                    LedgerUtils.showToast('删除成功');
+                    setTimeout(() => {
+                        window.location.href = 'shebei-taizhang-list.html';
+                    }, 1000);
+                } catch (e) {
+                    console.error(e);
+                    LedgerUtils.showToast('删除失败', 'error');
+                }
+            }
+        }
+
+        function switchTab(tabName) {
+            // Update Tab Styles
+            ['basic', 'usage', 'maintenance', 'fault'].forEach(t => {
+                const btn = document.getElementById('tab-' + t);
+                const content = document.getElementById('content-' + t);
+                
+                if (t === tabName) {
+                    btn.classList.replace('tab-inactive', 'tab-active');
+                    content.classList.remove('hidden');
+                } else {
+                    btn.classList.replace('tab-active', 'tab-inactive');
+                    content.classList.add('hidden');
+                }
+            });
+        }
+
+        function shareRecord() {
+             if (navigator.share) {
+                navigator.share({
+                    title: '设备详情',
+                    text: `查看设备: ${document.getElementById('header-title').innerText}`,
+                    url: window.location.href
+                }).catch(err => {
+                    console.log('分享失败', err);
+                });
+            } else {
+                const dummyUrl = window.location.href;
+                navigator.clipboard.writeText(dummyUrl).then(() => {
+                    LedgerUtils.showToast('链接已复制到剪贴板');
+                }).catch(() => {
+                    LedgerUtils.showToast('分享功能不支持当前浏览器', 'error');
+                });
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>批量新建生产记录 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-orange: #ff9f43;
+            --bg-light: #f7f7f5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+        }
+        .form-input {
+            width: 100%;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+            font-size: 0.875rem;
+            outline: none;
+        }
+        .form-input:focus {
+            border-color: var(--primary-orange);
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- Header -->
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="px-4 h-14 flex items-center justify-between">
+            <a href="shengchan-taizhang-list.html" class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            <h1 class="text-lg font-bold text-gray-800">批量新建记录</h1>
+            <div class="w-10"></div>
+        </div>
+    </nav>
+
+    <!-- Toolbar -->
+    <div class="bg-white border-b border-gray-100 px-4 py-3 flex gap-2 overflow-x-auto no-scrollbar">
+        <button onclick="addNewRow()" class="flex items-center gap-1 bg-orange-50 text-orange-600 px-3 py-1.5 rounded-lg text-sm font-bold whitespace-nowrap">
+            <i class="fas fa-plus"></i> 添加一行
+        </button>
+        <button onclick="fillCommonData()" class="flex items-center gap-1 bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg text-sm font-bold whitespace-nowrap">
+            <i class="fas fa-magic"></i> 智能填充
+        </button>
+        <button onclick="copyLastRow()" class="flex items-center gap-1 bg-gray-50 text-gray-600 px-3 py-1.5 rounded-lg text-sm font-bold whitespace-nowrap">
+            <i class="fas fa-copy"></i> 复制上一行
+        </button>
+    </div>
+
+    <!-- Table Form -->
+    <div class="overflow-x-auto">
+        <table class="w-full bg-white text-left text-sm whitespace-nowrap">
+            <thead class="bg-gray-50 text-gray-500 font-medium border-b border-gray-200">
+                <tr>
+                    <th class="px-4 py-3">操作</th>
+                    <th class="px-4 py-3">批次号 (自动)</th>
+                    <th class="px-4 py-3">产品名称 *</th>
+                    <th class="px-4 py-3">生产日期 *</th>
+                    <th class="px-4 py-3">操作人员 *</th>
+                    <th class="px-4 py-3">计划数量(kg) *</th>
+                    <th class="px-4 py-3">实际数量(kg) *</th>
+                </tr>
+            </thead>
+            <tbody id="batchTableBody" class="divide-y divide-gray-100">
+                <!-- Rows will be added here -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Empty State Hint -->
+    <div id="emptyHint" class="hidden p-8 text-center text-gray-400">
+        <i class="fas fa-table text-4xl mb-3 text-gray-200"></i>
+        <p>点击上方按钮添加记录</p>
+    </div>
+
+    <!-- Bottom Actions -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white p-4 border-t border-gray-100 flex gap-3 z-50 shadow-lg">
+        <div class="flex-1 text-xs text-gray-500 flex items-center">
+            已添加 <span id="rowCount" class="font-bold text-orange-500 mx-1">0</span> 条记录
+        </div>
+        <button onclick="saveAll()" class="px-8 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-orange-200">
+            批量保存
+        </button>
+    </div>
+
+    <script src="../js/common.js"></script>
+    <script src="../js/select-modal.js"></script>
+    <script>
+        let rowCounter = 0;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initial row
+            addNewRow();
+        });
+
+        function addNewRow(data = {}) {
+            const tbody = document.getElementById('batchTableBody');
+            const rowId = `row-${rowCounter++}`;
+            const tr = document.createElement('tr');
+            tr.id = rowId;
+            
+            const batchId = data.id || LedgerUtils.generateBatchId();
+            const date = data.productionDate || LedgerUtils.getLocalDateStr();
+            
+            tr.innerHTML = `
+                <td class="px-4 py-2">
+                    <button onclick="removeRow('${rowId}')" class="text-red-400 hover:text-red-600 p-2">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </td>
+                <td class="px-4 py-2 text-gray-400 font-mono text-xs">${batchId}
+                    <input type="hidden" name="id" value="${batchId}">
+                </td>
+                <td class="px-4 py-2">
+                    <input type="text" name="productName" class="form-input w-32" 
+                        value="${data.productName || ''}" placeholder="产品名称" required>
+                </td>
+                <td class="px-4 py-2">
+                    <input type="date" name="productionDate" class="form-input w-32" 
+                        value="${date}" required>
+                </td>
+                <td class="px-4 py-2">
+                    <div class="relative w-32">
+                        <input type="text" name="operator" class="form-input pr-8" 
+                            value="${data.operator || ''}" placeholder="操作人员" required>
+                        <i class="fas fa-user absolute right-2 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none"></i>
+                    </div>
+                </td>
+                <td class="px-4 py-2">
+                    <input type="number" name="planAmount" class="form-input w-24" 
+                        value="${data.planAmount || ''}" placeholder="0" required>
+                </td>
+                <td class="px-4 py-2">
+                    <input type="number" name="actualAmount" class="form-input w-24" 
+                        value="${data.actualAmount || ''}" placeholder="0" required>
+                </td>
+            `;
+            
+            tbody.appendChild(tr);
+            updateCount();
+            
+            // Add smart fill listener to new row
+            const productInput = tr.querySelector('input[name="productName"]');
+            productInput.addEventListener('change', (e) => {
+                const val = e.target.value;
+                if (val && LedgerUtils.SmartFill) {
+                    const suggestion = LedgerUtils.SmartFill.fillByProduct(val);
+                    if (suggestion) {
+                        const opInput = tr.querySelector('input[name="operator"]');
+                        const planInput = tr.querySelector('input[name="planAmount"]');
+                        if (!opInput.value) opInput.value = suggestion.operator || '';
+                        if (!planInput.value) planInput.value = suggestion.planAmount || '';
+                    }
+                }
+            });
+        }
+
+        function removeRow(id) {
+            const row = document.getElementById(id);
+            if (row) row.remove();
+            updateCount();
+        }
+
+        function updateCount() {
+            const count = document.getElementById('batchTableBody').children.length;
+            document.getElementById('rowCount').textContent = count;
+            
+            const emptyHint = document.getElementById('emptyHint');
+            if (count === 0) {
+                emptyHint.classList.remove('hidden');
+            } else {
+                emptyHint.classList.add('hidden');
+            }
+        }
+
+        function copyLastRow() {
+            const rows = document.getElementById('batchTableBody').children;
+            if (rows.length === 0) return;
+            
+            const lastRow = rows[rows.length - 1];
+            const data = {
+                productName: lastRow.querySelector('input[name="productName"]').value,
+                productionDate: lastRow.querySelector('input[name="productionDate"]').value,
+                operator: lastRow.querySelector('input[name="operator"]').value,
+                planAmount: lastRow.querySelector('input[name="planAmount"]').value,
+                actualAmount: lastRow.querySelector('input[name="actualAmount"]').value
+            };
+            
+            addNewRow(data);
+            LedgerUtils.showToast('已复制上一行');
+        }
+
+        function fillCommonData() {
+            // Fill empty date/operator fields with values from the first row
+            const rows = Array.from(document.getElementById('batchTableBody').children);
+            if (rows.length < 2) return;
+            
+            const firstRow = rows[0];
+            const commonDate = firstRow.querySelector('input[name="productionDate"]').value;
+            const commonOperator = firstRow.querySelector('input[name="operator"]').value;
+            
+            let filledCount = 0;
+            rows.slice(1).forEach(row => {
+                const dateInput = row.querySelector('input[name="productionDate"]');
+                const opInput = row.querySelector('input[name="operator"]');
+                
+                if (!dateInput.value && commonDate) {
+                    dateInput.value = commonDate;
+                    filledCount++;
+                }
+                if (!opInput.value && commonOperator) {
+                    opInput.value = commonOperator;
+                    filledCount++;
+                }
+            });
+            
+            if (filledCount > 0) {
+                LedgerUtils.showToast(`已智能填充 ${filledCount} 个字段`);
+            } else {
+                LedgerUtils.showToast('没有需要填充的空字段', 'info');
+            }
+        }
+
+        function saveAll() {
+            const rows = Array.from(document.getElementById('batchTableBody').children);
+            if (rows.length === 0) return;
+            
+            const newRecords = [];
+            let hasError = false;
+            
+            rows.forEach(row => {
+                const inputs = row.querySelectorAll('input');
+                let record = {};
+                inputs.forEach(input => {
+                    record[input.name] = input.value;
+                    if (input.hasAttribute('required') && !input.value) {
+                        input.classList.add('border-red-500');
+                        hasError = true;
+                    } else {
+                        input.classList.remove('border-red-500');
+                    }
+                });
+                
+                if (!hasError) {
+                    record.timestamp = new Date().getTime();
+                    record.status = parseFloat(record.planAmount) === parseFloat(record.actualAmount) ? 'qualified' : 'diff';
+                    // Append units
+                    record.planAmount = record.planAmount + 'kg';
+                    record.actualAmount = record.actualAmount + 'kg';
+                    newRecords.push(record);
+                }
+            });
+            
+            if (hasError) {
+                LedgerUtils.showToast('请填写所有必填字段', 'error');
+                return;
+            }
+            
+            try {
+                let ledgers = LedgerUtils.SafeStorage.get('ledger_production', []);
+                // Add new records to the beginning
+                ledgers = [...newRecords, ...ledgers];
+                LedgerUtils.SafeStorage.set('ledger_production', ledgers);
+                
+                LedgerUtils.showToast(`成功保存 ${newRecords.length} 条记录`);
+                setTimeout(() => {
+                    window.location.href = 'shengchan-taizhang-list.html';
+                }, 1500);
+            } catch (e) {
+                LedgerUtils.ErrorHandler.handle(e, 'batchSave');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>统计报表 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-orange: #ff9f43;
+            --bg-light: #f7f7f5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+            -webkit-tap-highlight-color: transparent;
+        }
+        .date-range-btn.active {
+            background-color: #fff7ed;
+            border-color: #ff9f43;
+            color: #ff9f43;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="pb-20">
+    <!-- Header -->
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="px-4 h-14 flex items-center justify-between">
+            <a href="taizhang-zhuye.html" class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            <h1 class="text-lg font-bold text-gray-800">统计报表</h1>
+            <button onclick="window.location.reload()" class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="px-4 space-y-4 mt-4">
+        <!-- 时间范围选择 -->
+        <div class="bg-white rounded-xl p-4 shadow-sm">
+            <h3 class="text-sm font-bold text-gray-800 mb-3">选择时间范围</h3>
+            <div class="grid grid-cols-3 gap-2">
+                <button class="date-range-btn py-2 border rounded-lg text-xs" onclick="setRange('today', this)">今日</button>
+                <button class="date-range-btn py-2 border rounded-lg text-xs" onclick="setRange('week', this)">本周</button>
+                <button class="date-range-btn active py-2 border rounded-lg text-xs" onclick="setRange('month', this)">本月</button>
+                <button class="date-range-btn py-2 border rounded-lg text-xs" onclick="setRange('quarter', this)">本季度</button>
+                <button class="date-range-btn py-2 border rounded-lg text-xs" onclick="setRange('year', this)">本年度</button>
+                <button class="date-range-btn py-2 border rounded-lg text-xs" onclick="setRange('custom', this)">自定义</button>
+            </div>
+        </div>
+        
+        <!-- 生产统计 -->
+        <div class="bg-white rounded-xl p-4 shadow-sm">
+            <h3 class="text-sm font-bold text-gray-800 mb-3">生产统计</h3>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-orange-500" id="total-production">0</div>
+                    <div class="text-xs text-gray-500 mt-1">总产量 (kg)</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-green-500" id="qualified-rate">0%</div>
+                    <div class="text-xs text-gray-500 mt-1">合格率</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 质量分析 -->
+        <div class="bg-white rounded-xl p-4 shadow-sm">
+            <h3 class="text-sm font-bold text-gray-800 mb-3">质量分析</h3>
+            <div class="h-64">
+                <canvas id="quality-chart"></canvas>
+            </div>
+        </div>
+
+        <!-- 成本分析 -->
+        <div class="bg-white rounded-xl p-4 shadow-sm">
+            <h3 class="text-sm font-bold text-gray-800 mb-3">成本分析</h3>
+            <div class="h-64">
+                <canvas id="cost-chart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/common.js"></script>
+    <script>
+        let qualityChart = null;
+        let costChart = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadStatistics('month');
+        });
+
+        function setRange(range, btn) {
+            // Update UI
+            document.querySelectorAll('.date-range-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            // Reload data
+            loadStatistics(range);
+        }
+
+        function loadStatistics(range) {
+            // Simulate data loading based on range
+            const prodData = JSON.parse(localStorage.getItem('ledger_production') || '[]');
+            const qualityData = JSON.parse(localStorage.getItem('ledger_quality') || '[]');
+
+            // Filter data by range (Mock implementation for now)
+            // In real app, filter by timestamp
+            
+            // Calculate Production Stats
+            let totalAmount = 0;
+            prodData.forEach(item => {
+                const amount = parseFloat(item.actualAmount) || 0;
+                totalAmount += amount;
+            });
+            document.getElementById('total-production').innerText = totalAmount.toFixed(1);
+
+            // Calculate Qualified Rate
+            const totalQuality = qualityData.length;
+            const qualified = qualityData.filter(q => q.status === 'qualified').length;
+            const rate = totalQuality > 0 ? (qualified / totalQuality * 100) : 100;
+            document.getElementById('qualified-rate').innerText = rate.toFixed(1) + '%';
+
+            // Render Charts
+            renderQualityChart(qualityData);
+            renderCostChart(range);
+        }
+
+        function renderQualityChart(data) {
+            const ctx = document.getElementById('quality-chart').getContext('2d');
+            
+            const qualified = data.filter(q => q.status === 'qualified').length;
+            const unqualified = data.filter(q => q.status === 'unqualified').length;
+            const scrap = data.filter(q => q.status === 'scrap').length;
+
+            if (qualityChart) qualityChart.destroy();
+
+            qualityChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['合格', '不合格', '报废'],
+                    datasets: [{
+                        data: [qualified || 10, unqualified || 1, scrap || 0], // Fallback for empty
+                        backgroundColor: ['#10b981', '#ef4444', '#991b1b'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { usePointStyle: true }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderCostChart(range) {
+            const ctx = document.getElementById('cost-chart').getContext('2d');
+            
+            if (costChart) costChart.destroy();
+
+            // Mock Data
+            const labels = ['W1', 'W2', 'W3', 'W4'];
+            const data = [1200, 1350, 1100, 1400];
+
+            costChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '生产成本 (元)',
+                        data: data,
+                        backgroundColor: '#ff9f43',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, grid: { display: false } },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

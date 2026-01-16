@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>召回详情 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-green: #10b981;
+            --bg-light: #f7f7f5;
+            --bg-white: #ffffff;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+            -webkit-tap-highlight-color: transparent;
+        }
+        .card {
+            background: var(--bg-white);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            border: 1px solid rgba(0,0,0,0.03);
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+
+    <!-- Header -->
+    <div class="bg-white px-4 py-3 shadow-sm border-b border-gray-100 z-30 flex-shrink-0">
+        <div class="flex items-center space-x-3">
+            <a href="zhaohui-gl-list.html" class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            <div class="flex-1">
+                <h1 class="text-lg font-bold text-gray-800">召回详情</h1>
+                <div class="text-xs text-gray-500 font-mono">RE-20231027-001</div>
+            </div>
+            <button class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors">
+                <i class="fas fa-share-alt"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Content Area -->
+    <div class="flex-1 overflow-y-auto p-4 space-y-4" id="detail-content">
+        <!-- Dynamic Content -->
+    </div>
+
+    <!-- Bottom Actions -->
+    <div class="bg-white p-4 border-t border-gray-100 z-30 flex gap-3">
+        <button class="flex-1 bg-white border border-gray-200 text-gray-700 py-3 rounded-xl font-bold text-sm hover:bg-gray-50 transition-colors">
+            <i class="fas fa-print mr-1"></i> 打印报告
+        </button>
+        <button id="completeBtn" onclick="completeRecall()" class="flex-1 bg-green-500 text-white py-3 rounded-xl font-bold text-sm hover:bg-green-600 transition-colors shadow-lg shadow-green-200 hidden">
+            <i class="fas fa-check mr-1"></i> 确认完成
+        </button>
+    </div>
+
+    <script src="../js/common.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const recallId = params.get('id');
+            
+            if (recallId) {
+                loadRecallDetail(recallId);
+            } else {
+                document.getElementById('detail-content').innerHTML = '<div class="text-center py-10 text-red-500">参数错误：未指定召回单ID</div>';
+            }
+        });
+
+        function loadRecallDetail(recallId) {
+            const recalls = JSON.parse(localStorage.getItem('recallRecords') || '[]');
+            const recall = recalls.find(r => r.id === recallId);
+            
+            if (!recall) {
+                document.getElementById('detail-content').innerHTML = '<div class="text-center py-10 text-red-500">未找到召回记录</div>';
+                return;
+            }
+
+            // Update Header Title
+            document.querySelector('.text-xs.text-gray-500.font-mono').textContent = recall.id;
+
+            // Status Logic
+            let statusHtml = '';
+            if (recall.status === '处理中') {
+                statusHtml = `
+                <div class="card p-6 flex flex-col items-center justify-center bg-gradient-to-br from-orange-50 to-white border-orange-100">
+                    <div class="w-16 h-16 rounded-full bg-orange-500 flex items-center justify-center text-white text-3xl shadow-lg mb-3">
+                        <i class="fas fa-sync-alt fa-spin"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-orange-600">处理中</h2>
+                    <p class="text-xs text-orange-500 mt-1">预计完成时间: 2023-10-30</p>
+                </div>`;
+                document.getElementById('completeBtn').classList.remove('hidden');
+            } else {
+                statusHtml = `
+                <div class="card p-6 flex flex-col items-center justify-center bg-gradient-to-br from-green-50 to-white border-green-100">
+                    <div class="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center text-white text-3xl shadow-lg mb-3">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-green-600">已完成</h2>
+                    <p class="text-xs text-green-500 mt-1">处理完毕</p>
+                </div>`;
+            }
+
+            // Destinations
+            const destinationsHtml = recall.destinations && recall.destinations.length > 0 ? `
+                <div class="card p-4">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-sm font-bold text-gray-800 border-l-4 border-yellow-500 pl-2">销售去向</h3>
+                        <button onclick="exportDestinations()" class="text-xs bg-yellow-50 text-yellow-600 px-2 py-1 rounded border border-yellow-200">
+                            <i class="fas fa-crown text-xs mr-1"></i> 导出详细去向
+                        </button>
+                    </div>
+                    <div class="text-xs text-gray-500 mb-2">
+                        共 ${recall.destinations.length} 家门店，总计 ${recall.quantity} 个
+                    </div>
+                    <div class="space-y-2">
+                        ${recall.destinations.slice(0, 3).map(d => `
+                            <div class="bg-gray-50 rounded p-2 text-xs flex justify-between items-center">
+                                <div>
+                                    <div class="font-bold text-gray-800">${d.name}</div>
+                                    <div class="text-gray-500">联系人: ${d.contact}</div>
+                                </div>
+                                <div class="font-bold text-orange-500">${d.quantity}个</div>
+                            </div>
+                        `).join('')}
+                        ${recall.destinations.length > 3 ? `
+                            <div class="text-center text-xs text-gray-400 py-1">
+                                还有 ${recall.destinations.length - 3} 家门店...
+                                <span class="text-yellow-600 cursor-pointer">升级查看全部</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            ` : '';
+
+            // Timeline
+            const timelineHtml = `
+                <div class="card p-4">
+                    <h3 class="text-sm font-bold text-gray-800 mb-3 border-l-4 border-purple-500 pl-2">处理进度</h3>
+                    <div class="space-y-4 pl-2">
+                        <div class="flex items-start gap-3 relative">
+                            <div class="w-2.5 h-2.5 rounded-full bg-green-500 mt-1 z-10 ring-4 ring-white"></div>
+                            <div class="absolute left-[5px] top-3 bottom-[-20px] w-0.5 bg-gray-200"></div>
+                            <div class="flex-1">
+                                <div class="text-xs font-bold text-gray-800">召回单已生成</div>
+                                <div class="text-[10px] text-gray-400">${new Date(recall.recallDate).toLocaleString()}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3 relative">
+                            <div class="w-2.5 h-2.5 rounded-full ${recall.status === '已完成' ? 'bg-green-500' : 'bg-orange-500'} mt-1 z-10 ring-4 ring-white"></div>
+                            <div class="absolute left-[5px] top-3 bottom-[-20px] w-0.5 bg-gray-200"></div>
+                            <div class="flex-1">
+                                <div class="text-xs font-bold text-gray-800">门店通知</div>
+                                <div class="text-[10px] text-gray-400">已发送系统通知</div>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3 relative">
+                            <div class="w-2.5 h-2.5 rounded-full ${recall.status === '已完成' ? 'bg-green-500' : 'bg-gray-300'} mt-1 z-10 ring-4 ring-white"></div>
+                            <div class="flex-1">
+                                <div class="text-xs font-bold text-gray-800">销毁/回收确认</div>
+                                <div class="text-[10px] text-gray-400">${recall.status === '已完成' ? '已完成销毁' : '等待确认'}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const html = `
+                ${statusHtml}
+
+                <div class="card p-4">
+                    <h3 class="text-sm font-bold text-gray-800 mb-3 border-l-4 border-red-500 pl-2">召回信息</h3>
+                    <div class="grid grid-cols-2 gap-y-3 gap-x-2 text-xs">
+                        <div>
+                            <div class="text-gray-400 mb-0.5">召回日期</div>
+                            <div class="font-bold text-gray-700">${new Date(recall.recallDate).toLocaleString()}</div>
+                        </div>
+                        <div>
+                            <div class="text-gray-400 mb-0.5">召回人员</div>
+                            <div class="font-bold text-gray-700">${recall.recallPerson || '张店长'}</div>
+                        </div>
+                        <div class="col-span-2">
+                            <div class="text-gray-400 mb-0.5">召回原因</div>
+                            <div class="font-bold text-red-600 bg-red-50 p-2 rounded">
+                                ${recall.reason}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card p-4">
+                    <h3 class="text-sm font-bold text-gray-800 mb-3 border-l-4 border-blue-500 pl-2">涉及产品</h3>
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 text-xl">
+                            <i class="fas fa-cookie-bite"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-gray-800 text-base">${recall.productName}</div>
+                            <div class="text-xs text-gray-500">生产批次: ${recall.batchNo}</div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 rounded p-3 text-xs flex justify-between">
+                        <div>
+                            <div class="text-gray-400">召回数量</div>
+                            <div class="font-bold text-gray-800 text-lg">${recall.quantity} <span class="text-xs font-normal">个</span></div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-gray-400">召回范围</div>
+                            <div class="font-bold text-gray-800">${recall.destinations ? recall.destinations.length : 0}家门店</div>
+                        </div>
+                    </div>
+                </div>
+
+                ${destinationsHtml}
+                ${timelineHtml}
+            `;
+
+            document.getElementById('detail-content').innerHTML = html;
+        }
+
+        function exportDestinations() {
+            LedgerUtils.showToast('付费功能：正在导出详细去向名单...', 'info');
+        }
+
+        async function completeRecall() {
+            const confirmComplete = await LedgerUtils.showConfirm({
+                title: '完成确认',
+                message: '确认所有产品已回收或销毁？\n此操作将归档召回记录。',
+                type: 'info',
+                confirmText: '确认完成'
+            });
+
+            if (confirmComplete) {
+                const params = new URLSearchParams(window.location.search);
+                const recallId = params.get('id');
+                
+                const recalls = LedgerUtils.SafeStorage.get('recallRecords', []);
+                const idx = recalls.findIndex(r => r.id === recallId);
+                
+                if (idx !== -1) {
+                    recalls[idx].status = '已完成';
+                    LedgerUtils.SafeStorage.set('recallRecords', recalls);
+                    LedgerUtils.showToast('处理完成！');
+                    loadRecallDetail(recallId); // Reload UI
+                }
+            }
+        }
+    </script>

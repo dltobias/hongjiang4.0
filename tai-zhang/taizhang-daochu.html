@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>年检台账导出 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body class="bg-gray-50 pb-20">
+    <!-- 顶部导航栏 -->
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="px-4 h-14 flex items-center justify-between">
+            <a href="taizhang-zhuye.html" class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            <h1 class="text-lg font-bold text-gray-800">年检台账导出</h1>
+            <div class="w-10"></div>
+        </div>
+    </nav>
+
+    <div class="p-4 space-y-6">
+        <!-- 导出选项区域 -->
+        <div class="bg-white rounded-xl shadow-sm p-4">
+            <h3 class="text-sm font-bold text-gray-800 mb-4 border-l-4 border-orange-500 pl-2">日期范围</h3>
+            <div class="grid grid-cols-3 gap-3">
+                <button onclick="selectDateRange('today', this)" class="date-btn py-2 border rounded-lg text-sm text-gray-600 hover:bg-orange-50 hover:border-orange-200">今日</button>
+                <button onclick="selectDateRange('week', this)" class="date-btn py-2 border rounded-lg text-sm text-gray-600 hover:bg-orange-50 hover:border-orange-200">本周</button>
+                <button onclick="selectDateRange('month', this)" class="date-btn py-2 border rounded-lg text-sm text-gray-600 hover:bg-orange-50 hover:border-orange-200">本月</button>
+                <button onclick="selectDateRange('quarter', this)" class="date-btn py-2 border rounded-lg text-sm text-gray-600 hover:bg-orange-50 hover:border-orange-200">本季度</button>
+                <button onclick="selectDateRange('year', this)" class="date-btn py-2 border border-orange-500 bg-orange-50 text-orange-600 rounded-lg text-sm font-medium">本年度</button>
+                <button onclick="selectDateRange('custom', this)" class="date-btn py-2 border rounded-lg text-sm text-gray-600 hover:bg-orange-50 hover:border-orange-200">自定义</button>
+            </div>
+            <!-- Custom Date Inputs (Hidden by default) -->
+            <div id="custom-date-inputs" class="hidden mt-3 flex gap-2 items-center">
+                <input type="date" class="border rounded px-2 py-1 text-sm flex-1">
+                <span>-</span>
+                <input type="date" class="border rounded px-2 py-1 text-sm flex-1">
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm p-4">
+            <h3 class="text-sm font-bold text-gray-800 mb-4 border-l-4 border-orange-500 pl-2">选择台账类型</h3>
+            <div class="space-y-3">
+                <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                    <input type="checkbox" value="production" class="w-5 h-5 text-orange-500 rounded focus:ring-orange-500 ledger-type" checked>
+                    <div class="ml-3">
+                        <span class="block text-sm font-medium text-gray-900">生产台账</span>
+                        <span class="block text-xs text-gray-500">包含批次、投料、环境、人员等信息</span>
+                    </div>
+                </label>
+                <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                    <input type="checkbox" value="material" class="w-5 h-5 text-orange-500 rounded focus:ring-orange-500 ledger-type" checked>
+                    <div class="ml-3">
+                        <span class="block text-sm font-medium text-gray-900">原料追溯台账</span>
+                        <span class="block text-xs text-gray-500">包含入库、批次、供应商资质等信息</span>
+                    </div>
+                </label>
+                <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                    <input type="checkbox" value="qc" class="w-5 h-5 text-orange-500 rounded focus:ring-orange-500 ledger-type" checked>
+                    <div class="ml-3">
+                        <span class="block text-sm font-medium text-gray-900">质检台账</span>
+                        <span class="block text-xs text-gray-500">包含来料、过程、成品检验记录</span>
+                    </div>
+                </label>
+                <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                    <input type="checkbox" value="supplier" class="w-5 h-5 text-orange-500 rounded focus:ring-orange-500 ledger-type">
+                    <div class="ml-3">
+                        <span class="block text-sm font-medium text-gray-900">供应商台账</span>
+                    </div>
+                </label>
+                <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                    <input type="checkbox" value="equipment" class="w-5 h-5 text-orange-500 rounded focus:ring-orange-500 ledger-type">
+                    <div class="ml-3">
+                        <span class="block text-sm font-medium text-gray-900">设备台账</span>
+                    </div>
+                </label>
+                <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                    <input type="checkbox" value="personnel" class="w-5 h-5 text-orange-500 rounded focus:ring-orange-500 ledger-type">
+                    <div class="ml-3">
+                        <span class="block text-sm font-medium text-gray-900">人员台账</span>
+                    </div>
+                </label>
+                <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                    <input type="checkbox" value="sales" class="w-5 h-5 text-orange-500 rounded focus:ring-orange-500 ledger-type">
+                    <div class="ml-3">
+                        <span class="block text-sm font-medium text-gray-900">销售追溯台账</span>
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <!-- 一键导出按钮 -->
+        <button onclick="exportLedgers()" class="w-full py-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 font-bold text-lg flex items-center justify-center">
+            <i class="fas fa-file-export mr-2"></i> 导出年检台账
+        </button>
+
+        <!-- 导出历史 -->
+        <div class="mt-6">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="text-sm font-bold text-gray-600">最近导出记录</h3>
+                <button onclick="clearHistory()" class="text-xs text-gray-400 hover:text-red-500">清空</button>
+            </div>
+            <div class="space-y-2" id="export-history">
+                <!-- Dynamic Content -->
+            </div>
+        </div>
+    </div>
+
+    <script src="js/common.js"></script>
+    <script>
+        let currentDateRange = 'year';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderHistory();
+        });
+
+        function selectDateRange(range, btn) {
+            currentDateRange = range;
+            document.querySelectorAll('.date-btn').forEach(b => {
+                b.classList.remove('bg-orange-50', 'text-orange-600', 'border-orange-500', 'font-medium');
+                b.classList.add('text-gray-600');
+            });
+            btn.classList.add('bg-orange-50', 'text-orange-600', 'border-orange-500', 'font-medium');
+            btn.classList.remove('text-gray-600');
+
+            const customInputs = document.getElementById('custom-date-inputs');
+            if (range === 'custom') {
+                customInputs.classList.remove('hidden');
+            } else {
+                customInputs.classList.add('hidden');
+            }
+        }
+
+        function exportLedgers() {
+            const selectedTypes = Array.from(document.querySelectorAll('.ledger-type:checked')).map(cb => cb.value);
+            
+            if (selectedTypes.length === 0) {
+                LedgerUtils.showToast('请至少选择一种台账类型', 'error');
+                return;
+            }
+
+            // Simulate Loading
+            const btn = document.querySelector('button[onclick="exportLedgers()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 正在生成...';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                try {
+                    const wb = XLSX.utils.book_new();
+                    const timestamp = new Date().toISOString().split('T')[0];
+                    const filename = `年检台账_${new Date().getFullYear()}年度.xlsx`;
+
+                    // 1. Production Ledger
+                    if (selectedTypes.includes('production')) {
+                        const data = LedgerUtils.SafeStorage.get('ledger_production', []);
+                        // Flatten data for Excel
+                        const flatData = data.map(item => ({
+                            '批次号': item.id || item.batchNo || item.batchNumber,
+                            '生产日期': item.productionDate,
+                            '产品名称': item.productName,
+                            '计划数量': item.planAmount || item.plannedQuantity || item.quantity,
+                            '实际数量': item.actualAmount || item.actualQuantity || item.quantity,
+                            '操作人员': item.operator,
+                            '状态': item.status === 'qualified' ? '合格' : (item.status === 'diff' ? '有差异' : '未知')
+                        }));
+                        const ws = XLSX.utils.json_to_sheet(flatData.length ? flatData : [{'提示': '无数据'}]);
+                        XLSX.utils.book_append_sheet(wb, ws, "生产台账");
+                    }
+
+                    // 2. Material Traceability Ledger
+                    if (selectedTypes.includes('material')) {
+                        const data = LedgerUtils.SafeStorage.get('ledger_material', []);
+                        const flatData = data.map(item => ({
+                            '原料批次': item.id || item.batchNo,
+                            '原料名称': item.materialName,
+                            '入库单号': item.inboundNo || item.inboundOrderId,
+                            '供应商': typeof item.supplier === 'object' ? item.supplier.name : item.supplier,
+                            '入库日期': item.inboundDate,
+                            '数量': item.quantity,
+                            '单位': item.unit
+                        }));
+                        const ws = XLSX.utils.json_to_sheet(flatData.length ? flatData : [{'提示': '无数据'}]);
+                        XLSX.utils.book_append_sheet(wb, ws, "原料追溯台账");
+                    }
+
+                    // 3. QC Ledger
+                    if (selectedTypes.includes('qc')) {
+                        const data = LedgerUtils.SafeStorage.get('ledger_quality', []);
+                         const flatData = data.map(item => ({
+                            '检验单号': item.inspectionId,
+                            '产品名称': item.productName,
+                            '检验日期': item.inspectionDate,
+                            '检验结果': item.inspectionResult,
+                            '不合格原因': item.unqualifiedReason || '-'
+                        }));
+                        const ws = XLSX.utils.json_to_sheet(flatData.length ? flatData : [{'提示': '无数据'}]);
+                        XLSX.utils.book_append_sheet(wb, ws, "质检台账");
+                    }
+
+                    // Save File
+                    XLSX.writeFile(wb, filename);
+
+                    // Save History
+                    const history = LedgerUtils.SafeStorage.get('export_history', []);
+                    history.unshift({
+                        filename: filename,
+                        date: new Date().toLocaleString(),
+                        types: selectedTypes.join(', ')
+                    });
+                    LedgerUtils.SafeStorage.set('export_history', history.slice(0, 5));
+                    renderHistory();
+
+                    LedgerUtils.showToast('导出成功！文件已开始下载。');
+                } catch (e) {
+                    console.error(e);
+                    LedgerUtils.showToast('导出失败，请重试', 'error');
+                } finally {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            }, 1000);
+        }
+
+        function renderHistory() {
+            const history = LedgerUtils.SafeStorage.get('export_history', []);
+            const container = document.getElementById('export-history');
+            
+            if (history.length === 0) {
+                container.innerHTML = '<div class="text-xs text-gray-400 text-center py-2">暂无导出记录</div>';
+                return;
+            }
+
+            container.innerHTML = history.map(item => `
+                <div class="bg-gray-50 rounded-lg p-3 flex justify-between items-center">
+                    <div>
+                        <div class="text-sm font-medium text-gray-800">${item.filename}</div>
+                        <div class="text-xs text-gray-400">${item.date}</div>
+                    </div>
+                    <button class="text-blue-500 text-xs font-bold hover:underline">重新下载</button>
+                </div>
+            `).join('');
+        }
+
+        async function clearHistory() {
+            const confirmed = await LedgerUtils.showConfirm({
+                title: '清空确认',
+                message: '确定清空导出历史记录？',
+                type: 'danger'
+            });
+            if(confirmed) {
+                LedgerUtils.SafeStorage.remove('export_history');
+                renderHistory();
+                LedgerUtils.showToast('历史记录已清空');
+            }
+        }
+    </script>
+</body>
+</html>

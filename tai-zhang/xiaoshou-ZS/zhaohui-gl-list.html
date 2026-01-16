@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>召回管理 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-green: #10b981;
+            --bg-light: #f7f7f5;
+            --bg-white: #ffffff;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+            -webkit-tap-highlight-color: transparent;
+        }
+        .card {
+            background: var(--bg-white);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            border: 1px solid rgba(0,0,0,0.03);
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+
+    <!-- Header -->
+    <div class="bg-white px-4 py-3 shadow-sm border-b border-gray-100 z-30 flex-shrink-0">
+        <div class="flex items-center space-x-3 mb-3">
+            <a href="xiaoshou-zs-query.html" class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            <div class="flex-1">
+                <h1 class="text-lg font-bold text-gray-800">召回管理</h1>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="exportReport()" class="flex items-center justify-center px-3 py-2 rounded-lg bg-yellow-50 text-yellow-600 hover:bg-yellow-100 transition-colors text-xs font-bold border border-yellow-200">
+                    <i class="fas fa-file-export mr-1"></i> 导出去向 <i class="fas fa-crown text-yellow-500 ml-1"></i>
+                </button>
+                <button onclick="openRecallModal()" class="bg-red-500 text-white px-3 py-2 rounded-lg text-xs font-bold shadow-md hover:bg-red-600 transition-colors flex items-center">
+                    <i class="fas fa-bullhorn mr-1"></i> 一键发起召回
+                </button>
+            </div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="relative mb-3">
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+            <input type="text" placeholder="搜索召回单号、产品名称" class="w-full bg-gray-50 border border-gray-200 rounded-lg py-2 pl-8 pr-4 text-xs focus:outline-none focus:border-green-400">
+        </div>
+
+        <!-- Filters -->
+        <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+            <button class="px-3 py-1.5 bg-red-100 text-red-700 rounded-full text-xs font-bold whitespace-nowrap border border-red-200">全部</button>
+            <button class="px-3 py-1.5 bg-gray-50 text-gray-600 rounded-full text-xs font-bold whitespace-nowrap border border-gray-100">待处理</button>
+            <button class="px-3 py-1.5 bg-gray-50 text-gray-600 rounded-full text-xs font-bold whitespace-nowrap border border-gray-100">处理中</button>
+            <button class="px-3 py-1.5 bg-gray-50 text-gray-600 rounded-full text-xs font-bold whitespace-nowrap border border-gray-100">已完成</button>
+        </div>
+    </div>
+
+    <!-- Content Area -->
+    <div class="flex-1 overflow-y-auto p-4 space-y-3" id="recall-list-container">
+        <!-- Dynamic content will be loaded here -->
+    </div>
+
+    <!-- Recall Modal -->
+    <div id="recallModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl w-full max-w-md overflow-hidden shadow-2xl transform transition-all">
+            <div class="bg-gray-50 px-4 py-3 border-b border-gray-100 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-gray-800">一键发起召回</h3>
+                <button onclick="closeRecallModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-4">
+                <!-- Step 1: Select Batch -->
+                <div class="mb-4">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">选择批次</label>
+                    <div class="relative">
+                        <input type="text" id="batchInput" class="w-full bg-gray-50 border border-gray-200 rounded-lg py-2 pl-3 pr-10 text-sm focus:outline-none focus:border-red-400 transition-colors" placeholder="输入批次号 (e.g. BATCH2023...)">
+                        <button onclick="searchBatch()" class="absolute right-2 top-1/2 -translate-y-1/2 text-red-500 font-bold text-xs hover:text-red-600">
+                            查询
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 2: Auto-associate Destination (Hidden initially) -->
+                <div id="recallPreview" class="hidden space-y-3">
+                    <div class="bg-red-50 border border-red-100 rounded-lg p-3" id="batch-preview-card">
+                        <!-- Dynamic batch info -->
+                    </div>
+                    
+                    <div class="mb-2">
+                         <label class="block text-sm font-bold text-gray-700 mb-2">召回原因</label>
+                         <textarea id="recallReason" class="w-full bg-gray-50 border border-gray-200 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-red-400" rows="2" placeholder="请输入召回原因..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="px-4 py-3 bg-gray-50 flex justify-end gap-3">
+                <button onclick="closeRecallModal()" class="px-4 py-2 text-gray-600 text-sm font-bold hover:bg-gray-100 rounded-lg transition-colors">取消</button>
+                <button id="initiateBtn" onclick="submitRecall()" class="hidden px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-lg shadow-md hover:bg-red-600 transition-colors">
+                    <i class="fas fa-paper-plane mr-1"></i> 生成召回单 & 通知
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/common.js"></script>
+    <script>
+        // --- Utilities ---
+        function showLoading(message = '处理中...') {
+            const loader = document.createElement('div');
+            loader.id = 'global-loader';
+            loader.className = 'fixed inset-0 bg-black bg-opacity-50 z-[100] flex items-center justify-center';
+            loader.innerHTML = `
+                <div class="bg-white rounded-xl p-6 text-center shadow-2xl">
+                    <div class="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                    <p class="text-gray-700 font-medium">${message}</p>
+                </div>
+            `;
+            document.body.appendChild(loader);
+        }
+
+        function hideLoading() {
+            const loader = document.getElementById('global-loader');
+            if (loader) loader.remove();
+        }
+
+        function showError(message) {
+            const error = document.createElement('div');
+            error.className = 'fixed top-4 left-1/2 -translate-x-1/2 bg-red-500 text-white px-4 py-3 rounded-lg shadow-lg z-[100] flex items-center gap-2 animate-bounce';
+            error.innerHTML = `
+                <i class="fas fa-exclamation-circle"></i>
+                <span>${message}</span>
+            `;
+            document.body.appendChild(error);
+            setTimeout(() => error.remove(), 3000);
+        }
+
+        // --- Main Logic ---
+        let currentBatchData = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadRecallList();
+            initFilters();
+        });
+
+        function openRecallModal() {
+            document.getElementById('recallModal').classList.remove('hidden');
+        }
+
+        function closeRecallModal() {
+            document.getElementById('recallModal').classList.add('hidden');
+            document.getElementById('recallPreview').classList.add('hidden');
+            document.getElementById('initiateBtn').classList.add('hidden');
+            document.getElementById('batchInput').value = '';
+            document.getElementById('recallReason').value = '';
+            const tip = document.getElementById('smart-tip');
+            if(tip) tip.remove();
+            currentBatchData = null;
+        }
+
+        function searchBatch() {
+            const batchNo = document.getElementById('batchInput').value.trim();
+            if (!batchNo) {
+                showError('请输入批次号');
+                return;
+            }
+
+            // Simulate searching from "Production Ledgers" (Mocking DB)
+            const btn = document.querySelector('button[onclick="searchBatch()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                
+                // Mock Logic: In real app, check localStorage.getItem('productionLedgers')
+                // For demo, we accept any batch or specific ones
+                const mockProduct = batchNo.includes('2023') ? '甜甜圈 (草莓味)' : '全麦吐司';
+                
+                currentBatchData = {
+                    batchNo: batchNo,
+                    productName: mockProduct,
+                    quantity: 50,
+                    destinations: [
+                        { name: '门店A (市中心店)', quantity: 20, contact: '张店长' },
+                        { name: '门店B (万达店)', quantity: 15, contact: '李店长' },
+                        { name: '门店C (社区店)', quantity: 15, contact: '王店长' }
+                    ]
+                };
+
+                // Render Preview
+                const previewCard = document.getElementById('batch-preview-card');
+                previewCard.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <div class="text-sm font-bold text-gray-800">${currentBatchData.productName}</div>
+                            <div class="text-xs text-gray-500">${currentBatchData.batchNo}</div>
+                        </div>
+                        <span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-bold">高风险</span>
+                    </div>
+                    <div class="text-xs text-gray-600">
+                        <p class="mb-1"><i class="fas fa-store mr-1"></i> 关联去向: <span class="font-bold">${currentBatchData.destinations.length}家门店</span></p>
+                        <ul class="list-disc pl-4 space-y-1 text-gray-500">
+                            ${currentBatchData.destinations.map(d => `<li>${d.name} - ${d.quantity}个 - ${d.contact}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+
+                document.getElementById('recallPreview').classList.remove('hidden');
+                document.getElementById('initiateBtn').classList.remove('hidden');
+
+                // Smart Tip
+                if(!document.getElementById('smart-tip')) {
+                     const tip = document.createElement('div');
+                     tip.id = 'smart-tip';
+                     tip.className = 'mb-2 bg-blue-50 text-blue-600 px-3 py-2 rounded-lg text-xs flex items-center gap-2 border border-blue-100 animate-pulse';
+                     tip.innerHTML = '<i class="fas fa-robot text-lg"></i> <span><b>AI智能推荐:</b> 基于销售记录，已自动锁定该批次发往的 ${currentBatchData.destinations.length} 个分销点。</span>';
+                     const preview = document.getElementById('recallPreview');
+                     preview.insertBefore(tip, preview.firstChild);
+                }
+
+            }, 600);
+        }
+
+        function submitRecall() {
+            if(!currentBatchData) return;
+            
+            const btn = document.getElementById('initiateBtn');
+            const reason = document.getElementById('recallReason').value;
+            
+            if(!reason) {
+                showError('请输入召回原因');
+                return;
+            }
+
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 处理中...';
+            
+            setTimeout(() => {
+                const now = new Date();
+                const recallNo = 'RE-' + now.getFullYear() + 
+                                (now.getMonth() + 1).toString().padStart(2, '0') + 
+                                now.getDate().toString().padStart(2, '0') + '-' + 
+                                Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+                
+                const recallRecord = {
+                    id: recallNo,
+                    batchNo: currentBatchData.batchNo,
+                    productName: currentBatchData.productName,
+                    quantity: currentBatchData.quantity,
+                    reason: reason,
+                    status: '处理中',
+                    recallDate: now.toISOString(),
+                    recallPerson: '当前用户',
+                    destinations: currentBatchData.destinations,
+                    createdAt: now.toISOString()
+                };
+                
+                // Save to localStorage
+                const recalls = LedgerUtils.SafeStorage.get('recallRecords', []);
+                recalls.unshift(recallRecord);
+                LedgerUtils.SafeStorage.set('recallRecords', recalls);
+                
+                LedgerUtils.showToast(`召回单 ${recallNo} 已生成！\n已自动通知 ${currentBatchData.destinations.length} 家门店。\n短信/系统通知已发送。`);
+                
+                closeRecallModal();
+                btn.innerHTML = originalText;
+                loadRecallList(); // Reload list
+            }, 1000);
+        }
+
+        function loadRecallList() {
+            let recalls = JSON.parse(localStorage.getItem('recallRecords') || '[]');
+            
+            // Add some mock data if empty for demo purposes
+            if (recalls.length === 0) {
+                recalls = [
+                    {
+                        id: 'RE-20231027-001',
+                        batchNo: 'BATCH20231025002',
+                        productName: '甜甜圈 (草莓味)',
+                        quantity: 50,
+                        reason: '口感异常 (炸糊了)',
+                        status: '处理中',
+                        recallDate: '2023-10-27T09:30:00.000Z',
+                        destinations: [{ name: '门店A', quantity: 50, contact: '张店长' }]
+                    },
+                    {
+                        id: 'RE-20230915-003',
+                        batchNo: 'BATCH20230914008',
+                        productName: '全麦吐司',
+                        quantity: 20,
+                        reason: '包装破损',
+                        status: '已完成',
+                        recallDate: '2023-09-15T14:00:00.000Z',
+                        destinations: [{ name: '门店C', quantity: 20, contact: '王店长' }]
+                    }
+                ];
+                localStorage.setItem('recallRecords', JSON.stringify(recalls));
+            }
+
+            renderRecallList(recalls);
+        }
+
+        function renderRecallList(list) {
+            const container = document.getElementById('recall-list-container');
+            if (list.length === 0) {
+                container.innerHTML = '<div class="text-center py-10 text-gray-400">暂无召回记录</div>';
+                return;
+            }
+
+            container.innerHTML = list.map(item => {
+                const date = new Date(item.recallDate).toLocaleString('zh-CN', {month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit'});
+                
+                let statusClass = 'bg-gray-100 text-gray-600';
+                let iconClass = 'bg-gray-100 text-gray-500';
+                let icon = 'fa-clipboard-list';
+                
+                if(item.status === '处理中') {
+                    statusClass = 'bg-orange-100 text-orange-700';
+                    iconClass = 'bg-red-50 text-red-600';
+                    icon = 'fa-bullhorn';
+                } else if(item.status === '已完成') {
+                    statusClass = 'bg-green-100 text-green-700';
+                    iconClass = 'bg-gray-100 text-gray-500';
+                    icon = 'fa-check-circle';
+                }
+
+                return `
+                <div class="card p-4 hover:shadow-md transition-shadow cursor-pointer" onclick="window.location.href='zhaohui-gl-detail.html?id=${item.id}'">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg ${iconClass} flex items-center justify-center font-bold text-lg">
+                                <i class="fas ${icon}"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-gray-800">${item.id}</div>
+                                <div class="text-xs text-gray-500">${date}</div>
+                            </div>
+                        </div>
+                        <span class="${statusClass} px-2 py-0.5 rounded text-xs font-bold">${item.status}</span>
+                    </div>
+                    
+                    <div class="bg-gray-50 rounded p-2 mb-2">
+                        <div class="text-xs font-bold text-gray-800 mb-1">${item.productName}</div>
+                        <div class="flex justify-between text-xs text-gray-500">
+                            <span>批次: ${item.batchNo}</span>
+                            <span>数量: ${item.quantity}个</span>
+                        </div>
+                    </div>
+
+                    <div class="text-xs text-gray-500 mb-2">
+                        <span class="font-bold text-gray-600">原因:</span> ${item.reason}
+                    </div>
+
+                    <div class="pt-2 border-t border-gray-50 flex justify-end gap-2">
+                        <button class="px-3 py-1.5 bg-gray-50 text-gray-600 rounded text-xs font-bold hover:bg-gray-100">查看详情</button>
+                        ${item.status === '处理中' ? `<button class="px-3 py-1.5 bg-green-50 text-green-600 rounded text-xs font-bold hover:bg-green-100" onclick="event.stopPropagation(); alert('请在详情页操作')">完成处理</button>` : ''}
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        // --- Search & Filter ---
+        function initFilters() {
+            // Search
+            const searchInput = document.querySelector('input[placeholder*="搜索召回"]');
+            searchInput.addEventListener('input', (e) => {
+                const keyword = e.target.value.toLowerCase();
+                filterRecallList(keyword);
+            });
+
+            // Filter Buttons
+            const buttons = document.querySelectorAll('.flex.gap-2 button');
+            buttons.forEach((btn, index) => {
+                btn.addEventListener('click', () => {
+                    // Reset UI
+                    buttons.forEach(b => {
+                        b.className = 'px-3 py-1.5 bg-gray-50 text-gray-600 rounded-full text-xs font-bold whitespace-nowrap border border-gray-100';
+                    });
+                    btn.className = 'px-3 py-1.5 bg-red-100 text-red-700 rounded-full text-xs font-bold whitespace-nowrap border border-red-200';
+                    
+                    const statusMap = ['全部', '待处理', '处理中', '已完成'];
+                    const status = statusMap[index];
+                    filterRecallList(document.querySelector('input[placeholder*="搜索召回"]').value.toLowerCase(), status);
+                });
+            });
+        }
+
+        function filterRecallList(keyword = '', status = '全部') {
+            const recalls = JSON.parse(localStorage.getItem('recallRecords') || '[]');
+            let filtered = recalls;
+            
+            if (keyword) {
+                filtered = filtered.filter(r => 
+                    r.id.toLowerCase().includes(keyword) || 
+                    r.productName.toLowerCase().includes(keyword) ||
+                    r.batchNo.toLowerCase().includes(keyword)
+                );
+            }
+            
+            if (status && status !== '全部') {
+                filtered = filtered.filter(r => r.status === status);
+            }
+            
+            renderRecallList(filtered);
+        }
+
+        async function exportReport() {
+            const confirmExport = await LedgerUtils.showConfirm({
+                title: '导出报告',
+                message: '这是一个付费功能。\n是否导出当前列表的详细去向报告？',
+                type: 'info',
+                confirmText: '确认导出'
+            });
+            if (confirmExport) {
+                setTimeout(() => {
+                    LedgerUtils.showToast('导出成功！\n文件: 召回记录汇总.xlsx');
+                }, 500);
+            }
+        }
+    </script>
+</body>
+</html>

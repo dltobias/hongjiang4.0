@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>合规助手 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        .card-hover { transition: all 0.2s; }
+        .card-hover:active { transform: scale(0.98); }
+        .checkbox-wrapper input:checked + div {
+            background-color: #10b981;
+            border-color: #10b981;
+        }
+        .checkbox-wrapper input:checked + div svg {
+            display: block;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 pb-20">
+    <!-- 顶部导航栏 -->
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="px-4 h-14 flex items-center justify-between">
+            <a href="taizhang-zhuye.html" class="w-10 h-10 flex items-center justify-center text-gray-600">
+                <i class="fas fa-arrow-left text-lg"></i>
+            </a>
+            <h1 class="text-lg font-bold text-gray-800">合规助手</h1>
+            <button class="w-10 h-10 flex items-center justify-center text-gray-600">
+                <i class="fas fa-question-circle"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- 1. 法规更新提醒 (News Feed) -->
+    <div class="px-4 py-4">
+        <div class="flex justify-between items-center mb-3">
+            <h3 class="text-sm font-bold text-gray-700">法规更新 & 公告</h3>
+            <span class="text-xs text-red-500 font-bold animate-pulse">● 2条新消息</span>
+        </div>
+        <div class="space-y-3">
+            <div class="bg-white rounded-xl p-4 shadow-sm border-l-4 border-blue-500">
+                <div class="flex justify-between items-start mb-1">
+                    <h4 class="font-bold text-gray-800 text-sm">食品安全法实施条例更新</h4>
+                    <span class="text-xs text-gray-400">昨天</span>
+                </div>
+                <p class="text-xs text-gray-600 mb-2">新增关于网络食品交易第三方平台提供者义务的规定，请注意核对...</p>
+                <a href="#" class="text-xs text-blue-500 font-bold">查看详情 <i class="fas fa-chevron-right text-[10px]"></i></a>
+            </div>
+            <div class="bg-white rounded-xl p-4 shadow-sm border-l-4 border-orange-500">
+                <div class="flex justify-between items-start mb-1">
+                    <h4 class="font-bold text-gray-800 text-sm">年度飞行检查预警</h4>
+                    <span class="text-xs text-gray-400">3天前</span>
+                </div>
+                <p class="text-xs text-gray-600 mb-2">本月起市场监管局将开展针对烘焙行业的专项飞行检查。</p>
+                <a href="#" class="text-xs text-orange-500 font-bold">查看自查清单 <i class="fas fa-chevron-right text-[10px]"></i></a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. 合规自查清单 (Checklist) -->
+    <div class="px-4 mb-6">
+        <h3 class="text-sm font-bold text-gray-700 mb-3">每日合规自查</h3>
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="p-3 bg-green-50 border-b border-green-100 flex justify-between items-center">
+                <span class="text-xs font-bold text-green-800">今日进度</span>
+                <span class="text-xs font-bold text-green-600" id="progress-text">0/3</span>
+            </div>
+            <div class="divide-y divide-gray-100">
+                <!-- Check Item 1 -->
+                <label class="flex items-center p-4 cursor-pointer hover:bg-gray-50 checkbox-wrapper">
+                    <input type="checkbox" class="hidden" onchange="updateProgress()">
+                    <div class="w-5 h-5 rounded border border-gray-300 mr-3 flex items-center justify-center transition-colors bg-white">
+                        <svg class="w-3 h-3 text-white hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                    </div>
+                    <div>
+                        <div class="text-sm font-medium text-gray-800">索证索票归档</div>
+                        <div class="text-xs text-gray-500">确认今日进货原料均已上传合格证明</div>
+                    </div>
+                </label>
+                <!-- Check Item 2 -->
+                <label class="flex items-center p-4 cursor-pointer hover:bg-gray-50 checkbox-wrapper">
+                    <input type="checkbox" class="hidden" onchange="updateProgress()">
+                    <div class="w-5 h-5 rounded border border-gray-300 mr-3 flex items-center justify-center transition-colors bg-white">
+                        <svg class="w-3 h-3 text-white hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                    </div>
+                    <div>
+                        <div class="text-sm font-medium text-gray-800">生产环境消杀</div>
+                        <div class="text-xs text-gray-500">填写《环境卫生记录表》</div>
+                    </div>
+                </label>
+                <!-- Check Item 3 -->
+                <label class="flex items-center p-4 cursor-pointer hover:bg-gray-50 checkbox-wrapper">
+                    <input type="checkbox" class="hidden" onchange="updateProgress()">
+                    <div class="w-5 h-5 rounded border border-gray-300 mr-3 flex items-center justify-center transition-colors bg-white">
+                        <svg class="w-3 h-3 text-white hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                    </div>
+                    <div>
+                        <div class="text-sm font-medium text-gray-800">废弃物处理</div>
+                        <div class="text-xs text-gray-500">确认过期原料及废弃物已按规处理</div>
+                    </div>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. 报告模板库 (Templates) -->
+    <div class="px-4 mb-6">
+        <h3 class="text-sm font-bold text-gray-700 mb-3">智能报告生成</h3>
+        <div class="grid grid-cols-2 gap-3">
+            <div class="bg-white rounded-xl p-4 shadow-sm card-hover border border-gray-100 relative overflow-hidden group">
+                <div class="absolute right-0 top-0 bg-orange-100 text-orange-600 text-[10px] px-2 py-0.5 rounded-bl-lg font-bold">热门</div>
+                <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center mb-3">
+                    <i class="fas fa-file-contract text-lg"></i>
+                </div>
+                <h4 class="font-bold text-gray-800 text-sm mb-1">年度自查报告</h4>
+                <p class="text-xs text-gray-400 mb-3">自动汇总全年台账数据</p>
+                <button onclick="generateReport('annual')" class="w-full py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors">一键生成</button>
+            </div>
+
+            <div class="bg-white rounded-xl p-4 shadow-sm card-hover border border-gray-100">
+                <div class="w-10 h-10 rounded-full bg-purple-50 text-purple-500 flex items-center justify-center mb-3">
+                    <i class="fas fa-clipboard-check text-lg"></i>
+                </div>
+                <h4 class="font-bold text-gray-800 text-sm mb-1">飞行检查迎检包</h4>
+                <p class="text-xs text-gray-400 mb-3">常用制度与记录清单</p>
+                <button onclick="generateReport('inspection')" class="w-full py-1.5 bg-purple-50 text-purple-600 rounded-lg text-xs font-bold hover:bg-purple-100 transition-colors">立即打包</button>
+            </div>
+            
+            <div class="bg-white rounded-xl p-4 shadow-sm card-hover border border-gray-100">
+                <div class="w-10 h-10 rounded-full bg-green-50 text-green-500 flex items-center justify-center mb-3">
+                    <i class="fas fa-id-card text-lg"></i>
+                </div>
+                <h4 class="font-bold text-gray-800 text-sm mb-1">健康证管理表</h4>
+                <p class="text-xs text-gray-400 mb-3">员工健康证明有效期</p>
+                <button onclick="generateReport('health')" class="w-full py-1.5 bg-green-50 text-green-600 rounded-lg text-xs font-bold hover:bg-green-100 transition-colors">导出表格</button>
+            </div>
+
+            <div class="bg-white rounded-xl p-4 shadow-sm card-hover border border-gray-100">
+                <div class="w-10 h-10 rounded-full bg-yellow-50 text-yellow-500 flex items-center justify-center mb-3">
+                    <i class="fas fa-exclamation-triangle text-lg"></i>
+                </div>
+                <h4 class="font-bold text-gray-800 text-sm mb-1">异常整改报告</h4>
+                <p class="text-xs text-gray-400 mb-3">不合格品处理记录</p>
+                <button onclick="generateReport('rectification')" class="w-full py-1.5 bg-yellow-50 text-yellow-600 rounded-lg text-xs font-bold hover:bg-yellow-100 transition-colors">生成草稿</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generating Modal -->
+    <div id="genModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl p-6 w-64 text-center">
+            <div class="animate-spin text-orange-500 text-3xl mb-4 mx-auto w-min">
+                <i class="fas fa-circle-notch"></i>
+            </div>
+            <h4 class="font-bold text-gray-800 mb-1">正在生成报告...</h4>
+            <p class="text-xs text-gray-500">正在从台账库提取数据</p>
+        </div>
+    </div>
+
+    <script src="js/common.js"></script>
+    <script>
+        function updateProgress() {
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            const checked = document.querySelectorAll('input[type="checkbox"]:checked');
+            const progressText = document.getElementById('progress-text');
+            
+            progressText.innerText = `${checked.length}/${checkboxes.length}`;
+            
+            if(checked.length === checkboxes.length) {
+                progressText.innerHTML = '<i class="fas fa-check-circle"></i> 已完成';
+            }
+        }
+
+        function generateReport(type) {
+            const modal = document.getElementById('genModal');
+            modal.classList.remove('hidden');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                LedgerUtils.showToast('报告已生成！已保存至“我的文档”并发送至您的邮箱。');
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

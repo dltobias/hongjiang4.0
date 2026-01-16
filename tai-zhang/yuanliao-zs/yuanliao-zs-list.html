@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>原料追溯台账 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-green: #10b981;
+            --primary-dark: #059669;
+            --bg-light: #f7f7f5;
+            --bg-white: #ffffff;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+            -webkit-tap-highlight-color: transparent;
+        }
+        .card {
+            background: var(--bg-white);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            border: 1px solid rgba(0,0,0,0.03);
+            transition: transform 0.2s;
+        }
+        .card:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+
+    <!-- Header -->
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="px-4 h-14 flex items-center justify-between">
+            <a href="../taizhang-zhuye.html" class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            <h1 class="text-lg font-bold text-gray-800">原料追溯</h1>
+            <button class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors" onclick="window.location.href='../../quanxian-gongneng/gongyingshang/gongyingshang-list.html'">
+                <i class="fas fa-handshake"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Sub-Header: Search -->
+    <div class="bg-white px-4 pb-3 shadow-sm border-b border-gray-100 z-40">
+        <div class="relative">
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+            <input type="text" id="search-input" placeholder="输入原料名称或批次号进行追溯" class="w-full bg-gray-50 border border-gray-200 rounded-lg py-2 pl-8 pr-4 text-xs focus:outline-none focus:border-green-400">
+        </div>
+    </div>
+
+    <!-- Batch Actions -->
+    <div class="bg-gray-50 px-4 py-2 border-b border-gray-200 flex justify-between items-center" id="batch-action-bar">
+        <label class="flex items-center gap-2 text-xs text-gray-600 font-medium">
+            <input type="checkbox" id="select-all" class="rounded text-green-500 focus:ring-green-500">
+            全选
+        </label>
+        <div class="flex gap-2">
+            <button id="batch-export-btn" onclick="batchExport()" class="hidden text-green-600 text-xs font-bold flex items-center gap-1 bg-green-50 px-2 py-1 rounded hover:bg-green-100 transition-colors">
+                <i class="fas fa-file-export"></i> 导出
+            </button>
+            <button id="batch-delete-btn" onclick="batchDelete()" class="hidden text-red-500 text-xs font-bold flex items-center gap-1 bg-red-50 px-2 py-1 rounded hover:bg-red-100 transition-colors">
+                <i class="fas fa-trash-alt"></i> 删除
+            </button>
+        </div>
+    </div>
+
+    <!-- Empty State / Recent Searches -->
+    <div class="flex-1 overflow-y-auto p-4" id="list-container">
+        <!-- Dynamic Content -->
+    </div>
+
+    <!-- Floating Add Button -->
+    <a href="yuanliao-zs-create.html" class="fixed bottom-8 right-4 w-14 h-14 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-full shadow-lg flex items-center justify-center z-40 hover:scale-105 transition-transform">
+        <i class="fas fa-plus text-2xl"></i>
+    </a>
+
+    <script src="../js/common.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            initData();
+            loadMaterials();
+            
+            document.getElementById('search-input').addEventListener('input', (e) => {
+                filterMaterials(e.target.value);
+            });
+
+            // Select All
+            const selectAll = document.getElementById('select-all');
+            selectAll.addEventListener('change', (e) => {
+                const checkboxes = document.querySelectorAll('.item-checkbox');
+                checkboxes.forEach(cb => cb.checked = e.target.checked);
+            });
+        });
+
+        function updateSelectAllState() {
+            const all = document.querySelectorAll('.item-checkbox');
+            const checked = document.querySelectorAll('.item-checkbox:checked');
+            const selectAll = document.getElementById('select-all');
+            const batchDelBtn = document.getElementById('batch-delete-btn');
+            const batchExpBtn = document.getElementById('batch-export-btn');
+            
+            if (all.length > 0) {
+                selectAll.checked = all.length === checked.length;
+                selectAll.indeterminate = checked.length > 0 && checked.length < all.length;
+            } else {
+                selectAll.checked = false;
+                selectAll.indeterminate = false;
+            }
+
+            if (checked.length > 0) {
+                batchDelBtn.classList.remove('hidden');
+                batchExpBtn.classList.remove('hidden');
+            } else {
+                batchDelBtn.classList.add('hidden');
+                batchExpBtn.classList.add('hidden');
+            }
+        }
+
+        function batchExport() {
+            const selectedIds = Array.from(document.querySelectorAll('.item-checkbox:checked'))
+                .map(cb => cb.value)
+                .filter(Boolean);
+                
+            if (selectedIds.length === 0) {
+                LedgerUtils.showToast('请选择要导出的记录', 'error');
+                return;
+            }
+
+            const allRecords = LedgerUtils.SafeStorage.get('ledger_material', []);
+            const selectedData = allRecords.filter(r => selectedIds.includes(r.id));
+            
+            const headerMap = {
+                id: '原料批次',
+                materialName: '原料名称',
+                supplier: '供应商',
+                inboundDate: '入库日期',
+                amount: '数量',
+                type: '类型'
+            };
+            
+            LedgerUtils.exportToExcel(selectedData, '原料追溯台账', headerMap);
+        }
+
+        async function batchDelete() {
+            const selected = Array.from(document.querySelectorAll('.item-checkbox:checked'))
+                .map(cb => cb.value)
+                .filter(Boolean);
+                
+            if (selected.length === 0) {
+                LedgerUtils.showToast('请选择要删除的记录', 'error');
+                return;
+            }
+                
+            const confirmed = await LedgerUtils.showConfirm({
+                title: '批量删除',
+                message: `确定要删除选中的 ${selected.length} 条记录吗？此操作无法撤销。`,
+                type: 'danger',
+                confirmText: '删除',
+                cancelText: '取消'
+            });
+
+            if (confirmed) {
+                try {
+                    const ledgers = LedgerUtils.SafeStorage.get('ledger_material', []);
+                    const newLedgers = ledgers.filter(l => !selected.includes(l.id));
+                    LedgerUtils.SafeStorage.set('ledger_material', newLedgers);
+                    
+                    LedgerUtils.showToast(`成功删除 ${selected.length} 条记录`);
+                    loadMaterials();
+                    updateSelectAllState();
+                } catch (e) {
+                    console.error(e);
+                    LedgerUtils.showToast('删除失败', 'error');
+                }
+            }
+        }
+
+        function initData() {
+            if (!LedgerUtils.SafeStorage.get('ledger_material', null)) {
+                const dummyData = [
+                    {
+                        id: 'MAT-231020-005',
+                        materialName: '高筋面粉',
+                        supplier: '益海嘉里',
+                        inboundDate: '2023-10-20',
+                        amount: '50kg',
+                        type: 'ingredient'
+                    },
+                    {
+                        id: 'MAT-231015-002',
+                        materialName: '总统黄油块',
+                        supplier: '总统乳业',
+                        inboundDate: '2023-10-15',
+                        amount: '10kg',
+                        type: 'ingredient'
+                    }
+                ];
+                LedgerUtils.SafeStorage.set('ledger_material', dummyData);
+            }
+        }
+
+        function loadMaterials() {
+            const container = document.getElementById('list-container');
+            LedgerUtils.Skeleton.show(container, 4, 'list');
+            
+            setTimeout(() => {
+                const materials = LedgerUtils.SafeStorage.get('ledger_material', []);
+                renderList(materials);
+            }, 300);
+        }
+
+        function renderList(data) {
+            const container = document.getElementById('list-container');
+            
+            if (data.length === 0) {
+                LedgerUtils.EmptyState.show(container, '暂无原料记录', 'fa-seedling');
+                return;
+            }
+
+            let html = `<h2 class="text-xs font-bold text-gray-500 mb-3 uppercase">最近追溯</h2><div class="space-y-3">`;
+            
+            data.forEach(item => {
+                html += `
+                    <div class="card p-4 flex gap-3" onclick="window.location.href='yuanliao-zs-detail.html?id=${item.id}'">
+                        <div class="flex items-start pt-1" onclick="event.stopPropagation()">
+                             <input type="checkbox" value="${item.id}" class="item-checkbox rounded text-green-500 focus:ring-green-500 w-5 h-5" onchange="updateSelectAllState()">
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex justify-between items-start mb-2">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-lg ${item.materialName.includes('黄油') ? 'bg-yellow-50 text-yellow-600' : 'bg-green-50 text-green-600'} flex items-center justify-center font-bold">
+                                        <i class="fas ${item.materialName.includes('黄油') ? 'fa-cheese' : 'fa-leaf'}"></i>
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-gray-800">${item.materialName}</div>
+                                        <div class="text-xs text-gray-500">${item.id}</div>
+                                    </div>
+                                </div>
+                                <span class="text-xs text-gray-400">${item.inboundDate}</span>
+                            </div>
+                            <div class="mt-2 pt-2 border-t border-gray-50 flex justify-between text-xs text-gray-500">
+                                <span>供应商: ${item.supplier}</span>
+                                <span>库存: ${item.amount}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `</div>`;
+            container.innerHTML = html;
+            updateSelectAllState();
+        }
+
+        function filterMaterials(keyword) {
+            const materials = LedgerUtils.SafeStorage.get('ledger_material', []);
+            if (!keyword) {
+                renderList(materials);
+                return;
+            }
+            
+            const lowerKeyword = keyword.toLowerCase();
+            const filtered = materials.filter(item => 
+                item.materialName.toLowerCase().includes(lowerKeyword) || 
+                item.id.toLowerCase().includes(lowerKeyword) ||
+                item.supplier.toLowerCase().includes(lowerKeyword)
+            );
+            renderList(filtered);
+        }
+    </script>
+
+</body>
+</html>

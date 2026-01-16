@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>台账数据验证 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-2xl font-bold mb-6 text-gray-800">台账数据流转验证</h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <!-- 1. 原料追溯台账 -->
+            <div class="bg-white rounded-xl shadow p-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="font-bold text-lg text-blue-600">1. 原料追溯台账</h2>
+                    <span class="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded" id="count-material">0 条</span>
+                </div>
+                <div class="overflow-auto max-h-96 text-xs" id="list-material">
+                    <p class="text-gray-400">暂无数据</p>
+                </div>
+            </div>
+
+            <!-- 2. 领料使用记录 -->
+            <div class="bg-white rounded-xl shadow p-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="font-bold text-lg text-orange-600">2. 领料使用记录</h2>
+                    <span class="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded" id="count-usage">0 条</span>
+                </div>
+                <div class="overflow-auto max-h-96 text-xs" id="list-usage">
+                    <p class="text-gray-400">暂无数据</p>
+                </div>
+            </div>
+
+            <!-- 3. 生产台账 -->
+            <div class="bg-white rounded-xl shadow p-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="font-bold text-lg text-green-600">3. 生产台账</h2>
+                    <span class="text-xs bg-green-100 text-green-600 px-2 py-1 rounded" id="count-production">0 条</span>
+                </div>
+                <div class="overflow-auto max-h-96 text-xs" id="list-production">
+                    <p class="text-gray-400">暂无数据</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-8 bg-white rounded-xl shadow p-4">
+            <h2 class="font-bold text-lg mb-4">环境与设备预设 (依赖数据)</h2>
+            <div class="grid grid-cols-2 gap-4 text-sm" id="preset-debug">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+
+        <div class="mt-8 flex justify-center">
+            <button onclick="clearAllData()" class="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition">
+                <i class="fas fa-trash mr-2"></i> 清空所有模拟数据
+            </button>
+        </div>
+    </div>
+
+    <script src="js/common.js"></script>
+    <script>
+        function renderList(id, data, formatter) {
+            const el = document.getElementById('list-' + id);
+            const countEl = document.getElementById('count-' + id);
+            
+            if (!data || data.length === 0) {
+                el.innerHTML = '<p class="text-gray-400 text-center py-4">暂无数据</p>';
+                countEl.textContent = '0 条';
+                return;
+            }
+
+            countEl.textContent = data.length + ' 条';
+            el.innerHTML = data.map(item => `
+                <div class="border-b border-gray-100 py-2 last:border-0">
+                    ${formatter(item)}
+                </div>
+            `).join('');
+        }
+
+        function loadData() {
+            // 1. Material
+            const materialData = JSON.parse(localStorage.getItem('material_traceability_ledger') || '[]');
+            renderList('material', materialData, item => `
+                <div class="font-bold text-gray-700">${item.materialName}</div>
+                <div class="text-gray-500">批次: <span class="font-mono text-blue-500">${item.batchNo}</span></div>
+                <div class="flex justify-between mt-1">
+                    <span>数量: ${item.quantity}${item.unit}</span>
+                    <span>${item.inboundDate}</span>
+                </div>
+                <div class="text-gray-400 mt-1">供: ${item.supplier}</div>
+            `);
+
+            // 2. Usage
+            const usageData = JSON.parse(localStorage.getItem('usage_records') || '[]');
+            renderList('usage', usageData, item => `
+                <div class="font-bold text-gray-700">${item.materialName}</div>
+                <div class="text-gray-500">来源批次: <span class="font-mono text-blue-500">${item.batchNo}</span></div>
+                <div class="flex justify-between mt-1">
+                    <span>领用: ${item.quantity}${item.unit}</span>
+                    <span>${item.pickingDate}</span>
+                </div>
+                <div class="text-gray-400 mt-1">用途: ${item.usage}</div>
+            `);
+
+            // 3. Production
+            const productionData = JSON.parse(localStorage.getItem('production_ledger') || '[]');
+            renderList('production', productionData, item => `
+                <div class="font-bold text-gray-700">${item.productName}</div>
+                <div class="text-gray-500">生产批次: <span class="font-mono text-green-500">${item.batchNo}</span></div>
+                <div class="mt-1 p-1 bg-gray-50 rounded">
+                    <div class="font-semibold">原料追溯:</div>
+                    <div class="truncate text-gray-500" title="${item.materialTrace}">${item.materialTrace}</div>
+                </div>
+                <div class="mt-1 text-gray-500">环境: ${item.environment}</div>
+                <div class="flex justify-between mt-1">
+                    <span>数量: ${item.quantity}</span>
+                    <span class="text-green-600 font-bold">${item.qcStatus}</span>
+                </div>
+            `);
+
+            // Presets
+            const env = JSON.parse(localStorage.getItem('preset_env') || 'null');
+            const equip = JSON.parse(localStorage.getItem('preset_equipment') || 'null');
+            
+            document.getElementById('preset-debug').innerHTML = `
+                <div class="border p-2 rounded">
+                    <div class="font-bold mb-1">环境参数</div>
+                    <pre class="text-xs text-gray-600 bg-gray-50 p-1">${env ? JSON.stringify(env, null, 2) : '未设置'}</pre>
+                </div>
+                <div class="border p-2 rounded">
+                    <div class="font-bold mb-1">设备信息</div>
+                    <pre class="text-xs text-gray-600 bg-gray-50 p-1">${equip ? JSON.stringify(equip, null, 2) : '未设置'}</pre>
+                </div>
+            `;
+        }
+
+        async function clearAllData() {
+            const confirmed = await LedgerUtils.showConfirm({
+                title: '清空确认',
+                message: '确定清空所有台账数据吗？',
+                type: 'danger'
+            });
+            
+            if(confirmed) {
+                localStorage.removeItem('material_traceability_ledger');
+                localStorage.removeItem('usage_records');
+                localStorage.removeItem('production_ledger');
+                localStorage.removeItem('preset_env');
+                localStorage.removeItem('preset_equipment');
+                loadData();
+                LedgerUtils.showToast('数据已清空');
+            }
+        }
+
+        loadData();
+    </script>
+</body>
+</html>

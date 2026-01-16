@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新建生产记录 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+            --bg-light: #f7f7f5;
+            --bg-white: #ffffff;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+            -webkit-tap-highlight-color: transparent;
+        }
+        .form-input {
+            width: 100%;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-input:focus {
+            border-color: var(--primary-orange);
+        }
+        .section-title {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 1rem;
+            background-color: var(--primary-orange);
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- Header -->
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="px-4 h-14 flex items-center justify-between">
+            <a href="shengchan-taizhang-list.html" class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            <h1 class="text-lg font-bold text-gray-800">新建生产记录</h1>
+            <button onclick="showHelp()" class="w-10 h-10 flex items-center justify-center text-gray-600 rounded-full hover:bg-gray-100" title="帮助">
+                <i class="fas fa-question-circle"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Example Button -->
+    <div class="px-4 pt-4 pb-2 flex justify-between">
+        <button onclick="loadExample()" class="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1">
+            <i class="fas fa-eye"></i> 查看填写示例
+        </button>
+        <button onclick="copyLastRecord()" class="text-xs text-orange-500 hover:text-orange-600 flex items-center gap-1">
+            <i class="fas fa-copy"></i> 复制上一条
+        </button>
+    </div>
+
+    <!-- Form -->
+    <form id="createForm" class="p-4 space-y-4">
+        
+        <!-- Basic Info -->
+        <div class="bg-white rounded-xl p-4 shadow-sm">
+            <h3 class="section-title">基本信息</h3>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">批次号 (自动生成)</label>
+                    <input type="text" id="batchId" class="form-input bg-gray-50 text-gray-500" readonly>
+                </div>
+                <div>
+                    <div class="flex items-center gap-1 mb-1">
+                        <label class="block text-xs text-gray-500">产品名称 *</label>
+                        <button type="button" onclick="showFieldHelp('productName')" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-question-circle text-xs"></i>
+                        </button>
+                    </div>
+                    <input type="text" id="productName" class="form-input" placeholder="例如：法式牛角包" list="productSuggestions" autocomplete="off" required>
+                    <datalist id="productSuggestions"></datalist>
+                    <p class="text-xs text-gray-400 mt-1">💡 输入产品名称后，系统会自动填充常用信息</p>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">生产日期 *</label>
+                        <input type="date" id="productionDate" class="form-input" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">操作人员 *</label>
+                        <button type="button" onclick="selectOperator()" class="form-input text-left flex items-center justify-between bg-white w-full">
+                            <span id="operatorDisplay" class="truncate text-gray-500">请选择操作人员</span>
+                            <i class="fas fa-chevron-down text-gray-400 flex-shrink-0"></i>
+                        </button>
+                        <input type="hidden" id="operator" required>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quantity Info -->
+        <div class="bg-white rounded-xl p-4 shadow-sm">
+            <h3 class="section-title">数量信息</h3>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">计划数量 *</label>
+                    <div class="relative">
+                        <input type="number" id="planAmount" class="form-input pr-8" placeholder="0" required>
+                        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">kg</span>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">实际数量 *</label>
+                    <div class="relative">
+                        <input type="number" id="actualAmount" class="form-input pr-8" placeholder="0" required>
+                        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">kg</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Relations -->
+        <div class="bg-white rounded-xl p-4 shadow-sm">
+            <h3 class="section-title">关联信息</h3>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">使用原料</label>
+                    <div id="materialsList" class="space-y-2 mb-2"></div>
+                    <button type="button" onclick="addMaterial()" class="w-full py-2 border border-dashed border-gray-300 rounded-lg text-xs text-gray-500 hover:bg-gray-50 transition-colors">
+                        <i class="fas fa-plus mr-1"></i> 添加原料批次
+                    </button>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">使用设备</label>
+                    <div id="equipmentList" class="space-y-2 mb-2"></div>
+                    <button type="button" onclick="addEquipment()" class="w-full py-2 border border-dashed border-gray-300 rounded-lg text-xs text-gray-500 hover:bg-gray-50 transition-colors">
+                        <i class="fas fa-plus mr-1"></i> 添加设备
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </form>
+
+    <!-- Bottom Actions -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white p-4 border-t border-gray-100 flex gap-3 z-50">
+        <button onclick="history.back()" class="flex-1 py-3 bg-white border border-gray-200 text-gray-600 rounded-xl font-bold text-sm">取消</button>
+        <button onclick="saveRecord()" class="flex-1 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-orange-200">保存记录</button>
+    </div>
+
+    <script src="../js/common.js"></script>
+    <script src="../js/select-modal.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const id = LedgerUtils.getQueryParam('id');
+            
+            // 加载产品名称历史建议
+            const productHistory = LedgerUtils.InputHistory.get('productName');
+            const datalist = document.getElementById('productSuggestions');
+            if (productHistory && datalist) {
+                productHistory.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item;
+                    datalist.appendChild(option);
+                });
+            }
+
+            // 应用工厂预设 (Priority 3)
+            if (!id) {
+                const presets = LedgerUtils.SafeStorage.get('factoryPresets', {});
+                if (presets.suppliers && presets.suppliers.length > 0) {
+                    // 这里主要是生产记录，可能没有供应商字段，但保留逻辑以备参考
+                }
+            }
+
+            if (id) {
+                // Edit Mode
+                document.querySelector('h1').textContent = '编辑生产记录';
+                loadRecordForEdit(id);
+            } else {
+                // Create Mode
+                document.getElementById('batchId').value = LedgerUtils.generateBatchId();
+                document.getElementById('productionDate').value = LedgerUtils.getLocalDateStr();
+                
+                // Init AutoSave
+                LedgerUtils.AutoSave.init('createForm', 'draft_production');
+            }
+
+            // Real-time Smart Hints (Phase 2.2)
+            document.getElementById('productName').addEventListener('input', (e) => {
+                const value = e.target.value;
+                if (value.length > 1) {
+                    // Smart Fill
+                    const suggestion = LedgerUtils.SmartFill.fillByProduct(value);
+                    if (suggestion) {
+                        if (!document.getElementById('operator').value && suggestion.operator) {
+                            // Only auto-fill if empty to avoid overwriting user choice
+                            document.getElementById('operator').value = suggestion.operator;
+                            document.getElementById('operatorDisplay').textContent = suggestion.operator;
+                            document.getElementById('operatorDisplay').classList.remove('text-gray-400');
+                            document.getElementById('operatorDisplay').classList.add('text-gray-800');
+                        }
+                        if (!document.getElementById('planAmount').value && suggestion.planAmount) {
+                            document.getElementById('planAmount').value = suggestion.planAmount;
+                        }
+                    }
+                }
+            });
+        });
+
+        // Mock Selectors
+        let materials = [];
+        let equipments = [];
+
+        function selectOperator() {
+            showPersonnelSelector((p) => {
+                document.getElementById('operator').value = p.name;
+                document.getElementById('operatorDisplay').textContent = p.name;
+                document.getElementById('operatorDisplay').classList.remove('text-gray-400');
+                document.getElementById('operatorDisplay').classList.add('text-gray-800');
+            });
+        }
+
+        function copyLastRecord() {
+            const ledgers = LedgerUtils.SafeStorage.get('ledger_production', []);
+            if (ledgers.length === 0) {
+                LedgerUtils.showToast('没有可复制的记录', 'error');
+                return;
+            }
+            
+            const lastRecord = ledgers[0]; // Assuming sorted by date desc or simply taking first
+            
+            document.getElementById('productName').value = lastRecord.productName;
+            document.getElementById('operator').value = lastRecord.operator;
+            document.getElementById('operatorDisplay').textContent = lastRecord.operator;
+            document.getElementById('planAmount').value = parseFloat(lastRecord.planAmount) || 0;
+            
+            LedgerUtils.showToast('已复制上一条记录，请修改后保存');
+        }
+
+        function loadRecordForEdit(id) {
+            const ledgers = LedgerUtils.SafeStorage.get('ledger_production', []);
+            const record = ledgers.find(l => l.id === id);
+            
+            if (!record) {
+                LedgerUtils.showToast('记录不存在', 'error');
+                setTimeout(() => window.location.href = 'shengchan-taizhang-list.html', 1500);
+                return;
+            }
+
+            document.getElementById('batchId').value = record.id;
+            document.getElementById('productName').value = record.productName;
+            document.getElementById('productionDate').value = record.productionDate;
+            document.getElementById('operator').value = record.operator;
+            document.getElementById('operatorDisplay').textContent = record.operator;
+            document.getElementById('planAmount').value = parseFloat(record.planAmount) || 0;
+            document.getElementById('actualAmount').value = parseFloat(record.actualAmount) || 0;
+
+            // Load relations
+            materials = record.materials || [];
+            equipments = record.equipment || []; // Note: stored as 'equipment' in saveRecord
+            
+            renderMaterials();
+            renderEquipments();
+        }
+
+        function addMaterial() {
+            showMaterialSelector((material) => {
+                // Check if already added
+                if (materials.some(m => m.id === material.id)) {
+                    LedgerUtils.showToast('该原料批次已添加', 'error');
+                    return;
+                }
+                materials.push(material);
+                renderMaterials();
+            });
+        }
+
+        function renderMaterials() {
+            const container = document.getElementById('materialsList');
+            container.innerHTML = materials.map((m, index) => `
+                <div class="flex justify-between items-center bg-gray-50 p-2 rounded text-xs">
+                    <span>${m.id}</span>
+                    <button onclick="removeMaterial(${index})" class="text-red-500"><i class="fas fa-times"></i></button>
+                </div>
+            `).join('');
+        }
+
+        function removeMaterial(index) {
+            materials.splice(index, 1);
+            renderMaterials();
+        }
+
+        function addEquipment() {
+            showEquipmentSelector((equipment) => {
+                // Check if already added
+                if (equipments.some(e => e.name === equipment.name)) {
+                    LedgerUtils.showToast('该设备已添加', 'error');
+                    return;
+                }
+                equipments.push(equipment);
+                renderEquipments();
+            });
+        }
+
+        function renderEquipments() {
+            const container = document.getElementById('equipmentList');
+            container.innerHTML = equipments.map((e, index) => `
+                <div class="flex justify-between items-center bg-gray-50 p-2 rounded text-xs">
+                    <span>${e.name}</span>
+                    <button onclick="removeEquipment(${index})" class="text-red-500"><i class="fas fa-times"></i></button>
+                </div>
+            `).join('');
+        }
+
+        function removeEquipment(index) {
+            equipments.splice(index, 1);
+            renderEquipments();
+        }
+
+        function showHelp() {
+            const helpModal = document.createElement('div');
+            helpModal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50';
+            helpModal.innerHTML = `
+                <div class="bg-white rounded-xl p-6 w-90 max-w-[90vw] max-h-[80vh] overflow-y-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold text-gray-800">使用帮助</h3>
+                        <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="space-y-4 text-sm">
+                        <div>
+                            <h4 class="font-bold text-gray-800 mb-2">📝 如何创建生产记录？</h4>
+                            <ol class="list-decimal list-inside space-y-1 text-gray-600 ml-2">
+                                <li>点击"新建记录"或"快速录入"</li>
+                                <li>填写产品名称（必填）</li>
+                                <li>选择生产日期和操作人员（必填）</li>
+                                <li>填写计划数量和实际数量（必填）</li>
+                                <li>可选：添加使用的原料和设备</li>
+                                <li>点击"保存记录"完成</li>
+                            </ol>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-gray-800 mb-2">⚡ 快速录入是什么？</h4>
+                            <p class="text-gray-600 ml-2">快速录入可以一次创建多条记录，适合批量录入相同日期的生产数据。</p>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-gray-800 mb-2">🔍 如何查询记录？</h4>
+                            <p class="text-gray-600 ml-2">在列表页使用搜索框输入批次号或产品名称，或使用日期筛选按钮。</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(helpModal);
+            helpModal.addEventListener('click', (e) => {
+                if (e.target === helpModal) helpModal.remove();
+            });
+        }
+
+        function showFieldHelp(fieldName) {
+            const helpTexts = {
+                productName: '请输入产品的标准名称，如"法式牛角包"、"基础甜面团"等。系统会记住您的输入，下次自动提示。',
+                materials: '选择本次生产使用的原料批次。如果没有原料记录，请先在"原料追溯"中创建。',
+                equipment: '选择本次生产使用的设备。如果没有设备记录，请先在"设备台账"中创建。',
+                planAmount: '计划生产的数量，单位默认为kg。如果实际数量与计划不同，系统会自动标记为"有差异"。',
+                actualAmount: '实际生产的数量。如果与计划数量一致，系统会自动标记为"合格"。'
+            };
+            LedgerUtils.showToast(helpTexts[fieldName] || '暂无说明', 'info');
+        }
+
+        function loadExample() {
+            // 填充示例数据（不保存）
+            document.getElementById('productName').value = '法式牛角包';
+            document.getElementById('productionDate').value = LedgerUtils.getLocalDateStr();
+            document.getElementById('planAmount').value = '50';
+            document.getElementById('actualAmount').value = '50';
+            
+            LedgerUtils.showToast('已填充示例数据，您可以在此基础上修改', 'info');
+        }
+
+        function saveRecord() {
+            const form = document.getElementById('createForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const plan = parseFloat(document.getElementById('planAmount').value) || 0;
+            const actual = parseFloat(document.getElementById('actualAmount').value) || 0;
+            const id = document.getElementById('batchId').value;
+            
+            const recordData = {
+                id: id,
+                productName: document.getElementById('productName').value,
+                productionDate: document.getElementById('productionDate').value,
+                operator: document.getElementById('operator').value,
+                planAmount: `${plan}kg`,
+                actualAmount: `${actual}kg`,
+                status: plan === actual ? 'qualified' : 'diff',
+                materials: materials,
+                equipment: equipments,
+                timestamp: new Date().getTime()
+            };
+
+            const validation = LedgerUtils.validateProductionRecord(recordData);
+            if (!validation.valid) {
+                // 将错误信息分组显示
+                const errorMessages = validation.errors.map(error => {
+                    // 为每个错误添加修复建议
+                    const suggestions = {
+                        '产品名称不能为空': '请输入产品名称，例如：法式牛角包',
+                        '生产日期不能为空': '请选择生产日期',
+                        '操作人员不能为空': '请点击"请选择操作人员"按钮选择操作人员',
+                        '原料批次不存在': '请先在"原料追溯"中创建该原料批次',
+                        '设备不存在': '请先在"设备台账"中创建该设备'
+                    };
+                    return `${error}${suggestions[error] ? `（${suggestions[error]}）` : ''}`;
+                });
+
+                // 显示友好的错误提示
+                const errorModal = document.createElement('div');
+                errorModal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50';
+                errorModal.innerHTML = `
+                    <div class="bg-white rounded-xl p-6 w-80 max-w-[90vw]">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-exclamation-triangle text-red-500"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-800">请完善以下信息</h3>
+                        </div>
+                        <ul class="space-y-2 mb-6">
+                            ${errorMessages.map(msg => `<li class="text-sm text-gray-600 flex items-start gap-2">
+                                <i class="fas fa-circle text-red-500 text-[6px] mt-2"></i>
+                                <span>${msg}</span>
+                            </li>`).join('')}
+                        </ul>
+                        <button onclick="this.closest('.fixed').remove()" class="w-full py-2 bg-orange-500 text-white rounded-lg font-bold">
+                            我知道了
+                        </button>
+                    </div>
+                `;
+                document.body.appendChild(errorModal);
+                return;
+            }
+
+            try {
+                let ledgers = LedgerUtils.SafeStorage.get('ledger_production', []);
+                
+                // Check if updating existing record
+                const existingIndex = ledgers.findIndex(l => l.id === id);
+                if (existingIndex >= 0) {
+                    // Update
+                    // Preserve original timestamp if needed, or update modification time
+                    recordData.timestamp = ledgers[existingIndex].timestamp; 
+                    ledgers[existingIndex] = recordData;
+                } else {
+                    // Create
+                    ledgers.unshift(recordData);
+                }
+                
+                LedgerUtils.SafeStorage.set('ledger_production', ledgers);
+                
+                // Save Input History
+                LedgerUtils.InputHistory.save('productName', recordData.productName);
+
+                // Clear draft
+                LedgerUtils.AutoSave.clear('draft_production');
+                
+                // Show success feedback
+                const feedbackModal = document.createElement('div');
+                feedbackModal.className = 'fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-white rounded-xl shadow-xl p-4 z-50 border-2 border-green-200';
+                feedbackModal.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-check text-green-500"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-gray-800">记录已保存</div>
+                            <div class="text-xs text-gray-500">批次号：${recordData.id}</div>
+                        </div>
+                        <button onclick="this.closest('.fixed').remove()" class="text-gray-400">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+                document.body.appendChild(feedbackModal);
+                setTimeout(() => feedbackModal.remove(), 3000);
+                
+                // Smart Link Suggestion (Priority 5)
+                setTimeout(() => {
+                    const modal = document.createElement('div');
+                    modal.className = 'fixed bottom-20 left-4 right-4 bg-white rounded-xl shadow-lg p-4 z-50 border border-green-200';
+                    modal.style.animation = 'slideUp 0.3s ease-out';
+                    modal.innerHTML = `
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="text-sm font-bold text-gray-800">下一步</div>
+                                <div class="text-xs text-gray-500">是否为此批次创建质检记录？</div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="window.location.href='shengchan-taizhang-list.html'" class="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg text-xs font-bold">
+                                    返回列表
+                                </button>
+                                <a href="../zhiliang-jy/zhiliang-jy-create.html?batch=${recordData.id}&name=${encodeURIComponent(recordData.productName)}" 
+                                    class="px-3 py-2 bg-green-500 text-white rounded-lg text-xs font-bold">
+                                    快速创建质检
+                                </a>
+                            </div>
+                        </div>
+                        <style>
+                            @keyframes slideUp {
+                                from { transform: translateY(100%); opacity: 0; }
+                                to { transform: translateY(0); opacity: 1; }
+                            }
+                        </style>
+                    `;
+                    document.body.appendChild(modal);
+                }, 1000); // Delay to let the success feedback show first
+
+            } catch (e) {
+                LedgerUtils.ErrorHandler.handle(e, 'saveRecord');
+            }
+        }
+    </script>
+</body>
+</html>

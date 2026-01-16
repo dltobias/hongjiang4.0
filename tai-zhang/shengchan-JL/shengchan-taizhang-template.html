@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>常用模板 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f7f7f5;
+        }
+    </style>
+</head>
+<body class="pb-20">
+    <!-- Header -->
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="px-4 h-14 flex items-center justify-between">
+            <a href="shengchan-taizhang-list.html" class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            <h1 class="text-lg font-bold text-gray-800">常用模板</h1>
+            <button onclick="showCreateTemplate()" class="w-10 h-10 flex items-center justify-center rounded-full bg-orange-500 text-white hover:bg-orange-600">
+                <i class="fas fa-plus"></i>
+            </button>
+        </div>
+    </nav>
+    <!-- 模板列表 -->
+    <div class="p-4 space-y-3" id="templatesContainer">
+        <!-- 动态生成 -->
+    </div>
+    <script src="../../js/common.js"></script>
+    <script src="../../js/select-modal.js"></script>
+    <script>
+        let templates = [];
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTemplates();
+        });
+        function loadTemplates() {
+            templates = LedgerUtils.SafeStorage.get('production_templates', []);
+            renderTemplates();
+        }
+        function renderTemplates() {
+            const container = document.getElementById('templatesContainer');
+            
+            if (templates.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-white rounded-xl p-8 text-center">
+                        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-file-alt text-2xl text-gray-300"></i>
+                        </div>
+                        <p class="text-gray-500 text-sm mb-4">暂无模板</p>
+                        <button onclick="showCreateTemplate()" class="px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-bold">
+                            创建第一个模板
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            container.innerHTML = templates.map((template, index) => `
+                <div class="bg-white rounded-xl p-4 shadow-sm">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <div class="text-sm font-bold text-gray-800">${template.name}</div>
+                            <div class="text-xs text-gray-500 mt-1">${template.productName} | ${template.planAmount}kg</div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="useTemplate(${index})" class="px-3 py-1.5 bg-orange-500 text-white rounded-lg text-xs font-bold">
+                                <i class="fas fa-play mr-1"></i> 使用
+                            </button>
+                            <button onclick="deleteTemplate(${index})" class="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-bold">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="text-xs text-gray-400">
+                        <div>操作人员: ${template.operator || '未设置'}</div>
+                        <div>常用设备: ${template.equipment?.map(e => e.name).join(', ') || '未设置'}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        function showCreateTemplate() {
+            const name = prompt('请输入模板名称：');
+            if (!name) return;
+            // 从最近一条记录创建模板
+            const ledgers = LedgerUtils.SafeStorage.get('ledger_production', []);
+            if (ledgers.length === 0) {
+                LedgerUtils.showToast('没有可用的记录作为模板', 'error');
+                return;
+            }
+            const lastRecord = ledgers[0];
+            const template = {
+                id: 'TMP' + Date.now(),
+                name: name,
+                productName: lastRecord.productName,
+                planAmount: parseFloat(lastRecord.planAmount) || 0,
+                operator: lastRecord.operator,
+                materials: lastRecord.materials || [],
+                equipment: lastRecord.equipment || []
+            };
+            templates.push(template);
+            LedgerUtils.SafeStorage.set('production_templates', templates);
+            renderTemplates();
+            LedgerUtils.showToast('模板创建成功');
+        }
+        function useTemplate(index) {
+            const template = templates[index];
+            // 跳转到创建页面，并传递模板数据
+            const params = new URLSearchParams({
+                template: template.id,
+                name: template.productName,
+                planAmount: template.planAmount,
+                operator: template.operator
+            });
+            window.location.href = `shengchan-taizhang-create.html?${params.toString()}`;
+        }
+        function deleteTemplate(index) {
+            if (confirm('确定要删除这个模板吗？')) {
+                templates.splice(index, 1);
+                LedgerUtils.SafeStorage.set('production_templates', templates);
+                renderTemplates();
+                LedgerUtils.showToast('模板已删除');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>质量检验台账 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-green: #10b981;
+            --bg-light: #f7f7f5;
+            --bg-white: #ffffff;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+            -webkit-tap-highlight-color: transparent;
+        }
+        .card {
+            background: var(--bg-white);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            border: 1px solid rgba(0,0,0,0.03);
+        }
+        .tab-active {
+            background-color: #10b981;
+            color: white;
+            font-weight: bold;
+        }
+        .tab-inactive {
+            background-color: white;
+            color: #6b7280;
+            font-weight: 500;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+
+    <!-- Header -->
+    <div class="bg-white px-4 py-3 shadow-sm border-b border-gray-100 z-30 flex-shrink-0">
+        <div class="flex items-center space-x-3 mb-3">
+            <a href="../taizhang-zhuye.html" class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            <div class="flex-1">
+                <h1 class="text-lg font-bold text-gray-800">质量检验台账</h1>
+            </div>
+            <button class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors">
+                <i class="fas fa-filter"></i>
+            </button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+            <button onclick="switchTab('incoming')" id="tab-incoming" class="tab-active px-4 py-1.5 rounded-full text-xs whitespace-nowrap transition-colors">来料检验</button>
+            <button onclick="switchTab('process')" id="tab-process" class="tab-inactive px-4 py-1.5 rounded-full text-xs whitespace-nowrap transition-colors">过程检验</button>
+            <button onclick="switchTab('finished')" id="tab-finished" class="tab-inactive px-4 py-1.5 rounded-full text-xs whitespace-nowrap transition-colors">成品检验</button>
+            <button onclick="switchTab('unqualified')" id="tab-unqualified" class="tab-inactive px-4 py-1.5 rounded-full text-xs whitespace-nowrap transition-colors">不合格品</button>
+        </div>
+    </div>
+
+    <!-- Batch Actions -->
+    <div class="bg-gray-50 px-4 py-2 border-b border-gray-200 flex justify-between items-center" id="batch-action-bar">
+        <label class="flex items-center gap-2 text-xs text-gray-600 font-medium">
+            <input type="checkbox" id="select-all" class="rounded text-green-500 focus:ring-green-500">
+            全选
+        </label>
+        <div class="flex gap-2">
+            <button id="batch-export-btn" onclick="batchExport()" class="hidden text-green-600 text-xs font-bold flex items-center gap-1 bg-green-50 px-2 py-1 rounded hover:bg-green-100 transition-colors">
+                <i class="fas fa-file-export"></i> 导出
+            </button>
+            <button id="batch-delete-btn" onclick="batchDelete()" class="hidden text-red-500 text-xs font-bold flex items-center gap-1 bg-red-50 px-2 py-1 rounded hover:bg-red-100 transition-colors">
+                <i class="fas fa-trash-alt"></i> 删除
+            </button>
+        </div>
+    </div>
+
+    <!-- Content Area -->
+    <div class="flex-1 overflow-y-auto p-4" id="content-area">
+        <!-- Dynamic Content -->
+    </div>
+
+    <!-- Floating Add Button -->
+    <a href="zhiliang-jy-create.html" class="fixed bottom-8 right-4 w-14 h-14 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-full shadow-lg flex items-center justify-center z-40 hover:scale-105 transition-transform">
+        <i class="fas fa-plus text-2xl"></i>
+    </a>
+
+    <script src="../js/common.js"></script>
+    <script>
+        let currentTab = 'incoming';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initData();
+            loadRecords(currentTab);
+
+            // Select All
+            const selectAll = document.getElementById('select-all');
+            selectAll.addEventListener('change', (e) => {
+                const checkboxes = document.querySelectorAll('.item-checkbox');
+                checkboxes.forEach(cb => cb.checked = e.target.checked);
+            });
+        });
+
+        function updateSelectAllState() {
+            const all = document.querySelectorAll('.item-checkbox');
+            const checked = document.querySelectorAll('.item-checkbox:checked');
+            const selectAll = document.getElementById('select-all');
+            const batchDelBtn = document.getElementById('batch-delete-btn');
+            const batchExpBtn = document.getElementById('batch-export-btn');
+            
+            if (all.length > 0) {
+                selectAll.checked = all.length === checked.length;
+                selectAll.indeterminate = checked.length > 0 && checked.length < all.length;
+            } else {
+                selectAll.checked = false;
+                selectAll.indeterminate = false;
+            }
+
+            if (checked.length > 0) {
+                batchDelBtn.classList.remove('hidden');
+                batchExpBtn.classList.remove('hidden');
+            } else {
+                batchDelBtn.classList.add('hidden');
+                batchExpBtn.classList.add('hidden');
+            }
+        }
+
+        function batchExport() {
+            const selectedIds = Array.from(document.querySelectorAll('.item-checkbox:checked'))
+                .map(cb => cb.value)
+                .filter(Boolean);
+                
+            if (selectedIds.length === 0) {
+                LedgerUtils.showToast('请选择要导出的记录', 'error');
+                return;
+            }
+
+            const allRecords = JSON.parse(localStorage.getItem('ledger_quality') || '[]');
+            const selectedData = allRecords.filter(r => selectedIds.includes(r.id));
+            
+            const headerMap = {
+                id: '检验单号',
+                type: '检验类型',
+                name: '物品名称',
+                batch: '批次号',
+                status: '检验结果',
+                time: '检验时间',
+                supplier: '供应商',
+                detail: '详情'
+            };
+            
+            // Transform data for export
+            const exportData = selectedData.map(item => {
+                let typeStr = item.type;
+                if (item.type === 'incoming') typeStr = '来料检验';
+                else if (item.type === 'process') typeStr = '过程检验';
+                else if (item.type === 'finished') typeStr = '成品检验';
+                else if (item.type === 'unqualified') typeStr = '不合格品';
+
+                let statusStr = item.status;
+                if (item.status === 'qualified') statusStr = '合格';
+                else if (item.status === 'unqualified') statusStr = '不合格';
+                else if (item.status === 'scrap') statusStr = '报废';
+                
+                return {
+                    ...item,
+                    type: typeStr,
+                    status: statusStr
+                };
+            });
+            
+            LedgerUtils.exportToExcel(exportData, '质检台账', headerMap);
+        }
+
+        async function batchDelete() {
+            const selected = Array.from(document.querySelectorAll('.item-checkbox:checked'))
+                .map(cb => cb.value)
+                .filter(Boolean);
+                
+            if (selected.length === 0) {
+                LedgerUtils.showToast('请选择要删除的记录', 'error');
+                return;
+            }
+                
+            const confirmed = await LedgerUtils.showConfirm({
+                title: '批量删除',
+                message: `确定要删除选中的 ${selected.length} 条记录吗？此操作无法撤销。`,
+                type: 'danger',
+                confirmText: '删除',
+                cancelText: '取消'
+            });
+
+            if (confirmed) {
+                try {
+                    const ledgers = LedgerUtils.SafeStorage.get('ledger_quality', []);
+                    const newLedgers = ledgers.filter(l => !selected.includes(l.id));
+                    LedgerUtils.SafeStorage.set('ledger_quality', newLedgers);
+                    
+                    LedgerUtils.showToast(`成功删除 ${selected.length} 条记录`);
+                    loadRecords(currentTab);
+                    updateSelectAllState();
+                } catch (e) {
+                    console.error(e);
+                    LedgerUtils.showToast('删除失败', 'error');
+                }
+            }
+        }
+
+        function initData() {
+            if (!LedgerUtils.SafeStorage.get('ledger_quality', null)) {
+                const dummyData = [
+                    // Incoming
+                    { id: 'QC-IN-231026-001', type: 'incoming', name: '高筋面粉', batch: 'MAT-231026-001', status: 'qualified', time: '2023-10-26 09:30', supplier: '益海嘉里' },
+                    { id: 'QC-IN-231025-003', type: 'incoming', name: '鲜鸡蛋', batch: 'MAT-231025-003', status: 'unqualified', time: '2023-10-25 14:00', supplier: '本地农场' },
+                    // Process
+                    { id: 'QC-PR-231026-005', type: 'process', name: '法式牛角包 - 烘烤', batch: 'BATCH20231026005', status: 'qualified', time: '2023-10-26 10:15', detail: '工序: 烘烤 (炉温200°C)' },
+                    // Finished
+                    { id: 'QC-FN-231026-008', type: 'finished', name: '全麦吐司', batch: 'BATCH20231026008', status: 'qualified', time: '2023-10-26 16:30', detail: '数量: 50个' },
+                    // Unqualified (Can be from any type, but here we treat it as a separate view filter if needed, or just specific records marked as 'unqualified' across types. The UI tab says "Unqualified Product", implying a filtered view of all unqualified items or a specific type. Let's assume it filters all 'unqualified' status items for simplicity, or items specifically logged as 'unqualified' type if that's the design. The static code had `type=unqualified`. Let's stick to status filter for the tab 'unqualified' or a specific type.)
+                    // Actually, let's treat 'unqualified' tab as a filter for status='unqualified' OR type='unqualified'.
+                    { id: 'QC-NG-231025-002', type: 'unqualified', name: '甜甜圈', batch: 'BATCH20231025002', status: 'scrap', time: '2023-10-25 15:00', detail: '原因: 炸糊了' }
+                ];
+                LedgerUtils.SafeStorage.set('ledger_quality', dummyData);
+            }
+        }
+
+        function loadRecords(tab) {
+            const container = document.getElementById('content-area');
+            LedgerUtils.Skeleton.show(container, 4, 'list');
+
+            setTimeout(() => {
+                const allRecords = LedgerUtils.SafeStorage.get('ledger_quality', []);
+                let filtered = [];
+
+                if (tab === 'unqualified') {
+                    // Show records that are either type 'unqualified' or status 'unqualified'/'scrap'
+                    filtered = allRecords.filter(r => r.type === 'unqualified' || r.status === 'unqualified' || r.status === 'scrap');
+                } else {
+                    filtered = allRecords.filter(r => r.type === tab);
+                }
+
+                renderList(filtered);
+            }, 300);
+        }
+
+        function renderList(data) {
+            const container = document.getElementById('content-area');
+            
+            if (data.length === 0) {
+                LedgerUtils.EmptyState.show(container, '暂无质检记录', 'fa-clipboard-check');
+                return;
+            }
+
+            let html = `<div class="space-y-3">`;
+            
+            data.forEach(item => {
+                let iconClass = '';
+                let iconBg = '';
+                let statusBadge = '';
+
+                // Icon logic
+                if (item.type === 'incoming') {
+                    iconClass = item.name.includes('蛋') ? 'fa-egg' : 'fa-truck-loading';
+                    iconBg = item.name.includes('蛋') ? 'bg-yellow-50 text-yellow-600' : 'bg-blue-50 text-blue-600';
+                } else if (item.type === 'process') {
+                    iconClass = 'fa-temperature-high';
+                    iconBg = 'bg-orange-50 text-orange-600';
+                } else if (item.type === 'finished') {
+                    iconClass = 'fa-check-circle';
+                    iconBg = 'bg-green-50 text-green-600';
+                } else {
+                    iconClass = 'fa-exclamation-triangle';
+                    iconBg = 'bg-red-50 text-red-600';
+                }
+
+                // Status logic
+                if (item.status === 'qualified') {
+                    statusBadge = `<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-bold">合格</span>`;
+                } else if (item.status === 'unqualified') {
+                    statusBadge = `<span class="bg-red-100 text-red-600 px-2 py-0.5 rounded text-xs font-bold">不合格</span>`;
+                } else if (item.status === 'scrap') {
+                    statusBadge = `<span class="bg-red-100 text-red-600 px-2 py-0.5 rounded text-xs font-bold">报废</span>`;
+                }
+
+                // Detail line
+                let detailLine = '';
+                if (item.supplier) detailLine = `<span>供应商: ${item.supplier}</span>`;
+                else if (item.detail) detailLine = `<span>${item.detail}</span>`;
+                
+                html += `
+                    <div class="card p-4 flex gap-3" onclick="window.location.href='zhiliang-jy-detail.html?type=${item.type}&id=${item.id}'">
+                        <div class="flex items-start pt-1" onclick="event.stopPropagation()">
+                             <input type="checkbox" value="${item.id}" class="item-checkbox rounded text-green-500 focus:ring-green-500 w-5 h-5" onchange="updateSelectAllState()">
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex justify-between items-start mb-2">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-lg ${iconBg} flex items-center justify-center font-bold">
+                                        <i class="fas ${iconClass}"></i>
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-gray-800">${item.name}</div>
+                                        <div class="text-xs text-gray-500">批次: ${item.batch}</div>
+                                    </div>
+                                </div>
+                                ${statusBadge}
+                            </div>
+                            <div class="mt-2 pt-2 border-t border-gray-50 flex justify-between text-xs text-gray-500">
+                                ${detailLine}
+                                <span>${item.time}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `</div>`;
+            container.innerHTML = html;
+            updateSelectAllState();
+        }
+
+        function switchTab(tabName) {
+            currentTab = tabName;
+            
+            // Update Tab Styles
+            ['incoming', 'process', 'finished', 'unqualified'].forEach(t => {
+                const btn = document.getElementById('tab-' + t);
+                if (t === tabName) {
+                    btn.classList.replace('tab-inactive', 'tab-active');
+                } else {
+                    btn.classList.replace('tab-active', 'tab-inactive');
+                }
+            });
+            
+            loadRecords(tabName);
+        }
+    </script>
+</body>
+</html>
