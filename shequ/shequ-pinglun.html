@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>评论和@ - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #ffffff;
+            color: #1a1a1a;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+    </style>
+</head>
+<body class="bg-white">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-30 bg-white border-b border-gray-100">
+        <div class="flex items-center justify-between px-4 h-14">
+            <div class="flex items-center">
+                <a href="javascript:history.back()" class="w-8 h-8 flex items-center justify-center text-gray-800 -ml-2">
+                    <i class="fas fa-chevron-left text-lg"></i>
+                </a>
+                <div class="flex items-center ml-2">
+                    <img src="https://randomuser.me/api/portraits/women/44.jpg" class="w-8 h-8 rounded-full border border-gray-100 mr-2">
+                    <span class="font-bold text-gray-900 text-sm">成都樱桃家</span>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+                <button class="text-xs font-bold text-red-500 border border-red-500 px-3 py-1 rounded-full active:bg-red-50">关注</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="pb-24">
+        <!-- Comment Count Header -->
+        <div class="px-4 py-3 text-xs text-gray-500 font-medium">
+            共 17 条评论
+        </div>
+
+        <!-- Input Area (Mock) -->
+        <div class="px-4 mb-4 flex items-center space-x-3">
+            <div class="w-8 h-8 rounded-full bg-black flex items-center justify-center text-white">
+                <i class="fas fa-user-astronaut"></i>
+            </div>
+            <div class="flex-1 bg-gray-100 rounded-full h-9 px-4 flex items-center justify-between text-gray-400 text-sm">
+                <span>爱评论的人运气都不差</span>
+                <div class="flex space-x-3 text-gray-500">
+                    <i class="fas fa-at"></i>
+                    <i class="far fa-smile"></i>
+                    <i class="far fa-image"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Comment List -->
+        <div class="px-4 space-y-6">
+            
+            <!-- Main Comment 1 (Author) -->
+            <div class="flex items-start">
+                <img src="https://randomuser.me/api/portraits/women/44.jpg" class="w-8 h-8 rounded-full border border-gray-100 mr-3 flex-shrink-0">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center mb-1">
+                        <span class="text-gray-500 text-xs mr-2">成都樱桃家</span>
+                        <span class="bg-red-50 text-red-500 text-[10px] px-1 rounded font-medium">作者</span>
+                    </div>
+                    <p class="text-sm text-gray-800 leading-relaxed mb-1.5">
+                        这个品牌的黄油品牌方过场有点多，如果味道一般，我就发帖大家不用测试了哈🍑哈哈哈哈讨厌一切过场多的人和事物
+                    </p>
+                    <div class="flex items-center text-xs text-gray-400 space-x-3 mb-3">
+                        <span>昨天 03:52 四川</span>
+                        <span class="font-medium text-gray-600">回复</span>
+                    </div>
+
+                    <!-- Nested Reply -->
+                    <div class="flex items-start mt-2">
+                        <img src="https://randomuser.me/api/portraits/men/32.jpg" class="w-6 h-6 rounded-full border border-gray-100 mr-2 flex-shrink-0">
+                        <div class="flex-1">
+                            <div class="text-gray-500 text-xs mb-0.5">嘻嘻哈哈小神童</div>
+                            <p class="text-sm text-gray-800 mb-1">
+                                过场是啥 <span class="text-gray-400 text-xs ml-1">昨天 18:12 上海 回复</span>
+                            </p>
+                        </div>
+                        <div class="flex flex-col items-center ml-2">
+                            <i class="far fa-heart text-gray-400 text-xs"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Expand Replies -->
+                    <div class="flex items-center mt-2 ml-8">
+                        <div class="w-6 h-px bg-gray-200 mr-2"></div>
+                        <span class="text-xs text-gray-500 font-medium">展开 1 条回复</span>
+                    </div>
+                </div>
+                <div class="flex flex-col items-center ml-2 pt-1">
+                    <i class="far fa-heart text-gray-400 text-sm mb-0.5"></i>
+                    <span class="text-[10px] text-gray-400">1</span>
+                </div>
+            </div>
+
+            <!-- Main Comment 2 -->
+            <div class="flex items-start">
+                <img src="https://randomuser.me/api/portraits/women/12.jpg" class="w-8 h-8 rounded-full border border-gray-100 mr-3 flex-shrink-0">
+                <div class="flex-1 min-w-0">
+                    <div class="text-gray-500 text-xs mb-1">大吉大力</div>
+                    <p class="text-sm text-gray-800 leading-relaxed mb-1.5">
+                        一定要卖给上海人
+                    </p>
+                    <div class="flex items-center text-xs text-gray-400 space-x-3 mb-3">
+                        <span>4小时前 江苏</span>
+                        <span class="font-medium text-gray-600">回复</span>
+                    </div>
+
+                    <!-- Nested Reply (Author) -->
+                    <div class="flex items-start mt-2">
+                        <img src="https://randomuser.me/api/portraits/women/44.jpg" class="w-6 h-6 rounded-full border border-gray-100 mr-2 flex-shrink-0">
+                        <div class="flex-1">
+                            <div class="flex items-center mb-0.5">
+                                <span class="text-gray-500 text-xs mr-1">成都樱桃家</span>
+                                <span class="bg-red-50 text-red-500 text-[10px] px-1 rounded font-medium">作者</span>
+                            </div>
+                            <p class="text-sm text-gray-800 mb-1">
+                                成都人也吃得起的哈哈哈🍑
+                            </p>
+                            <div class="text-gray-400 text-xs">1小时前 四川 回复</div>
+                        </div>
+                        <div class="flex flex-col items-center ml-2">
+                            <i class="far fa-heart text-gray-400 text-xs"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex flex-col items-center ml-2 pt-1">
+                    <i class="far fa-heart text-gray-400 text-sm"></i>
+                </div>
+            </div>
+
+            <!-- Main Comment 3 -->
+            <div class="flex items-start">
+                <img src="https://randomuser.me/api/portraits/men/85.jpg" class="w-8 h-8 rounded-full border border-gray-100 mr-3 flex-shrink-0">
+                <div class="flex-1 min-w-0">
+                    <div class="text-gray-500 text-xs mb-1">两袖清风</div>
+                    <p class="text-sm text-gray-800 leading-relaxed mb-1.5">
+                        使用和牛的奶来做黄油🐂 吗😂
+                    </p>
+                    <div class="flex items-center text-xs text-gray-400 space-x-3 mb-3">
+                        <span>昨天 22:05 马来西亚</span>
+                        <span class="font-medium text-gray-600">回复</span>
+                    </div>
+
+                    <!-- Nested Reply (Author) -->
+                    <div class="flex items-start mt-2">
+                        <img src="https://randomuser.me/api/portraits/women/44.jpg" class="w-6 h-6 rounded-full border border-gray-100 mr-2 flex-shrink-0">
+                        <div class="flex-1">
+                            <div class="flex items-center mb-0.5">
+                                <span class="text-gray-500 text-xs mr-1">成都樱桃家</span>
+                                <span class="bg-red-50 text-red-500 text-[10px] px-1 rounded font-medium">作者</span>
+                            </div>
+                            <p class="text-sm text-gray-800 mb-1">
+                                我咋知道
+                            </p>
+                            <div class="text-gray-400 text-xs">昨天 22:53 四川 回复</div>
+                        </div>
+                        <div class="flex flex-col items-center ml-2">
+                            <i class="far fa-heart text-gray-400 text-xs"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex flex-col items-center ml-2 pt-1">
+                    <i class="far fa-heart text-gray-400 text-sm"></i>
+                </div>
+            </div>
+
+            <!-- Main Comment 4 -->
+            <div class="flex items-start">
+                <img src="https://randomuser.me/api/portraits/women/22.jpg" class="w-8 h-8 rounded-full border border-gray-100 mr-3 flex-shrink-0">
+                <div class="flex-1 min-w-0">
+                    <div class="text-gray-500 text-xs mb-1">会笑的不锈钢 (互关)</div>
+                    <p class="text-sm text-gray-800 leading-relaxed mb-1.5">
+                        蹲一个测评结果！
+                    </p>
+                    <div class="flex items-center text-xs text-gray-400 space-x-3">
+                        <span>昨天 23:10 广东</span>
+                        <span class="font-medium text-gray-600">回复</span>
+                    </div>
+                </div>
+                <div class="flex flex-col items-center ml-2 pt-1">
+                    <i class="far fa-heart text-gray-400 text-sm"></i>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Action Menu Modal -->
+    <div id="action-menu-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden transition-opacity duration-300 opacity-0" onclick="hideActionMenu()"></div>
+    <div id="action-menu" class="fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl z-50 transform translate-y-full transition-transform duration-300 pb-safe">
+        <!-- Handle -->
+        <div class="w-10 h-1 bg-gray-200 rounded-full mx-auto mt-2 mb-2"></div>
+        
+        <!-- Top (Author only) -->
+        <div id="menu-item-top" class="hidden">
+            <button class="w-full flex items-center px-5 py-3.5 active:bg-gray-50" onclick="handleMenuAction('top')">
+                <i class="fas fa-arrow-up text-gray-700 w-8 text-center"></i>
+                <span class="text-base text-gray-800 ml-2">置顶</span>
+            </button>
+            <div class="h-px bg-gray-100 mx-4"></div>
+        </div>
+
+        <!-- Standard Actions -->
+        <button class="w-full flex items-center px-5 py-3.5 active:bg-gray-50" onclick="handleMenuAction('reply')">
+            <i class="far fa-comment-dots text-gray-700 w-8 text-center"></i>
+            <span class="text-base text-gray-800 ml-2">回复</span>
+        </button>
+        
+        <div class="h-px bg-gray-100 mx-4"></div>
+
+        <button class="w-full flex items-center px-5 py-3.5 active:bg-gray-50" onclick="handleMenuAction('favorite')">
+            <i class="far fa-star text-gray-700 w-8 text-center"></i>
+            <span class="text-base text-gray-800 ml-2">收藏</span>
+        </button>
+
+        <div class="h-px bg-gray-100 mx-4"></div>
+
+        <button class="w-full flex items-center px-5 py-3.5 active:bg-gray-50" onclick="handleMenuAction('copy')">
+            <i class="far fa-copy text-gray-700 w-8 text-center"></i>
+            <span class="text-base text-gray-800 ml-2">复制</span>
+        </button>
+
+        <div class="h-px bg-gray-100 mx-4"></div>
+
+        <button class="w-full flex items-center px-5 py-3.5 active:bg-gray-50" onclick="handleMenuAction('message')">
+            <i class="far fa-paper-plane text-gray-700 w-8 text-center"></i>
+            <span class="text-base text-gray-800 ml-2">私信</span>
+        </button>
+        
+        <div class="h-2 bg-gray-100 border-t border-b border-gray-100 mt-1"></div>
+
+        <button class="w-full flex items-center justify-between px-5 py-3.5 active:bg-gray-50" onclick="handleMenuAction('report')">
+            <div class="flex items-center">
+                <i class="fas fa-exclamation-triangle text-gray-700 w-8 text-center"></i>
+                <span class="text-base text-gray-800 ml-2">举报</span>
+            </div>
+            <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+        </button>
+
+        <div class="h-2 bg-gray-100 border-t border-b border-gray-100"></div>
+
+        <button class="w-full flex items-center px-5 py-3.5 active:bg-gray-50 text-red-500" onclick="handleMenuAction('delete')">
+            <i class="far fa-trash-alt w-8 text-center"></i>
+            <span class="text-base ml-2">删除</span>
+        </button>
+    </div>
+
+    <script>
+        // Configuration: Set to true if current user is the author of the post
+        // This controls whether the "Top" (置顶) option appears
+        const urlParams = new URLSearchParams(window.location.search);
+        const isPostAuthor = urlParams.get('is_author') === 'true';
+
+        let longPressTimer;
+        let isLongPress = false;
+        let currentCommentId = null;
+        const LONG_PRESS_DURATION = 1500; // 1.5 seconds
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // If author, hide the "Follow" button in header
+            if (isPostAuthor) {
+                const followBtn = document.querySelector('header button.text-red-500');
+                if (followBtn) followBtn.style.display = 'none';
+            }
+
+            // Attach event listeners to all comment items
+            const comments = document.querySelectorAll('.flex.items-start');
+            
+            comments.forEach((comment, index) => {
+                // Add an ID for reference if not present
+                if (!comment.id) comment.id = `comment-${index}`;
+                
+                // Add touch/mouse events for long press
+                comment.addEventListener('touchstart', (e) => startLongPress(e, comment.id));
+                comment.addEventListener('touchend', cancelLongPress);
+                comment.addEventListener('touchmove', cancelLongPress);
+                
+                comment.addEventListener('mousedown', (e) => startLongPress(e, comment.id));
+                comment.addEventListener('mouseup', cancelLongPress);
+                comment.addEventListener('mouseleave', cancelLongPress);
+                
+                // Click handler (for Reply)
+                comment.addEventListener('click', (e) => {
+                    // If it was a long press, don't trigger click action
+                    if (isLongPress) {
+                        isLongPress = false; // Reset flag
+                        return;
+                    }
+                    
+                    // Don't trigger if clicking heart or other buttons
+                    if (e.target.closest('button') || e.target.closest('a') || e.target.closest('.fa-heart')) {
+                        return;
+                    }
+
+                    handleReply(comment.id);
+                });
+            });
+
+            // Prevent default context menu on long press
+            document.addEventListener('contextmenu', (e) => {
+                if (e.target.closest('.flex.items-start')) {
+                    e.preventDefault();
+                }
+            });
+        });
+
+        function startLongPress(e, commentId) {
+            isLongPress = false;
+            longPressTimer = setTimeout(() => {
+                isLongPress = true;
+                showActionMenu(commentId);
+                
+                // Haptic feedback if available
+                if (navigator.vibrate) {
+                    navigator.vibrate(50);
+                }
+            }, LONG_PRESS_DURATION);
+        }
+
+        function cancelLongPress() {
+            clearTimeout(longPressTimer);
+        }
+
+        function showActionMenu(commentId) {
+            currentCommentId = commentId;
+            const menu = document.getElementById('action-menu');
+            const overlay = document.getElementById('action-menu-overlay');
+            const topOption = document.getElementById('menu-item-top');
+
+            // Show/Hide "Top" option based on role
+            if (isPostAuthor) {
+                topOption.classList.remove('hidden');
+            } else {
+                topOption.classList.add('hidden');
+            }
+
+            overlay.classList.remove('hidden');
+            // Small delay to allow display:block to apply before opacity transition
+            setTimeout(() => {
+                overlay.classList.remove('opacity-0');
+                menu.classList.remove('translate-y-full');
+            }, 10);
+        }
+
+        function hideActionMenu() {
+            const menu = document.getElementById('action-menu');
+            const overlay = document.getElementById('action-menu-overlay');
+
+            menu.classList.add('translate-y-full');
+            overlay.classList.add('opacity-0');
+            
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+            }, 300);
+        }
+
+        function handleReply(commentId) {
+            console.log('Reply to:', commentId);
+            // In a real app, this would focus the input and set "Replying to..."
+            const inputArea = document.querySelector('.bg-gray-100.rounded-full span');
+            if (inputArea) {
+                inputArea.innerText = "回复 " + getCommentAuthor(commentId);
+                // Highlight the input area briefly
+                const inputContainer = document.querySelector('.bg-gray-100.rounded-full');
+                inputContainer.classList.add('bg-gray-200');
+                setTimeout(() => inputContainer.classList.remove('bg-gray-200'), 200);
+            }
+        }
+
+        function handleMenuAction(action) {
+            console.log('Action:', action, 'on comment:', currentCommentId);
+            
+            if (action === 'reply') {
+                handleReply(currentCommentId);
+            } else if (action === 'top') {
+                alert('评论已置顶');
+            } else if (action === 'delete') {
+                if(confirm('确定要删除这条评论吗？')) {
+                    const el = document.getElementById(currentCommentId);
+                    if(el) el.remove();
+                }
+            } else {
+                // Mock action feedback
+                // alert('操作 executed: ' + action);
+            }
+            
+            hideActionMenu();
+        }
+
+        function getCommentAuthor(commentId) {
+            const el = document.getElementById(commentId);
+            if (!el) return "用户";
+            const nameEl = el.querySelector('.text-gray-500.text-xs') || el.querySelector('.font-bold.text-gray-900');
+            return nameEl ? nameEl.innerText.split('\n')[0] : "用户";
+        }
+    </script>
+
+</body>
+</html>

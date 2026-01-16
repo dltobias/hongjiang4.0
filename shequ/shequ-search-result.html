@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>详细资料 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #ffffff;
+            color: #1a1a1a;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+    </style>
+</head>
+<body class="bg-white min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-30 bg-white">
+        <div class="flex items-center justify-between px-4 h-12">
+            <a href="javascript:history.back()" class="w-8 h-8 flex items-center justify-center text-gray-600 -ml-2">
+                <i class="fas fa-chevron-left text-lg"></i>
+            </a>
+            <div class="w-8"></div>
+        </div>
+    </header>
+
+    <main class="flex-1 pb-safe">
+        
+        <!-- User Info -->
+        <div class="px-6 py-4">
+            <div class="flex items-start mb-8">
+                <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-1.2.1&auto=format&fit=crop&w=150&q=80" class="w-20 h-20 rounded-xl object-cover border border-gray-100 mr-5">
+                <div class="flex-1 min-w-0 pt-1">
+                    <div class="flex items-center mb-1">
+                        <h1 class="text-2xl font-bold text-gray-900 mr-2">面包仙人</h1>
+                        <i class="fas fa-mars text-blue-400 text-sm bg-blue-50 px-1.5 py-0.5 rounded-full"></i>
+                    </div>
+                    <p class="text-sm text-gray-500 mb-1">烘匠号：bread_fairy</p>
+                    <p class="text-sm text-gray-500">地区：北京 朝阳</p>
+                </div>
+            </div>
+            
+            <div class="h-px bg-gray-100 my-6"></div>
+
+            <!-- Meta Info -->
+            <div class="space-y-6">
+                <!-- Signature -->
+                <div class="flex">
+                    <span class="w-20 text-gray-900 font-medium">个性签名</span>
+                    <span class="text-gray-500 flex-1">用心做好每一款面包，分享烘焙的快乐 🍞</span>
+                </div>
+                
+                <!-- Source -->
+                <div class="flex">
+                    <span class="w-20 text-gray-900 font-medium">来源</span>
+                    <span class="text-gray-500 flex-1">来自手机号搜索</span>
+                </div>
+            </div>
+
+            <div class="h-px bg-gray-100 my-6"></div>
+
+            <!-- Recent Posts Preview -->
+            <div class="mb-8">
+                <div class="flex justify-between items-center mb-3">
+                    <span class="text-gray-900 font-medium">个人笔记</span>
+                    <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                </div>
+                <div class="flex space-x-2 overflow-x-auto pb-2 scrollbar-hide">
+                    <img src="https://images.unsplash.com/photo-1509440159596-0249088772ff?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80" class="w-20 h-20 rounded-lg object-cover bg-gray-100">
+                    <img src="https://images.unsplash.com/photo-1556910103-1c02745a30bf?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80" class="w-20 h-20 rounded-lg object-cover bg-gray-100">
+                    <img src="https://images.unsplash.com/photo-1486427944299-d1955d23e34d?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80" class="w-20 h-20 rounded-lg object-cover bg-gray-100">
+                </div>
+            </div>
+
+            <!-- Action Button -->
+            <div class="mt-8">
+                <button onclick="addToContacts()" class="w-full bg-[#ff8c00] text-white font-bold py-3.5 rounded-xl shadow-lg shadow-orange-100 active:bg-orange-600 transition-colors">
+                    添加到通讯录
+                </button>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Success Modal -->
+    <div id="modal-success" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-2xl w-72 p-6 flex flex-col items-center shadow-2xl transform scale-90 transition-transform duration-300">
+            <div class="w-14 h-14 bg-green-50 rounded-full flex items-center justify-center text-green-500 mb-4">
+                <i class="fas fa-check text-2xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-900 mb-1">发送成功</h3>
+            <p class="text-sm text-gray-500 mb-6 text-center">好友申请已发送，等待对方验证</p>
+            <button onclick="window.history.back()" class="w-full py-3 bg-[#ff8c00] hover:bg-orange-600 text-white font-bold rounded-xl transition-colors shadow-md shadow-orange-100">
+                知道了
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function addToContacts() {
+            // Simulate adding friend
+            const btn = document.querySelector('button');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 发送中...';
+            btn.disabled = true;
+            btn.classList.add('opacity-70');
+            
+            setTimeout(() => {
+                const modal = document.getElementById('modal-success');
+                modal.classList.remove('hidden');
+                // Trigger reflow
+                void modal.offsetWidth;
+                modal.classList.remove('opacity-0');
+                const inner = modal.querySelector('div');
+                inner.classList.remove('scale-90');
+                inner.classList.add('scale-100');
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>聊天 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #1a1a1a;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .pb-safe {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Message Bubble Styles */
+        .message-bubble {
+            max-width: 75%;
+            word-wrap: break-word;
+            position: relative;
+        }
+        
+        .message-sent {
+            background-color: #ff9f43;
+            color: white;
+            border-radius: 12px 12px 0 12px;
+        }
+        
+        .message-received {
+            background-color: white;
+            color: #333;
+            border-radius: 12px 12px 12px 0;
+            border: 1px solid #e5e7eb;
+        }
+
+        /* Card Styles */
+        .card-bubble {
+            width: 240px;
+            background-color: white;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #e5e7eb;
+        }
+    </style>
+</head>
+<body class="bg-[#f5f5f5] h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 flex items-center justify-between px-4 h-12 flex-shrink-0 z-10">
+        <a href="javascript:history.back()" class="w-8 h-8 flex items-center justify-center text-gray-700">
+            <i class="fas fa-chevron-left"></i>
+        </a>
+        <h1 class="font-bold text-lg text-gray-800">面包仙人</h1>
+        <button class="w-8 h-8 flex items-center justify-center text-gray-700">
+            <i class="fas fa-ellipsis-h"></i>
+        </button>
+    </header>
+
+    <!-- Chat Area -->
+    <main id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
+        <!-- Timestamp -->
+        <div class="flex justify-center my-2">
+            <span class="text-xs text-gray-400 bg-gray-200 px-2 py-1 rounded">昨天 14:23</span>
+        </div>
+
+        <!-- Message: Received Text -->
+        <div class="flex items-start space-x-2">
+            <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80" class="w-10 h-10 rounded-full border border-gray-200">
+            <div>
+                <div class="message-bubble message-received px-4 py-2 shadow-sm">
+                    Hi，好久不见！最近在研究什么新面包？
+                </div>
+            </div>
+        </div>
+
+        <!-- Message: Sent Text -->
+        <div class="flex items-start justify-end space-x-2">
+            <div>
+                <div class="message-bubble message-sent px-4 py-2 shadow-sm">
+                    正在试这周的新品，全麦碱水面包。
+                </div>
+            </div>
+            <img src="https://randomuser.me/api/portraits/men/32.jpg" class="w-10 h-10 rounded-full border border-gray-200">
+        </div>
+
+        <!-- Message: Sent Formula Card -->
+        <div class="flex items-start justify-end space-x-2">
+            <div>
+                <div class="card-bubble shadow-sm">
+                    <div class="bg-orange-50 p-3 flex items-center border-b border-orange-100">
+                        <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-orange-500 mr-3 shadow-sm">
+                            <i class="fas fa-book-open"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-gray-800">全麦碱水面包</p>
+                            <p class="text-xs text-gray-500">配方分享</p>
+                        </div>
+                    </div>
+                    <div class="p-3 bg-white">
+                        <div class="flex justify-between text-xs text-gray-500 mb-1">
+                            <span>高筋面粉</span>
+                            <span>500g</span>
+                        </div>
+                        <div class="flex justify-between text-xs text-gray-500 mb-1">
+                            <span>全麦粉</span>
+                            <span>100g</span>
+                        </div>
+                        <div class="flex justify-between text-xs text-gray-500">
+                            <span>水</span>
+                            <span>380g</span>
+                        </div>
+                    </div>
+                    <div class="px-3 py-2 border-t border-gray-100 text-xs text-orange-500 text-center font-medium">
+                        查看详情
+                    </div>
+                </div>
+            </div>
+            <img src="https://randomuser.me/api/portraits/men/32.jpg" class="w-10 h-10 rounded-full border border-gray-200">
+        </div>
+
+        <!-- Message: Received Material Card -->
+        <div class="flex items-start space-x-2">
+            <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80" class="w-10 h-10 rounded-full border border-gray-200">
+            <div>
+                <div class="card-bubble shadow-sm">
+                    <div class="bg-blue-50 p-3 flex items-center border-b border-blue-100">
+                        <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-blue-500 mr-3 shadow-sm">
+                            <i class="fas fa-cubes"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-gray-800">法国T65面粉</p>
+                            <p class="text-xs text-gray-500">材料推荐</p>
+                        </div>
+                    </div>
+                    <div class="p-3 bg-white flex items-center space-x-2">
+                        <img src="https://images.unsplash.com/photo-1509440159596-0249088772ff?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80" class="w-12 h-12 object-cover rounded-md">
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs text-gray-800 line-clamp-2">王后T65法式面包粉 烘焙原料 25kg/袋</p>
+                        </div>
+                    </div>
+                    <div class="px-3 py-2 border-t border-gray-100 text-xs text-blue-500 text-center font-medium">
+                        查看详情
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Input Area -->
+    <footer class="bg-white border-t border-gray-200 pb-safe z-10">
+        <div class="px-3 py-2 flex items-end space-x-2">
+            <!-- Add Button -->
+            <button onclick="toggleActionSheet()" class="w-9 h-9 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center flex-shrink-0 mb-0.5 active:bg-gray-200">
+                <i class="fas fa-plus text-lg transition-transform duration-200" id="plus-icon"></i>
+            </button>
+            
+            <!-- Text Input -->
+            <div class="flex-1 bg-gray-100 rounded-xl px-3 py-2 mb-0.5">
+                <textarea id="message-input" rows="1" class="w-full bg-transparent border-0 focus:ring-0 p-0 text-sm resize-none max-h-24" placeholder="发消息..." style="min-height: 20px;"></textarea>
+            </div>
+            
+            <!-- Send Button -->
+            <button onclick="sendText()" class="w-14 h-9 bg-orange-500 text-white rounded-xl text-sm font-bold flex-shrink-0 mb-0.5 active:bg-orange-600 flex items-center justify-center">
+                发送
+            </button>
+        </div>
+
+        <!-- Action Sheet (Formula/Material) -->
+        <div id="action-sheet" class="hidden border-t border-gray-200 bg-gray-100 p-6 pb-8">
+            <div class="grid grid-cols-4 gap-6">
+                <!-- Share Formula -->
+                <div class="flex flex-col items-center space-y-2 cursor-pointer active:opacity-70" onclick="sendDummyCard('formula')">
+                    <div class="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-orange-500 shadow-sm border border-gray-200">
+                        <i class="fas fa-book-open text-2xl"></i>
+                    </div>
+                    <span class="text-xs text-gray-500">配方</span>
+                </div>
+                
+                <!-- Share Material -->
+                <div class="flex flex-col items-center space-y-2 cursor-pointer active:opacity-70" onclick="sendDummyCard('ingredient')">
+                    <div class="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-blue-500 shadow-sm border border-gray-200">
+                        <i class="fas fa-cubes text-2xl"></i>
+                    </div>
+                    <span class="text-xs text-gray-500">材料</span>
+                </div>
+
+                <!-- Placeholder for layout balance (optional) -->
+                <div class="flex flex-col items-center space-y-2 opacity-0 pointer-events-none">
+                    <div class="w-14 h-14 bg-white rounded-2xl"></div>
+                    <span class="text-xs text-gray-500">Placeholder</span>
+                </div>
+                <div class="flex flex-col items-center space-y-2 opacity-0 pointer-events-none">
+                    <div class="w-14 h-14 bg-white rounded-2xl"></div>
+                    <span class="text-xs text-gray-500">Placeholder</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Auto-resize textarea
+        const textarea = document.getElementById('message-input');
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+
+        // Toggle Action Sheet
+        function toggleActionSheet() {
+            const sheet = document.getElementById('action-sheet');
+            const icon = document.getElementById('plus-icon');
+            
+            if (sheet.classList.contains('hidden')) {
+                sheet.classList.remove('hidden');
+                icon.style.transform = 'rotate(45deg)';
+                scrollToBottom();
+            } else {
+                sheet.classList.add('hidden');
+                icon.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        // Scroll to bottom
+        function scrollToBottom() {
+            const container = document.getElementById('chat-container');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Initialize scroll
+        window.onload = scrollToBottom;
+
+        // Send Text Message
+        function sendText() {
+            const input = document.getElementById('message-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const container = document.getElementById('chat-container');
+            
+            const msgHtml = `
+                <div class="flex items-start justify-end space-x-2 animate-fade-in">
+                    <div>
+                        <div class="message-bubble message-sent px-4 py-2 shadow-sm">
+                            ${text}
+                        </div>
+                    </div>
+                    <img src="https://randomuser.me/api/portraits/men/32.jpg" class="w-10 h-10 rounded-full border border-gray-200">
+                </div>
+            `;
+            
+            container.insertAdjacentHTML('beforeend', msgHtml);
+            input.value = '';
+            input.style.height = 'auto';
+            scrollToBottom();
+        }
+
+        // Send Dummy Card (Formula/Material)
+        function sendDummyCard(type) {
+            const container = document.getElementById('chat-container');
+            let html = '';
+
+            if (type === 'formula') {
+                html = `
+                    <div class="flex items-start justify-end space-x-2 animate-fade-in">
+                        <div>
+                            <div class="card-bubble shadow-sm">
+                                <div class="bg-orange-50 p-3 flex items-center border-b border-orange-100">
+                                    <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-orange-500 mr-3 shadow-sm">
+                                        <i class="fas fa-book-open"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold text-gray-800">海盐卷配方</p>
+                                        <p class="text-xs text-gray-500">配方分享</p>
+                                    </div>
+                                </div>
+                                <div class="p-3 bg-white">
+                                    <div class="flex justify-between text-xs text-gray-500 mb-1">
+                                        <span>高筋面粉</span>
+                                        <span>250g</span>
+                                    </div>
+                                    <div class="flex justify-between text-xs text-gray-500">
+                                        <span>黄油</span>
+                                        <span>20g</span>
+                                    </div>
+                                </div>
+                                <div class="px-3 py-2 border-t border-gray-100 text-xs text-orange-500 text-center font-medium">
+                                    查看详情
+                                </div>
+                            </div>
+                        </div>
+                        <img src="https://randomuser.me/api/portraits/men/32.jpg" class="w-10 h-10 rounded-full border border-gray-200">
+                    </div>
+                `;
+            } else if (type === 'ingredient') {
+                html = `
+                    <div class="flex items-start justify-end space-x-2 animate-fade-in">
+                        <div>
+                            <div class="card-bubble shadow-sm">
+                                <div class="bg-blue-50 p-3 flex items-center border-b border-blue-100">
+                                    <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-blue-500 mr-3 shadow-sm">
+                                        <i class="fas fa-cubes"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold text-gray-800">安佳黄油</p>
+                                        <p class="text-xs text-gray-500">材料推荐</p>
+                                    </div>
+                                </div>
+                                <div class="p-3 bg-white flex items-center space-x-2">
+                                    <div class="w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center text-gray-400">
+                                        <i class="fas fa-image"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-xs text-gray-800 line-clamp-2">新西兰进口安佳黄油食用烘焙原料</p>
+                                    </div>
+                                </div>
+                                <div class="px-3 py-2 border-t border-gray-100 text-xs text-blue-500 text-center font-medium">
+                                    查看详情
+                                </div>
+                            </div>
+                        </div>
+                        <img src="https://randomuser.me/api/portraits/men/32.jpg" class="w-10 h-10 rounded-full border border-gray-200">
+                    </div>
+                `;
+            }
+
+            container.insertAdjacentHTML('beforeend', html);
+            scrollToBottom();
+            // Hide action sheet after selection
+            toggleActionSheet();
+        }
+
+        // Animation style
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .animate-fade-in {
+                animation: fadeIn 0.3s ease-out forwards;
+            }
+        `;
+        document.head.appendChild(style);
+
+    </script>
+</body>
+</html>

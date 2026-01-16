@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>面对面建群 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #1a1a1a;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+        .digit-input {
+            caret-color: transparent;
+        }
+    </style>
+</head>
+<body class="bg-gray-800 text-white h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-transparent p-4">
+        <a href="javascript:history.back()" class="text-white/80 hover:text-white">
+            <span class="text-base">取消</span>
+        </a>
+    </header>
+
+    <main class="flex-1 flex flex-col items-center pt-12 px-8">
+        <h1 class="text-2xl font-bold mb-2">面对面建群</h1>
+        <p class="text-white/60 text-sm mb-12 text-center">和身边的朋友输入同样的四个数字<br>进入同一个群聊</p>
+
+        <!-- Input Area -->
+        <div class="flex space-x-4 mb-12">
+            <div class="w-14 h-16 border-b-2 border-white/30 flex items-center justify-center text-3xl font-bold digit-box" id="digit-0"></div>
+            <div class="w-14 h-16 border-b-2 border-white/30 flex items-center justify-center text-3xl font-bold digit-box" id="digit-1"></div>
+            <div class="w-14 h-16 border-b-2 border-white/30 flex items-center justify-center text-3xl font-bold digit-box" id="digit-2"></div>
+            <div class="w-14 h-16 border-b-2 border-white/30 flex items-center justify-center text-3xl font-bold digit-box" id="digit-3"></div>
+        </div>
+
+        <!-- Hidden Input for keyboard -->
+        <input type="number" id="hidden-input" class="opacity-0 absolute inset-0 h-full w-full z-10 cursor-pointer" pattern="\d*" inputmode="numeric" maxlength="4">
+
+    </main>
+    
+    <div class="p-8 pb-16 text-center text-white/40 text-xs">
+        <p>输入数字后，将自动创建或加入群聊</p>
+    </div>
+
+    <script>
+        const input = document.getElementById('hidden-input');
+        const boxes = [
+            document.getElementById('digit-0'),
+            document.getElementById('digit-1'),
+            document.getElementById('digit-2'),
+            document.getElementById('digit-3')
+        ];
+
+        input.addEventListener('input', function(e) {
+            const val = this.value;
+            
+            // Update boxes
+            boxes.forEach((box, index) => {
+                if (index < val.length) {
+                    box.textContent = val[index];
+                    box.style.borderColor = 'white';
+                } else {
+                    box.textContent = '';
+                    box.style.borderColor = 'rgba(255,255,255,0.3)';
+                }
+            });
+
+            if (val.length === 4) {
+                // Simulate loading/joining
+                setTimeout(() => {
+                    alert('正在进入群聊...');
+                    window.location.href = 'shequ-liaotian.html';
+                }, 500);
+            }
+        });
+        
+        // Focus input on load
+        window.onload = () => input.focus();
+    </script>
+</body>
+</html>

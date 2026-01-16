@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>社区 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #ffffff;
+            color: #1a1a1a;
+            -webkit-tap-highlight-color: transparent;
+            padding-bottom: 80px;
+        }
+        
+        /* Cookpad 风格配色 */
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+            --text-main: #333333;
+            --text-sub: #8b8b8b;
+            --bg-light: #f7f7f5;
+        }
+
+        .text-cookpad { color: var(--primary-dark); }
+        .bg-cookpad { background-color: var(--primary-dark); }
+        .border-cookpad { border-color: var(--primary-dark); }
+
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* 搜索栏样式 */
+        .search-header {
+            background-color: #ffffff;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        
+        .search-input-wrapper {
+            background-color: #f3f3f3;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        .search-input-wrapper:focus-within {
+            background-color: #ffffff;
+            box-shadow: 0 0 0 2px var(--primary-orange) inset;
+        }
+
+        /* 导航标签 */
+        .nav-tab { 
+            position: relative; 
+            font-size: 15px; 
+            color: var(--text-sub); 
+            padding: 10px 4px; 
+            font-weight: 600; 
+            transition: all 0.2s; 
+        }
+        .nav-tab.active { 
+            color: var(--text-main); 
+            font-size: 16px; 
+        }
+        .nav-tab.active::after { 
+            content: ''; 
+            position: absolute; 
+            bottom: 0; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            width: 20px; 
+            height: 3px; 
+            background-color: var(--primary-dark); 
+            border-radius: 2px; 
+        }
+
+        /* 食材/分类图标 */
+        .ingredient-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 4px;
+            background-color: #f8f8f8;
+            border: 1px solid #eeeeee;
+        }
+
+        /* 配方卡片 - Cookpad 风格 (列表式/大图式) */
+        .recipe-card {
+            /* margin-bottom: 24px;  Removed for Grid layout */
+        }
+        
+        .recipe-img-container {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            aspect-ratio: 4/3;
+            background-color: #eee;
+        }
+        
+        .cooksnap-badge {
+            display: flex;
+            align-items: center;
+            font-size: 12px;
+            color: var(--text-sub);
+            margin-top: 4px;
+        }
+        
+        .cooksnap-icon {
+            color: var(--primary-dark);
+            margin-right: 4px;
+        }
+
+        /* 底部导航 */
+        .bottom-nav { 
+            background: rgba(255, 255, 255, 0.98); 
+            backdrop-filter: blur(10px); 
+            border-top: 1px solid #f0f0f0; 
+            padding-bottom: env(safe-area-inset-bottom); 
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 50;
+        }
+        .bottom-nav-item { 
+            padding: 8px 0 4px; 
+            color: #999; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .bottom-nav-item.active { color: var(--primary-dark); }
+        .bottom-nav-item i { font-size: 22px; margin-bottom: 2px; }
+        .bottom-nav-item span { font-size: 10px; font-weight: 500; }
+
+        /* 悬浮按钮 (Old styles removed, replaced by Tailwind classes) */
+        /* .floating-add-btn removed */
+    </style>
+</head>
+<body>
+    <!-- 顶部搜索栏 -->
+    <header class="search-header sticky top-0 z-30 pt-2 pb-0 px-4">
+        <div class="flex items-center space-x-3 mb-2">
+            <!-- 个人主页入口 -->
+            <div class="relative cursor-pointer" onclick="window.location.href='shequ-yonghukangerenye.html'">
+                <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80" class="w-9 h-9 rounded-full border border-gray-200 object-cover">
+                <span class="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+            </div>
+
+            <div class="flex-1 relative search-input-wrapper">
+                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <input type="text" placeholder="搜索食谱、食材"
+                       class="w-full pl-10 pr-4 py-2.5 bg-transparent text-sm text-gray-700 focus:outline-none placeholder-gray-500">
+            </div>
+            <a href="shequ-xiaoxi.html" class="relative p-2 text-gray-600">
+                <i class="far fa-envelope text-xl"></i>
+                <span class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+            </a>
+        </div>
+        
+        <!-- 导航标签 -->
+        <div class="flex items-center border-b border-gray-100">
+            <div class="flex-1 flex justify-start space-x-6 overflow-x-auto scrollbar-hide pl-4 pr-12">
+                <button class="nav-tab whitespace-nowrap" onclick="window.location.href='shequ-tuijian.html'">关注</button>
+                <button class="nav-tab active whitespace-nowrap">推荐</button>
+                <button class="nav-tab whitespace-nowrap">烘焙</button>
+                <button class="nav-tab whitespace-nowrap">轻食</button>
+                <button class="nav-tab whitespace-nowrap">饮品</button>
+                <button class="nav-tab whitespace-nowrap">西餐</button>
+            </div>
+            <div class="absolute right-0 pl-4 pr-4 bg-gradient-to-l from-white via-white to-transparent">
+                <button onclick="toggleCategoryDrawer()" class="p-2 text-gray-500 hover:text-orange-500 transition-colors">
+                    <i class="fas fa-th-large text-lg"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区域 -->
+    <main class="px-4 pt-4">
+        
+        <!-- 配方列表 (双列 Grid + Cookpad 风格) -->
+        <section class="mb-6">
+            <h3 class="font-bold text-gray-800 text-lg mb-4">今日推荐</h3>
+            
+            <div class="grid grid-cols-2 gap-3">
+                <!-- 配方 1 -->
+                <div class="recipe-card mb-0 flex flex-col cursor-pointer" onclick="window.location.href='shequ-xiangqingye.html'">
+                    <div class="recipe-img-container mb-2 relative">
+                        <img src="https://via.placeholder.com/800x600?text=Cover" class="w-full h-full object-cover">
+                        <div class="absolute bottom-1 right-1 bg-black/60 backdrop-blur-sm text-white text-[10px] px-1.5 py-0.5 rounded font-medium">
+                            45分钟
+                        </div>
+                    </div>
+                    <h3 class="font-bold text-gray-900 text-sm leading-tight mb-2 line-clamp-2 h-10">零失败！法式牛角面包保姆级教程</h3>
+                    
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center min-w-0 cursor-pointer" onclick="event.stopPropagation(); window.location.href='user-profile.html'">
+                            <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80" class="w-5 h-5 rounded-full mr-1 flex-shrink-0 border border-gray-100">
+                            <span class="text-xs text-gray-600 truncate mr-1">玛丽烘焙</span>
+                        </div>
+                        <button class="bg-orange-100 text-orange-600 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap transition-colors" onclick="event.stopPropagation(); toggleFollow(this)">关注</button>
+                    </div>
+
+                    <div class="flex items-center justify-between mt-auto">
+                        <span class="text-xs text-gray-400">128跟做</span>
+                        <i class="far fa-heart text-gray-400 text-sm"></i>
+                    </div>
+                </div>
+
+                <!-- 配方 2 -->
+                <div class="recipe-card mb-0 flex flex-col cursor-pointer" onclick="window.location.href='shequ-xiangqingye.html'">
+                    <div class="recipe-img-container mb-2 relative">
+                        <img src="https://images.unsplash.com/photo-1595295333158-4742f28fbd85?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover">
+                        <div class="absolute top-1 right-1 bg-black/30 rounded-full w-6 h-6 flex items-center justify-center backdrop-blur-sm">
+                            <i class="fas fa-play text-white text-[10px] ml-0.5"></i>
+                        </div>
+                    </div>
+                    <h3 class="font-bold text-gray-900 text-sm leading-tight mb-2 line-clamp-2 h-10">不用烤箱！一次成功的抹茶千层</h3>
+                    
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center min-w-0 cursor-pointer" onclick="event.stopPropagation(); window.location.href='user-profile.html'">
+                            <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80" class="w-5 h-5 rounded-full mr-1 flex-shrink-0 border border-gray-100">
+                            <span class="text-xs text-gray-600 truncate mr-1">甜点安娜</span>
+                        </div>
+                        <button class="bg-orange-100 text-orange-600 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap transition-colors" onclick="event.stopPropagation(); toggleFollow(this)">关注</button>
+                    </div>
+
+                    <div class="flex items-center justify-between mt-auto">
+                        <span class="text-xs text-gray-400">45跟做</span>
+                        <i class="far fa-heart text-gray-400 text-sm"></i>
+                    </div>
+                </div>
+
+                <!-- 配方 3 -->
+                <div class="recipe-card mb-0 flex flex-col cursor-pointer" onclick="window.location.href='shequ-xiangqingye.html'">
+                    <div class="recipe-img-container mb-2 relative">
+                        <img src="https://images.unsplash.com/photo-1582716401301-b2407dc7563d?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover">
+                    </div>
+                    <h3 class="font-bold text-gray-900 text-sm leading-tight mb-2 line-clamp-2 h-10">美式软心巧克力曲奇，一口爆浆</h3>
+                    
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center min-w-0 cursor-pointer" onclick="event.stopPropagation(); window.location.href='user-profile.html'">
+                            <img src="https://images.unsplash.com/photo-1560180474-e8563fd75bab?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80" class="w-5 h-5 rounded-full mr-1 flex-shrink-0 border border-gray-100">
+                            <span class="text-xs text-gray-600 truncate mr-1">杰克大叔</span>
+                        </div>
+                        <button class="bg-orange-100 text-orange-600 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap transition-colors" onclick="event.stopPropagation(); toggleFollow(this)">关注</button>
+                    </div>
+
+                    <div class="flex items-center justify-between mt-auto">
+                        <span class="text-xs text-gray-400">230跟做</span>
+                        <i class="far fa-heart text-gray-400 text-sm"></i>
+                    </div>
+                </div>
+
+                <!-- 配方 4 -->
+                <div class="recipe-card mb-0 flex flex-col cursor-pointer" onclick="window.location.href='shequ-xiangqingye.html'">
+                    <div class="recipe-img-container mb-2 relative">
+                        <img src="https://images.unsplash.com/photo-1565958011703-44f9829ba187?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover">
+                        <div class="absolute bottom-1 right-1 bg-black/60 backdrop-blur-sm text-white text-[10px] px-1.5 py-0.5 rounded font-medium">
+                            60分钟
+                        </div>
+                    </div>
+                    <h3 class="font-bold text-gray-900 text-sm leading-tight mb-2 line-clamp-2 h-10">草莓奶油蛋糕，生日节日必备</h3>
+                    
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center min-w-0 cursor-pointer" onclick="event.stopPropagation(); window.location.href='user-profile.html'">
+                            <img src="https://randomuser.me/api/portraits/women/65.jpg" class="w-5 h-5 rounded-full mr-1 flex-shrink-0 border border-gray-100">
+                            <span class="text-xs text-gray-600 truncate mr-1">小烘焙师</span>
+                        </div>
+                        <button class="bg-orange-100 text-orange-600 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap transition-colors" onclick="event.stopPropagation(); toggleFollow(this)">关注</button>
+                    </div>
+
+                    <div class="flex items-center justify-between mt-auto">
+                        <span class="text-xs text-gray-400">88跟做</span>
+                        <i class="far fa-heart text-gray-400 text-sm"></i>
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- 人气烘焙师推荐 (Optimized) -->
+        <section class="mb-8">
+            <div class="flex flex-col mb-4">
+                <div class="flex justify-between items-end mb-3">
+                    <h3 class="font-bold text-gray-800 text-lg">人气博主</h3>
+                    <a href="#" class="text-xs text-gray-400 flex items-center hover:text-orange-500 transition-colors">
+                        查看全部
+                        <i class="fas fa-chevron-right ml-1 transform scale-75"></i>
+                    </a>
+                </div>
+                
+                <!-- Sorting Tabs -->
+                <div class="flex space-x-5 border-b border-gray-100">
+                    <button onclick="switchBakerSort('popularity')" id="sort-popularity" class="baker-sort-btn active pb-2 text-sm font-bold text-gray-800 border-b-2 border-orange-500 transition-all">人气最高</button>
+                    <button onclick="switchBakerSort('rating')" id="sort-rating" class="baker-sort-btn pb-2 text-sm font-medium text-gray-400 border-b-2 border-transparent hover:text-gray-600 transition-all">评分最高</button>
+                    <button onclick="switchBakerSort('works')" id="sort-works" class="baker-sort-btn pb-2 text-sm font-medium text-gray-400 border-b-2 border-transparent hover:text-gray-600 transition-all">作品最多</button>
+                </div>
+            </div>
+            
+            <!-- Bakers Container -->
+            <div id="bakers-list-container" class="flex space-x-3 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide snap-x snap-mandatory">
+                <!-- Content injected by JS -->
+                <div class="w-full h-40 flex items-center justify-center text-gray-300">
+                    <i class="fas fa-spinner fa-spin mr-2"></i> 加载中...
+                </div>
+            </div>
+        </section>
+
+
+
+        <!-- 人气面包列表 -->
+        <section class="mt-8">
+            <h3 class="font-bold text-gray-800 text-lg mb-4">人气面包</h3>
+            
+            <div class="grid grid-cols-2 gap-3">
+                <!-- 面包 1 -->
+                <div class="recipe-card mb-0 flex flex-col cursor-pointer" onclick="window.location.href='shequ-xiangqingye.html'">
+                    <div class="recipe-img-container mb-2 relative">
+                        <img src="https://images.unsplash.com/photo-1598373182133-52452f7691ef?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover">
+                        <div class="absolute bottom-1 right-1 bg-black/60 backdrop-blur-sm text-white text-[10px] px-1.5 py-0.5 rounded font-medium">
+                            120分钟
+                        </div>
+                    </div>
+                    <h3 class="font-bold text-gray-900 text-sm leading-tight mb-2 line-clamp-2 h-10">超软日式生吐司，手撕更过瘾</h3>
+                    
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center min-w-0 cursor-pointer" onclick="event.stopPropagation(); window.location.href='user-profile.html'">
+                            <img src="https://randomuser.me/api/portraits/men/32.jpg" class="w-5 h-5 rounded-full mr-1 flex-shrink-0 border border-gray-100">
+                            <span class="text-xs text-gray-600 truncate mr-1">面包大叔</span>
+                        </div>
+                        <button class="bg-orange-100 text-orange-600 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap transition-colors" onclick="event.stopPropagation(); toggleFollow(this)">关注</button>
+                    </div>
+
+                    <div class="flex items-center justify-between mt-auto">
+                        <span class="text-xs text-gray-400">2.3k跟做</span>
+                        <i class="far fa-heart text-gray-400 text-sm"></i>
+                    </div>
+                </div>
+
+                <!-- 面包 2 -->
+                <div class="recipe-card mb-0 flex flex-col cursor-pointer" onclick="window.location.href='shequ-xiangqingye.html'">
+                    <div class="recipe-img-container mb-2 relative">
+                        <img src="https://images.unsplash.com/photo-1509440159596-0249088772ff?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover">
+                        <div class="absolute top-1 right-1 bg-black/30 rounded-full w-6 h-6 flex items-center justify-center backdrop-blur-sm">
+                            <i class="fas fa-play text-white text-[10px] ml-0.5"></i>
+                        </div>
+                    </div>
+                    <h3 class="font-bold text-gray-900 text-sm leading-tight mb-2 line-clamp-2 h-10">全麦欧包，健康低脂首选</h3>
+                    
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center min-w-0 cursor-pointer" onclick="event.stopPropagation(); window.location.href='user-profile.html'">
+                            <img src="https://randomuser.me/api/portraits/women/44.jpg" class="w-5 h-5 rounded-full mr-1 flex-shrink-0 border border-gray-100">
+                            <span class="text-xs text-gray-600 truncate mr-1">健康烘焙</span>
+                        </div>
+                        <button class="bg-orange-100 text-orange-600 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap transition-colors" onclick="event.stopPropagation(); toggleFollow(this)">关注</button>
+                    </div>
+
+                    <div class="flex items-center justify-between mt-auto">
+                        <span class="text-xs text-gray-400">560跟做</span>
+                        <i class="far fa-heart text-gray-400 text-sm"></i>
+                    </div>
+                </div>
+
+                <!-- 面包 3 -->
+                <div class="recipe-card mb-0 flex flex-col cursor-pointer" onclick="window.location.href='shequ-xiangqingye.html'">
+                    <div class="recipe-img-container mb-2 relative">
+                        <img src="https://images.unsplash.com/photo-1589367920969-ab8e050bbb04?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover">
+                    </div>
+                    <h3 class="font-bold text-gray-900 text-sm leading-tight mb-2 line-clamp-2 h-10">经典法棍，外脆内软的秘密</h3>
+                    
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center min-w-0 cursor-pointer" onclick="event.stopPropagation(); window.location.href='user-profile.html'">
+                            <img src="https://randomuser.me/api/portraits/men/85.jpg" class="w-5 h-5 rounded-full mr-1 flex-shrink-0 border border-gray-100">
+                            <span class="text-xs text-gray-600 truncate mr-1">法式大厨</span>
+                        </div>
+                        <button class="bg-orange-100 text-orange-600 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap transition-colors" onclick="event.stopPropagation(); toggleFollow(this)">关注</button>
+                    </div>
+
+                    <div class="flex items-center justify-between mt-auto">
+                        <span class="text-xs text-gray-400">890跟做</span>
+                        <i class="far fa-heart text-gray-400 text-sm"></i>
+                    </div>
+                </div>
+
+                <!-- 面包 4 -->
+                <div class="recipe-card mb-0 flex flex-col cursor-pointer" onclick="window.location.href='shequ-xiangqingye.html'">
+                    <div class="recipe-img-container mb-2 relative">
+                        <img src="https://images.unsplash.com/photo-1555507036-ab1f4038808a?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover">
+                        <div class="absolute bottom-1 right-1 bg-black/60 backdrop-blur-sm text-white text-[10px] px-1.5 py-0.5 rounded font-medium">
+                            60分钟
+                        </div>
+                    </div>
+                    <h3 class="font-bold text-gray-900 text-sm leading-tight mb-2 line-clamp-2 h-10">松软红豆面包，童年的味道</h3>
+                    
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center min-w-0 cursor-pointer" onclick="event.stopPropagation(); window.location.href='user-profile.html'">
+                            <img src="https://randomuser.me/api/portraits/women/68.jpg" class="w-5 h-5 rounded-full mr-1 flex-shrink-0 border border-gray-100">
+                            <span class="text-xs text-gray-600 truncate mr-1">奶奶的厨房</span>
+                        </div>
+                        <button class="bg-orange-100 text-orange-600 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap transition-colors" onclick="event.stopPropagation(); toggleFollow(this)">关注</button>
+                    </div>
+
+                    <div class="flex items-center justify-between mt-auto">
+                        <span class="text-xs text-gray-400">1.2k跟做</span>
+                        <i class="far fa-heart text-gray-400 text-sm"></i>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- 人气蛋糕列表 -->
+        <section class="mt-8">
+            <h3 class="font-bold text-gray-800 text-lg mb-4">人气蛋糕</h3>
+            
+            <div class="grid grid-cols-2 gap-3">
+                <!-- 蛋糕 1 -->
+                <div class="recipe-card mb-0 flex flex-col cursor-pointer" onclick="window.location.href='shequ-xiangqingye.html'">
+                    <div class="recipe-img-container mb-2 relative">
+                        <img src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover">
+                        <div class="absolute bottom-1 right-1 bg-black/60 backdrop-blur-sm text-white text-[10px] px-1.5 py-0.5 rounded font-medium">
+                            90分钟
+                        </div>
+                    </div>
+                    <h3 class="font-bold text-gray-900 text-sm leading-tight mb-2 line-clamp-2 h-10">浓郁黑森林蛋糕，入口即化</h3>
+                    
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center min-w-0 cursor-pointer" onclick="event.stopPropagation(); window.location.href='user-profile.html'">
+                            <img src="https://randomuser.me/api/portraits/women/90.jpg" class="w-5 h-5 rounded-full mr-1 flex-shrink-0 border border-gray-100">
+                            <span class="text-xs text-gray-600 truncate mr-1">Cici Cake</span>
+                        </div>
+                        <button class="bg-orange-100 text-orange-600 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap transition-colors" onclick="event.stopPropagation(); toggleFollow(this)">关注</button>
+                    </div>
+
+                    <div class="flex items-center justify-between mt-auto">
+                        <span class="text-xs text-gray-400">3.1k跟做</span>
+                        <i class="far fa-heart text-gray-400 text-sm"></i>
+                    </div>
+                </div>
+
+                <!-- 蛋糕 2 -->
+                <div class="recipe-card mb-0 flex flex-col cursor-pointer" onclick="window.location.href='shequ-xiangqingye.html'">
+                    <div class="recipe-img-container mb-2 relative">
+                        <img src="https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover">
+                        <div class="absolute top-1 right-1 bg-black/30 rounded-full w-6 h-6 flex items-center justify-center backdrop-blur-sm">
+                            <i class="fas fa-play text-white text-[10px] ml-0.5"></i>
+                        </div>
+                    </div>
+                    <h3 class="font-bold text-gray-900 text-sm leading-tight mb-2 line-clamp-2 h-10">轻盈日式芝士蛋糕，云朵般口感</h3>
+                    
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center min-w-0 cursor-pointer" onclick="event.stopPropagation(); window.location.href='user-profile.html'">
+                            <img src="https://randomuser.me/api/portraits/women/44.jpg" class="w-5 h-5 rounded-full mr-1 flex-shrink-0 border border-gray-100">
+                            <span class="text-xs text-gray-600 truncate mr-1">苏苏的甜点</span>
+                        </div>
+                        <button class="bg-orange-100 text-orange-600 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap transition-colors" onclick="event.stopPropagation(); toggleFollow(this)">关注</button>
+                    </div>
+
+                    <div class="flex items-center justify-between mt-auto">
+                        <span class="text-xs text-gray-400">1.8k跟做</span>
+                        <i class="far fa-heart text-gray-400 text-sm"></i>
+                    </div>
+                </div>
+
+                <!-- 蛋糕 3 -->
+                <div class="recipe-card mb-0 flex flex-col cursor-pointer" onclick="window.location.href='shequ-xiangqingye.html'">
+                    <div class="recipe-img-container mb-2 relative">
+                        <img src="https://images.unsplash.com/photo-1464349095431-e93992015966?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover">
+                    </div>
+                    <h3 class="font-bold text-gray-900 text-sm leading-tight mb-2 line-clamp-2 h-10">缤纷水果裸蛋糕，高颜值下午茶</h3>
+                    
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center min-w-0 cursor-pointer" onclick="event.stopPropagation(); window.location.href='user-profile.html'">
+                            <img src="https://randomuser.me/api/portraits/women/23.jpg" class="w-5 h-5 rounded-full mr-1 flex-shrink-0 border border-gray-100">
+                            <span class="text-xs text-gray-600 truncate mr-1">安娜的厨房</span>
+                        </div>
+                        <button class="bg-orange-100 text-orange-600 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap transition-colors" onclick="event.stopPropagation(); toggleFollow(this)">关注</button>
+                    </div>
+
+                    <div class="flex items-center justify-between mt-auto">
+                        <span class="text-xs text-gray-400">950跟做</span>
+                        <i class="far fa-heart text-gray-400 text-sm"></i>
+                    </div>
+                </div>
+
+                <!-- 蛋糕 4 -->
+                <div class="recipe-card mb-0 flex flex-col cursor-pointer" onclick="window.location.href='shequ-xiangqingye.html'">
+                    <div class="recipe-img-container mb-2 relative">
+                        <img src="https://images.unsplash.com/photo-1551024709-8f23befc6f87?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover">
+                        <div class="absolute bottom-1 right-1 bg-black/60 backdrop-blur-sm text-white text-[10px] px-1.5 py-0.5 rounded font-medium">
+                            45分钟
+                        </div>
+                    </div>
+                    <h3 class="font-bold text-gray-900 text-sm leading-tight mb-2 line-clamp-2 h-10">抹茶毛巾卷，平底锅也能做</h3>
+                    
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center min-w-0 cursor-pointer" onclick="event.stopPropagation(); window.location.href='user-profile.html'">
+                            <img src="https://randomuser.me/api/portraits/men/12.jpg" class="w-5 h-5 rounded-full mr-1 flex-shrink-0 border border-gray-100">
+                            <span class="text-xs text-gray-600 truncate mr-1">抹茶控</span>
+                        </div>
+                        <button class="bg-orange-100 text-orange-600 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap transition-colors" onclick="event.stopPropagation(); toggleFollow(this)">关注</button>
+                    </div>
+
+                    <div class="flex items-center justify-between mt-auto">
+                        <span class="text-xs text-gray-400">2.1k跟做</span>
+                        <i class="far fa-heart text-gray-400 text-sm"></i>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- 加载更多 -->
+        <div class="py-6 text-center">
+            <button class="text-orange-600 text-sm font-bold border border-orange-200 px-6 py-2 rounded-full hover:bg-orange-50 transition-colors">
+                加载更多食谱
+            </button>
+        </div>
+    </main>
+
+    <!-- 个人中心侧边栏 -->
+    <div id="user-drawer-overlay" class="fixed inset-0 bg-black/50 z-[80] hidden transition-opacity duration-300 opacity-0 backdrop-blur-sm" onclick="toggleUserDrawer()"></div>
+    <div id="user-drawer" class="fixed top-0 left-0 bottom-0 w-[85%] max-w-sm bg-white z-[90] transform -translate-x-full transition-transform duration-300 shadow-2xl overflow-y-auto flex flex-col">
+        
+        <!-- 用户头部信息 -->
+        <div class="p-6 pb-4 bg-orange-50/50">
+            <div class="flex items-start justify-between">
+                <div class="relative">
+                    <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80" class="w-20 h-20 rounded-full border-4 border-white shadow-sm">
+                    <div class="absolute bottom-0 right-0 bg-orange-500 text-white text-[10px] px-1.5 py-0.5 rounded-full border-2 border-white">LV.5</div>
+                </div>
+                <button onclick="toggleUserDrawer()" class="p-2 text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="mt-4">
+                <h2 class="text-xl font-bold text-gray-900">玛丽烘焙</h2>
+                <p class="text-sm text-gray-500 mt-1">ID: 8839201</p>
+                <div class="mt-3 flex gap-2">
+                    <button class="text-xs font-medium bg-white border border-gray-200 px-3 py-1.5 rounded-full shadow-sm text-gray-700">编辑资料</button>
+                    <button class="text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200 px-3 py-1.5 rounded-full shadow-sm">
+                        <i class="fas fa-crown text-orange-500 mr-1"></i>会员中心
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 数据概览 -->
+        <div class="flex justify-around py-4 border-b border-gray-100 bg-white">
+            <div class="flex flex-col items-center cursor-pointer" onclick="window.location.href='shequ-yonghukangerenye.html?tab=recipes'">
+                <span class="font-bold text-lg text-gray-900">12</span>
+                <span class="text-xs text-gray-500">食谱</span>
+            </div>
+            <div class="flex flex-col items-center cursor-pointer" onclick="window.location.href='shequ-yonghukangerenye.html?tab=cooksnaps'">
+                <span class="font-bold text-lg text-gray-900">45</span>
+                <span class="text-xs text-gray-500">作品</span>
+            </div>
+            <div class="flex flex-col items-center cursor-pointer" onclick="window.location.href='shequ-fensi.html?tab=fans'">
+                <span class="font-bold text-lg text-gray-900">1.2k</span>
+                <span class="text-xs text-gray-500">粉丝</span>
+            </div>
+            <div class="flex flex-col items-center cursor-pointer" onclick="window.location.href='shequ-fensi.html?tab=following'">
+                <span class="font-bold text-lg text-gray-900">368</span>
+                <span class="text-xs text-gray-500">关注</span>
+            </div>
+        </div>
+
+        <!-- 菜单列表 -->
+        <div class="flex-1 overflow-y-auto py-2">
+            <!-- 创作与内容 -->
+            <div class="px-4 py-2">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 px-2">我的厨房</h3>
+                <a href="shequ-yonghukangerenye.html" class="flex items-center px-3 py-3 rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors group">
+                    <div class="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center mr-3 group-hover:bg-orange-200 transition-colors">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <span class="text-gray-700 font-medium flex-1">我的主页</span>
+                    <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                </a>
+                <a href="../../peifnagmokuai/mianbao/mianbaozhuye/peifang-zhuye.html" class="flex items-center px-3 py-3 rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors group">
+                    <div class="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center mr-3 group-hover:bg-orange-200 transition-colors">
+                        <i class="fas fa-book-open"></i>
+                    </div>
+                    <span class="text-gray-700 font-medium flex-1">我的配方</span>
+                    <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                </a>
+                <a href="shequ-yonghukangerenye.html?tab=cooksnaps" class="flex items-center px-3 py-3 rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors group">
+                    <div class="w-8 h-8 rounded-lg bg-green-100 text-green-600 flex items-center justify-center mr-3 group-hover:bg-green-200 transition-colors">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                    <span class="text-gray-700 font-medium flex-1">我的作品 (Cooksnaps)</span>
+                    <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                </a>
+                <a href="shequ-yonghukangerenye.html?tab=favorites" class="flex items-center px-3 py-3 rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors group">
+                    <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center mr-3 group-hover:bg-blue-200 transition-colors">
+                        <i class="fas fa-bookmark"></i>
+                    </div>
+                    <span class="text-gray-700 font-medium flex-1">收藏夹</span>
+                    <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                </a>
+                <a href="shequ-caogaoxiang.html" class="flex items-center px-3 py-3 rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors group">
+                    <div class="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 flex items-center justify-center mr-3 group-hover:bg-gray-200 transition-colors">
+                        <i class="fas fa-file-edit"></i>
+                    </div>
+                    <span class="text-gray-700 font-medium flex-1">草稿箱</span>
+                    <span class="bg-red-500 text-white text-[10px] px-1.5 rounded-full mr-2">2</span>
+                    <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                </a>
+            </div>
+
+            <div class="h-1 bg-gray-50 mx-4 my-1"></div>
+
+            <!-- 服务与工具 -->
+            <div class="px-4 py-2">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 px-2">服务</h3>
+                <a href="shequ-history.html" class="flex items-center px-3 py-3 rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors">
+                    <i class="fas fa-history text-gray-400 w-8 text-center mr-3"></i>
+                    <span class="text-gray-700 font-medium flex-1">浏览历史</span>
+                </a>
+                <a href="shequ-settings.html" class="flex items-center px-3 py-3 rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors">
+                    <i class="fas fa-cog text-gray-400 w-8 text-center mr-3"></i>
+                    <span class="text-gray-700 font-medium flex-1">设置</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 全部分类侧边栏 (从底部弹出) -->
+    <div id="category-drawer-overlay" class="fixed inset-0 bg-black/50 z-[80] hidden transition-opacity duration-300 opacity-0 backdrop-blur-sm" onclick="toggleCategoryDrawer()"></div>
+    <div id="category-drawer" class="fixed bottom-0 left-0 right-0 bg-white z-[90] rounded-t-2xl transform translate-y-full transition-transform duration-300 shadow-2xl h-[85vh] flex flex-col">
+        
+        <!-- 标题栏 -->
+        <div class="sticky top-0 bg-white z-10 px-5 py-4 border-b border-gray-100 flex justify-between items-center rounded-t-2xl shrink-0">
+            <h2 class="text-lg font-bold text-gray-800">全部分类</h2>
+            <button onclick="toggleCategoryDrawer()" class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center hover:bg-gray-200 transition-colors">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- 三级联动分类容器 -->
+        <div class="flex flex-1 overflow-hidden">
+            <!-- 一级分类 (左侧固定) -->
+            <div class="w-[24%] bg-gray-50 overflow-y-auto scrollbar-hide py-2" id="level1-container">
+                <!-- 由 JS 渲染 -->
+            </div>
+
+            <!-- 二级分类 (中间) -->
+            <div class="w-[28%] bg-white border-r border-gray-100 overflow-y-auto scrollbar-hide py-2" id="level2-container">
+                <!-- 由 JS 渲染 -->
+            </div>
+
+            <!-- 三级分类 (右侧标签) -->
+            <div class="flex-1 bg-white overflow-y-auto scrollbar-hide p-4" id="level3-container">
+                <!-- 由 JS 渲染 -->
+            </div>
+        </div>
+
+        <!-- 底部操作栏 -->
+        <div class="p-4 border-t border-gray-100 bg-white flex space-x-3 shrink-0">
+            <button onclick="resetSelection()" class="flex-1 py-2.5 rounded-full border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-colors">重置</button>
+            <button onclick="confirmSelection()" class="flex-1 py-2.5 rounded-full bg-[#ff8c00] text-white font-bold shadow-lg shadow-orange-100 hover:bg-orange-600 transition-colors">查看结果 <span id="selected-count" class="hidden text-xs ml-1 bg-white/20 px-1.5 rounded-full">0</span></button>
+        </div>
+    </div>
+
+    <!-- 悬浮菜单遮罩层 -->
+    <div id="fab-overlay" class="fixed inset-0 bg-black/50 z-[60] hidden transition-opacity duration-300 opacity-0 backdrop-blur-sm" onclick="toggleFabMenu()"></div>
+
+    <!-- 悬浮按钮容器 -->
+    <div class="fixed bottom-24 right-5 z-[70] flex flex-col items-end space-y-4">
+        
+        <!-- 子按钮组 -->
+        <div id="fab-menu" class="flex flex-col items-end space-y-4 transition-all duration-300 opacity-0 translate-y-10 pointer-events-none scale-90 origin-bottom">
+            
+            <!-- 子按钮 B: 晒作品 -->
+            <div class="flex items-center space-x-3">
+                <span class="text-sm font-medium text-gray-700 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-gray-100">晒作品</span>
+                <button onclick="handleCooksnap()" class="w-12 h-12 rounded-full bg-green-500 text-white shadow-lg flex items-center justify-center hover:bg-green-600 transition-colors pointer-events-auto transform active:scale-90">
+                    <i class="fas fa-camera text-lg"></i>
+                </button>
+            </div>
+
+            <!-- 子按钮 A: 写食谱 -->
+            <div class="flex items-center space-x-3">
+                <span class="text-sm font-medium text-gray-700 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-gray-100">写食谱</span>
+                <button onclick="handleWriteRecipe()" class="w-12 h-12 rounded-full bg-orange-500 text-white shadow-lg flex items-center justify-center hover:bg-orange-600 transition-colors pointer-events-auto transform active:scale-90">
+                    <i class="fas fa-pen text-lg"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 主按钮 -->
+        <button id="main-fab" onclick="toggleFabMenu()" class="w-14 h-14 rounded-full bg-[#ff8c00] text-white shadow-lg flex items-center justify-center transition-transform duration-300 active:scale-90 shadow-orange-500/40">
+            <i class="fas fa-plus text-2xl transition-transform duration-300" id="fab-icon"></i>
+        </button>
+    </div>
+
+    <!-- 底部导航栏 -->
+    <nav class="bottom-nav" id="mainBottomNav">
+        <div class="grid grid-cols-4">
+            <a href="../shouye/shouye-mobile.html" class="bottom-nav-item">
+                <i class="fas fa-home"></i>
+                <span>首页</span>
+            </a>
+            <a href="../cangku-gongneng/erp-zhuye-canku.html" class="bottom-nav-item">
+                <i class="fas fa-chart-pie"></i>
+                <span>ERP</span>
+            </a>
+            <a href="#" class="bottom-nav-item active">
+                <i class="fas fa-users"></i>
+                <span>社区</span>
+            </a>
+            <a href="../wode/wodezhuye.html" class="bottom-nav-item">
+                <i class="fas fa-user"></i>
+                <span>我的</span>
+            </a>
+        </div>
+    </nav>
+
+    <script>
+        // 关注按钮功能
+        function toggleFollow(btn) {
+            if (btn.classList.contains('bg-orange-100')) {
+                // 切换到已关注状态
+                btn.classList.remove('bg-orange-100', 'text-orange-600');
+                btn.classList.add('bg-transparent', 'text-gray-400', 'border', 'border-gray-300');
+                btn.textContent = '已关注';
+            } else {
+                // 切换到关注状态
+                btn.classList.add('bg-orange-100', 'text-orange-600');
+                btn.classList.remove('bg-transparent', 'text-gray-400', 'border', 'border-gray-300');
+                btn.textContent = '关注';
+            }
+        }
+
+        // 导航标签切换
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // 收藏功能
+        document.querySelectorAll('button i.fa-heart').forEach(icon => {
+            icon.parentElement.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (icon.classList.contains('far')) {
+                    icon.classList.remove('far');
+                    icon.classList.add('fas');
+                    icon.classList.add('text-red-500');
+                } else {
+                    icon.classList.remove('fas', 'text-red-500');
+                    icon.classList.add('far');
+                }
+            });
+        });
+
+        // 悬浮按钮点击 (已废弃，保留函数名以防万一，但实际逻辑已拆分)
+        function openCreateMenu() {
+            toggleFabMenu();
+        }
+
+        // 新版悬浮菜单逻辑
+        let isFabOpen = false;
+        const fabMenu = document.getElementById('fab-menu');
+        const fabIcon = document.getElementById('fab-icon');
+        const fabOverlay = document.getElementById('fab-overlay');
+        const mainFab = document.getElementById('main-fab');
+
+        function toggleFabMenu() {
+            isFabOpen = !isFabOpen;
+            
+            if (isFabOpen) {
+                // 打开菜单
+                fabMenu.classList.remove('opacity-0', 'translate-y-10', 'pointer-events-none', 'scale-90');
+                fabIcon.classList.add('rotate-45');
+                fabOverlay.classList.remove('hidden');
+                // 微小延迟以触发 opacity 动画
+                setTimeout(() => fabOverlay.classList.remove('opacity-0'), 10);
+            } else {
+                // 关闭菜单
+                fabMenu.classList.add('opacity-0', 'translate-y-10', 'pointer-events-none', 'scale-90');
+                fabIcon.classList.remove('rotate-45');
+                fabOverlay.classList.add('opacity-0');
+                setTimeout(() => fabOverlay.classList.add('hidden'), 300);
+            }
+        }
+
+        function handleWriteRecipe() {
+            // 跳转到发布食谱页面
+            window.location.href = '../../peifnagmokuai/mianbao/mianbaozhuye/peifang-zhuye.html';
+        }
+
+        function handleCooksnap() {
+            // 跳转到发布Cooksnap页面
+            alert('即将打开跟做发布页面 (Cooksnap)');
+            toggleFabMenu(); // 关闭菜单
+        }
+
+        // 搜索功能
+        document.querySelector('input[type="text"]').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                console.log('搜索: ' + this.value);
+                // 执行搜索逻辑
+            }
+        });
+
+        // --- Popular Bakers Logic ---
+        const bakersData = [
+            {
+                id: 1,
+                name: "苏苏的甜点",
+                avatar: "https://randomuser.me/api/portraits/women/44.jpg",
+                level: 5,
+                verified: true,
+                desc: "专注法式甜点教学",
+                fans: 12500,
+                worksCount: 342,
+                rating: 4.9,
+                isFollowing: false,
+                images: [
+                    "https://images.unsplash.com/photo-1578985545062-69928b1d9587?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80",
+                    "https://images.unsplash.com/photo-1558301211-0d8c8ddee6ec?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80",
+                    "https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80"
+                ]
+            },
+            {
+                id: 2,
+                name: "面包大叔",
+                avatar: "https://randomuser.me/api/portraits/men/32.jpg",
+                level: 4,
+                verified: true,
+                desc: "天然酵母研究员",
+                fans: 8900,
+                worksCount: 156,
+                rating: 4.7,
+                isFollowing: true,
+                images: [
+                    "https://images.unsplash.com/photo-1621303837174-89787a7d4729?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80",
+                    "https://images.unsplash.com/photo-1509440159596-0249088772ff?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80",
+                    "https://images.unsplash.com/photo-1549396535-c11d5c55b9df?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80"
+                ]
+            },
+            {
+                id: 3,
+                name: "Chef David",
+                avatar: "https://randomuser.me/api/portraits/men/85.jpg",
+                level: 6,
+                verified: true,
+                desc: "米其林三星主厨",
+                fans: 45000,
+                worksCount: 89,
+                rating: 5.0,
+                isFollowing: false,
+                images: [
+                    "https://images.unsplash.com/photo-1488477181946-6428a0291777?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80",
+                    "https://images.unsplash.com/photo-1464349095431-e93992015966?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80",
+                    "https://images.unsplash.com/photo-1551024709-8f23befc6f87?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80"
+                ]
+            },
+            {
+                id: 4,
+                name: "小爱烘焙",
+                avatar: "https://randomuser.me/api/portraits/women/68.jpg",
+                level: 3,
+                verified: false,
+                desc: "记录家庭烘焙日常",
+                fans: 3200,
+                worksCount: 560,
+                rating: 4.5,
+                isFollowing: false,
+                images: [
+                    "https://images.unsplash.com/photo-1565958011703-44f9829ba187?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80",
+                    "https://images.unsplash.com/photo-1551879400-111a9087cd86?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80",
+                    "https://images.unsplash.com/photo-1587314168485-3236d6710814?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80"
+                ]
+            },
+            {
+                id: 5,
+                name: "甜品实验室",
+                avatar: "https://randomuser.me/api/portraits/men/45.jpg",
+                level: 4,
+                verified: true,
+                desc: "探索无限可能",
+                fans: 18900,
+                worksCount: 210,
+                rating: 4.8,
+                isFollowing: false,
+                images: []
+            },
+            {
+                id: 6,
+                name: "安娜的厨房",
+                avatar: "https://randomuser.me/api/portraits/women/23.jpg",
+                level: 2,
+                verified: false,
+                desc: "简单的幸福味道",
+                fans: 5600,
+                worksCount: 120,
+                rating: 4.6,
+                isFollowing: true,
+                images: []
+            },
+            {
+                id: 7,
+                name: "老张的面包坊",
+                avatar: "https://randomuser.me/api/portraits/men/67.jpg",
+                level: 5,
+                verified: true,
+                desc: "四十年匠心手作",
+                fans: 32000,
+                worksCount: 890,
+                rating: 4.9,
+                isFollowing: false,
+                images: []
+            },
+            {
+                id: 8,
+                name: "Cici Cake",
+                avatar: "https://randomuser.me/api/portraits/women/90.jpg",
+                level: 3,
+                verified: true,
+                desc: "韩式裱花教学",
+                fans: 9800,
+                worksCount: 150,
+                rating: 4.7,
+                isFollowing: false,
+                images: []
+            },
+            {
+                id: 9,
+                name: "抹茶控",
+                avatar: "https://randomuser.me/api/portraits/men/12.jpg",
+                level: 2,
+                verified: false,
+                desc: "万物皆可抹茶",
+                fans: 4200,
+                worksCount: 88,
+                rating: 4.4,
+                isFollowing: false,
+                images: []
+            },
+            {
+                id: 10,
+                name: "糖霜艺术家",
+                avatar: "https://randomuser.me/api/portraits/women/34.jpg",
+                level: 4,
+                verified: true,
+                desc: "饼干上的绘画",
+                fans: 15600,
+                worksCount: 230,
+                rating: 4.8,
+                isFollowing: true,
+                images: []
+            },
+            {
+                id: 11,
+                name: "低脂烘焙",
+                avatar: "https://randomuser.me/api/portraits/men/56.jpg",
+                level: 3,
+                verified: true,
+                desc: "健康不长胖",
+                fans: 11200,
+                worksCount: 180,
+                rating: 4.6,
+                isFollowing: false,
+                images: []
+            },
+            {
+                id: 12,
+                name: "巧克力工厂",
+                avatar: "https://randomuser.me/api/portraits/men/78.jpg",
+                level: 5,
+                verified: true,
+                desc: "纯正黑巧风味",
+                fans: 28900,
+                worksCount: 340,
+                rating: 4.9,
+                isFollowing: false,
+                images: []
+            }
+        ];
+
+        let currentSort = 'popularity';
+
+        function initBakers() {
+            renderBakers();
+        }
+
+        function switchBakerSort(sortType) {
+            currentSort = sortType;
+            
+            // Update tabs UI
+            document.querySelectorAll('.baker-sort-btn').forEach(btn => {
+                btn.classList.remove('active', 'text-gray-900', 'border-orange-500');
+                btn.classList.add('text-gray-400', 'border-transparent');
+            });
+            const activeBtn = document.getElementById('sort-' + sortType);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-gray-400', 'border-transparent');
+                activeBtn.classList.add('active', 'text-gray-900', 'border-orange-500');
+            }
+            
+            renderBakers();
+        }
+
+        function renderBakers() {
+            const container = document.getElementById('bakers-list-container');
+            if (!container) return;
+
+            // Sort data
+            let sortedData = [...bakersData];
+            if (currentSort === 'popularity') {
+                sortedData.sort((a, b) => b.fans - a.fans);
+            } else if (currentSort === 'rating') {
+                sortedData.sort((a, b) => b.rating - a.rating);
+            } else if (currentSort === 'works') {
+                sortedData.sort((a, b) => b.worksCount - a.worksCount);
+            }
+
+            // Render HTML
+            container.innerHTML = sortedData.map(baker => `
+                <div class="w-28 bg-white rounded-xl border border-gray-100 shadow-sm p-2 relative group hover:shadow-md transition-shadow cursor-pointer flex flex-col items-center justify-between" onclick="window.location.href='user-profile.html'">
+                    
+                    <!-- Top: Avatar & Info -->
+                    <div class="flex flex-col items-center w-full">
+                        <!-- Avatar -->
+                        <div class="relative mb-1.5">
+                            <img src="${baker.avatar}" class="w-10 h-10 rounded-full border border-gray-100 object-cover">
+                            ${baker.verified ? `<span class="absolute -bottom-0 -right-0 bg-yellow-400 text-white text-[8px] w-3 h-3 flex items-center justify-center rounded-full border border-white"><i class="fas fa-check"></i></span>` : ''}
+                        </div>
+                        
+                        <!-- Info -->
+                        <h4 class="font-bold text-gray-900 text-xs leading-tight truncate w-full text-center">
+                            ${baker.name}
+                        </h4>
+                        <p class="text-[9px] text-gray-400 mt-0.5 truncate w-full text-center">${baker.desc}</p>
+                        <p class="text-[9px] text-gray-400 mt-1 mb-1.5"><span class="font-bold text-gray-600">${formatNumber(baker.fans)}</span> 粉丝</p>
+                    </div>
+
+                    <!-- Bottom: Button -->
+                    <button onclick="event.stopPropagation(); toggleFollowState(this, ${baker.id})" class="w-full py-1 rounded-full text-[10px] font-bold transition-all ${baker.isFollowing ? 'bg-gray-100 text-gray-500 border border-gray-200' : 'bg-orange-50 text-orange-600 border border-orange-100 hover:bg-orange-100'}">
+                        ${baker.isFollowing ? '已关注' : '关注'}
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function formatNumber(num) {
+            return num >= 1000 ? (num/1000).toFixed(1) + 'k' : num;
+        }
+
+        function toggleFollowState(btn, id) {
+            const baker = bakersData.find(b => b.id === id);
+            if (baker) {
+                baker.isFollowing = !baker.isFollowing;
+                if (baker.isFollowing) {
+                    btn.className = "w-full py-1 rounded-full text-[10px] font-bold transition-all bg-gray-100 text-gray-500 border border-gray-200";
+                    btn.textContent = "已关注";
+                } else {
+                    btn.className = "w-full py-1 rounded-full text-[10px] font-bold transition-all bg-orange-50 text-orange-600 border border-orange-100 hover:bg-orange-100";
+                    btn.textContent = "关注";
+                }
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initBakers();
+            initCategoryDrawer();
+        });
+
+        // --- Category Drawer Logic (3-Level Linkage) ---
+        
+        // Data Structure
+        const categoryData = {
+            'baking': {
+                name: '烘焙',
+                icon: 'fa-bread-slice',
+                color: 'text-orange-500',
+                bg: 'bg-orange-50',
+                subCategories: [
+                    { name: '面包', tags: ['欧式面包', '吐司', '可颂 / 丹麦', '日式', '天然种', '高水量', '冷冻面团'] },
+                    { name: '蛋糕', tags: ['戚风', '海绵', '奶油蛋糕', '慕斯蛋糕', '翻糖 / 裱花', '商用蛋糕'] },
+                    { name: '西点', tags: ['挞类', '泡芙', '曲奇', '马卡龙', '布朗尼', '可丽露', '常温甜点'] },
+                    { name: '中点', tags: ['中式糕点', '酥皮点心', '月饼', '桃酥', '麻薯类'] },
+                    { name: '发酵面制品', tags: ['馒头', '包子', '花卷', '油条', '烧饼', '发面饼'] },
+                    { name: '馅料', tags: ['甜口馅料', '咸口馅料', '淋面酱', '抹酱', '装饰酱', '裹入馅'] }
+                ]
+            },
+            'light_food': {
+                name: '轻食',
+                icon: 'fa-leaf',
+                color: 'text-green-500',
+                bg: 'bg-green-50',
+                description: '轻食｜以面包为主食的吃法与组合，非家常炒菜',
+                subCategories: [
+                    { name: '三明治', tags: ['冷三明治', '热三明治', '开放式三明治', '商用三明治', '家庭快手'] },
+                    { name: '吐司料理', tags: ['法式吐司', '烤吐司', '咸吐司', '甜吐司'] },
+                    { name: '面包轻餐', tags: ['面包+沙拉', '面包+酱料', '简餐组合'] },
+                    { name: '开放式面包', tags: ['咸味搭配', '甜味搭配', '水果搭配', '坚果搭配'] },
+                    { name: '早餐 / Brunch', tags: ['早餐盘', '咖啡搭配', '轻早午餐'] }
+                ]
+            },
+            'drinks': {
+                name: '饮品',
+                icon: 'fa-coffee',
+                color: 'text-stone-600',
+                bg: 'bg-stone-50',
+                description: '用于搭配烘焙与轻食的饮品配方',
+                subCategories: [
+                    { name: '咖啡', tags: ['手冲', '意式', '美式', '拿铁', '商用配方'] },
+                    { name: '茶饮', tags: ['红茶', '绿茶', '奶茶', '冷泡'] },
+                    { name: '奶饮', tags: ['牛奶饮品', '奶盖', '调味奶'] },
+                    { name: '巧克力/可可', tags: ['热可可', '冷巧', '烘焙搭配'] },
+                    { name: '饮品搭配', tags: ['搭配吐司', '搭配甜点', '搭配三明治'] }
+                ]
+            },
+            'western': {
+                name: '西餐',
+                icon: 'fa-utensils',
+                color: 'text-red-500',
+                bg: 'bg-red-50',
+                description: '可复用、有配方结构的西式料理',
+                subCategories: [
+                    { name: '主食', tags: ['意面', '披萨', '焗烤'] },
+                    { name: '酱料', tags: ['白酱', '红酱', '香草酱', '黄油酱'] },
+                    { name: '汤品', tags: ['奶油汤', '蔬菜汤', '面包搭配汤'] },
+                    { name: '前菜/配菜', tags: ['沙拉', '冷盘', '面包配菜'] }
+                ]
+            }
+        };
+
+        // State
+        let currentLevel1 = 'baking';
+        let currentLevel2Index = 0;
+        let selectedTags = new Set();
+        let isDrawerOpen = false;
+
+        // Elements
+        const drawer = document.getElementById('category-drawer');
+        const drawerOverlay = document.getElementById('category-drawer-overlay');
+        const level1Container = document.getElementById('level1-container');
+        const level2Container = document.getElementById('level2-container');
+        const level3Container = document.getElementById('level3-container');
+        const selectedCountEl = document.getElementById('selected-count');
+
+        function initCategoryDrawer() {
+            renderLevel1();
+            renderLevel2();
+            renderLevel3();
+        }
+
+        function toggleCategoryDrawer() {
+            isDrawerOpen = !isDrawerOpen;
+            if (isDrawerOpen) {
+                // 如果当前一级分类不在 tabMap 中（比如在"推荐"tab），默认选中第一个分类（烘焙）
+                if (!categoryData[currentLevel1]) {
+                    currentLevel1 = 'baking';
+                    currentLevel2Index = 0;
+                }
+                
+                // 确保打开时渲染正确的一级分类选中状态
+                renderLevel1();
+                renderLevel2();
+                renderLevel3();
+                
+                drawerOverlay.classList.remove('hidden');
+                setTimeout(() => {
+                    drawerOverlay.classList.remove('opacity-0');
+                    drawer.classList.remove('translate-y-full');
+                }, 10);
+                document.body.style.overflow = 'hidden';
+            } else {
+                drawerOverlay.classList.add('opacity-0');
+                drawer.classList.add('translate-y-full');
+                setTimeout(() => {
+                    drawerOverlay.classList.add('hidden');
+                }, 300);
+                document.body.style.overflow = '';
+            }
+        }
+
+        function renderLevel1() {
+            level1Container.innerHTML = '';
+            Object.keys(categoryData).forEach(key => {
+                const data = categoryData[key];
+                const isActive = key === currentLevel1;
+                
+                const item = document.createElement('div');
+                item.className = `flex flex-col items-center justify-center py-4 cursor-pointer transition-colors relative ${isActive ? 'bg-white' : 'hover:bg-gray-100'}`;
+                item.onclick = () => selectLevel1(key);
+                
+                // Active indicator strip
+                if (isActive) {
+                    const strip = document.createElement('div');
+                    strip.className = 'absolute left-0 top-0 bottom-0 w-1 bg-orange-500 rounded-r-full';
+                    item.appendChild(strip);
+                }
+
+                item.innerHTML += `
+                    <div class="w-10 h-10 rounded-xl ${data.bg} ${data.color} flex items-center justify-center text-lg mb-1.5 transition-transform ${isActive ? 'scale-110' : ''}">
+                        <i class="fas ${data.icon}"></i>
+                    </div>
+                    <span class="text-xs font-medium ${isActive ? 'text-gray-900 font-bold' : 'text-gray-500'}">${data.name}</span>
+                `;
+                level1Container.appendChild(item);
+            });
+        }
+
+        function selectLevel1(key) {
+            if (currentLevel1 === key) return;
+            currentLevel1 = key;
+            currentLevel2Index = 0; // Reset level 2 selection
+            renderLevel1();
+            renderLevel2();
+            renderLevel3();
+        }
+
+        function renderLevel2() {
+            level2Container.innerHTML = '';
+            const subCategories = categoryData[currentLevel1].subCategories;
+            
+            subCategories.forEach((sub, index) => {
+                const isActive = index === currentLevel2Index;
+                const item = document.createElement('div');
+                item.className = `px-3 py-3 text-sm cursor-pointer transition-colors flex items-center justify-between ${isActive ? 'text-orange-600 font-bold bg-orange-50/50' : 'text-gray-600 hover:bg-gray-50'}`;
+                item.onclick = () => selectLevel2(index);
+                
+                item.innerHTML = `
+                    <span>${sub.name}</span>
+                    ${isActive ? '<i class="fas fa-chevron-right text-[10px] opacity-60"></i>' : ''}
+                `;
+                level2Container.appendChild(item);
+            });
+        }
+
+        function selectLevel2(index) {
+            if (currentLevel2Index === index) return;
+            currentLevel2Index = index;
+            renderLevel2();
+            renderLevel3();
+        }
+
+        function renderLevel3() {
+            level3Container.innerHTML = '';
+            const data = categoryData[currentLevel1];
+            const subCategory = data.subCategories[currentLevel2Index];
+            
+            // Description (if exists for Level 1)
+            if (data.description) {
+                const desc = document.createElement('div');
+                desc.className = 'bg-orange-50 border border-orange-100 rounded-lg p-2.5 mb-4 text-xs text-orange-800 leading-relaxed';
+                desc.innerHTML = `<i class="fas fa-info-circle mr-1 text-orange-500"></i>${data.description}`;
+                level3Container.appendChild(desc);
+            }
+
+            // Title for current section
+            const title = document.createElement('h3');
+            title.className = 'font-bold text-gray-800 text-sm mb-3 px-1';
+            title.textContent = subCategory.name;
+            level3Container.appendChild(title);
+
+            // Tags Grid
+            const grid = document.createElement('div');
+            grid.className = 'flex flex-wrap gap-2';
+            
+            subCategory.tags.forEach(tag => {
+                const isSelected = selectedTags.has(tag);
+                const chip = document.createElement('button');
+                chip.className = `px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${isSelected ? 'bg-orange-500 border-orange-500 text-white shadow-sm' : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'}`;
+                chip.textContent = tag;
+                chip.onclick = () => toggleTag(tag);
+                grid.appendChild(chip);
+            });
+            level3Container.appendChild(grid);
+        }
+
+        function toggleTag(tag) {
+            if (selectedTags.has(tag)) {
+                selectedTags.delete(tag);
+            } else {
+                selectedTags.add(tag);
+            }
+            renderLevel3(); // Re-render to update UI
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() {
+            const count = selectedTags.size;
+            selectedCountEl.textContent = count;
+            if (count > 0) {
+                selectedCountEl.classList.remove('hidden');
+            } else {
+                selectedCountEl.classList.add('hidden');
+            }
+        }
+
+        function resetSelection() {
+            selectedTags.clear();
+            renderLevel3();
+            updateSelectedCount();
+        }
+
+        function confirmSelection() {
+            toggleCategoryDrawer();
+            if (selectedTags.size > 0) {
+                console.log('Selected tags:', Array.from(selectedTags));
+                // Optional: Trigger search or filtering here
+            }
+        }
+    </script>
+</body>
+</html>

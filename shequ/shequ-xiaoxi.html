@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>消息中心 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #ffffff;
+            color: #1a1a1a;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+        }
+
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Animation for dropdown */
+        .dropdown-enter {
+            opacity: 0;
+            transform: scale(0.95) translateY(-10px);
+        }
+        .dropdown-enter-active {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            transition: opacity 200ms ease-out, transform 200ms ease-out;
+        }
+
+        /* Swipe to Delete Styles */
+        .swipe-item-container {
+            position: relative;
+            overflow: hidden;
+        }
+        .swipe-content {
+            position: relative;
+            z-index: 10;
+            background-color: white;
+            transition: transform 0.2s ease-out;
+        }
+        .swipe-actions {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            right: 0;
+            width: 70px;
+            background-color: #ef4444; /* red-500 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body class="bg-white">
+
+    <!-- 顶部导航 -->
+    <header class="sticky top-0 z-30 bg-white">
+        <div class="flex items-center justify-between px-4 h-12">
+            <!-- 左侧：返回 -->
+            <a href="shequ-zhuye.html" class="w-8 h-8 flex items-center justify-center text-gray-600">
+                <i class="fas fa-arrow-left text-lg"></i>
+            </a>
+            
+            <!-- 中间：标题 -->
+            <h1 id="header-title" class="font-bold text-lg text-gray-800 transition-all duration-200">消息</h1>
+
+            <!-- 搜索框 (默认隐藏) -->
+            <div id="search-container" class="hidden flex-1 mx-4 transition-all duration-200">
+                <div class="relative w-full">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                        <i class="fas fa-search text-gray-400"></i>
+                    </span>
+                    <input type="text" id="search-input" oninput="filterMessages()" placeholder="搜索联系人、群聊..." class="w-full bg-gray-100 text-sm text-gray-900 rounded-full pl-10 pr-8 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-200">
+                    <button onclick="toggleSearch()" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400">
+                        <i class="fas fa-times-circle"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 右侧：搜索与添加 -->
+            <div id="header-actions" class="flex items-center space-x-3 transition-all duration-200">
+                <button onclick="toggleSearch()" class="text-gray-600 w-8 h-8 flex items-center justify-center">
+                    <i class="fas fa-search text-lg"></i>
+                </button>
+                <button onclick="openModal('modal-contacts')" class="text-gray-600 w-8 h-8 flex items-center justify-center">
+                    <i class="fas fa-address-book text-lg"></i>
+                </button>
+                <div class="relative">
+                    <button onclick="toggleMenu()" class="text-gray-600 w-8 h-8 flex items-center justify-center">
+                        <i class="fas fa-plus-circle text-lg"></i>
+                    </button>
+                    <!-- 下拉菜单 -->
+                    <div id="add-menu" class="hidden absolute right-0 top-10 w-40 bg-white shadow-xl rounded-xl py-2 z-50 border border-gray-100 transform origin-top-right transition-all duration-200">
+                        <button onclick="window.location.href='shequ-create-group.html'; toggleMenu()" class="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50">
+                            <i class="fas fa-comments w-6 text-gray-400"></i>
+                            <span>创建群聊</span>
+                        </button>
+                        <button onclick="window.location.href='shequ-add-friend.html'; toggleMenu()" class="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50">
+                            <i class="fas fa-user-plus w-6 text-gray-400"></i>
+                            <span>添加好友</span>
+                        </button>
+                        <button onclick="openModal('modal-scan'); toggleMenu()" class="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50">
+                            <i class="fas fa-qrcode w-6 text-gray-400"></i>
+                            <span>扫一扫</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="pb-safe min-h-screen">
+        
+        <!-- 互动入口栏 (Interaction Grid) -->
+        <div class="flex justify-around py-6 bg-white">
+            <div onclick="window.location.href='shequ-zan.html'" class="flex flex-col items-center space-y-2 cursor-pointer active:opacity-70 transition-opacity">
+                <div class="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center text-red-500 relative border border-red-100 shadow-sm">
+                    <i class="fas fa-heart text-2xl"></i>
+                    <span class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] min-w-[18px] h-[18px] flex items-center justify-center rounded-full border-2 border-white font-bold">2</span>
+                </div>
+                <span class="text-xs font-medium text-gray-700">赞和收藏</span>
+            </div>
+            
+            <div onclick="window.location.href='shequ-guanzhu.html'" class="flex flex-col items-center space-y-2 cursor-pointer active:opacity-70 transition-opacity">
+                <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-500 relative border border-blue-100 shadow-sm">
+                    <i class="fas fa-user text-2xl"></i>
+                </div>
+                <span class="text-xs font-medium text-gray-700">新增关注</span>
+            </div>
+            
+            <div onclick="window.location.href='shequ-pinglun.html'" class="flex flex-col items-center space-y-2 cursor-pointer active:opacity-70 transition-opacity">
+                <div class="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center text-green-500 relative border border-green-100 shadow-sm">
+                    <i class="fas fa-comment-dots text-2xl"></i>
+                    <span class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] min-w-[18px] h-[18px] flex items-center justify-center rounded-full border-2 border-white font-bold">1</span>
+                </div>
+                <span class="text-xs font-medium text-gray-700">评论和@</span>
+            </div>
+        </div>
+
+        <!-- 消息列表 -->
+        <div class="mt-2" id="message-list">
+            
+            <!-- 群聊 -->
+            <div class="swipe-item-container">
+                <div class="swipe-actions" onclick="deleteMessage(this)">删除</div>
+                <div class="swipe-content flex items-center px-4 py-3.5 bg-white active:bg-gray-50 transition-colors"
+                     onclick="navigateToChat(event)" ontouchstart="handleTouchStart(event)" ontouchmove="handleTouchMove(event)" ontouchend="handleTouchEnd(event)">
+                    <div class="relative">
+                        <div class="w-12 h-12 rounded-full bg-gray-100 overflow-hidden border border-gray-100 grid grid-cols-2 gap-0.5 p-0.5">
+                             <img src="https://randomuser.me/api/portraits/women/44.jpg" class="w-full h-full object-cover rounded-tl-full">
+                             <img src="https://randomuser.me/api/portraits/men/32.jpg" class="w-full h-full object-cover rounded-tr-full">
+                             <img src="https://randomuser.me/api/portraits/women/68.jpg" class="w-full h-full object-cover rounded-bl-full">
+                             <div class="w-full h-full bg-gray-200 flex items-center justify-center text-[8px] text-gray-500 rounded-br-full">+5</div>
+                        </div>
+                    </div>
+                    <div class="flex-1 ml-3 min-w-0 border-b border-gray-50 pb-3.5 pointer-events-none">
+                        <div class="flex justify-between items-baseline mb-1">
+                            <h3 class="font-bold text-gray-900 text-sm">烘匠APP官方群聊</h3>
+                            <span class="text-xs text-gray-400">13:57</span>
+                        </div>
+                        <p class="text-sm text-gray-500 truncate">
+                            <span class="text-gray-400">@雪:</span> Hi，欢迎加入群聊，快来和小伙伴...
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 活动消息 -->
+            <div class="swipe-item-container">
+                <div class="swipe-actions" onclick="deleteMessage(this)">删除</div>
+                <div class="swipe-content flex items-center px-4 py-3.5 bg-white active:bg-gray-50 transition-colors"
+                     onclick="navigateToChat(event)" ontouchstart="handleTouchStart(event)" ontouchmove="handleTouchMove(event)" ontouchend="handleTouchEnd(event)">
+                    <div class="relative">
+                        <div class="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white border border-blue-100">
+                            <i class="fas fa-bullhorn text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="flex-1 ml-3 min-w-0 border-b border-gray-50 pb-3.5 pointer-events-none">
+                        <div class="flex justify-between items-baseline mb-1">
+                            <h3 class="font-bold text-gray-900 text-sm">活动消息</h3>
+                            <span class="text-xs text-gray-400">11-23</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <p class="text-sm text-gray-500 truncate pr-2">本周群聊流量奖励即将过期</p>
+                            <div class="w-2 h-2 bg-red-500 rounded-full flex-shrink-0"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 面包仙人 -->
+            <div class="swipe-item-container">
+                <div class="swipe-actions" onclick="deleteMessage(this)">删除</div>
+                <div class="swipe-content flex items-center px-4 py-3.5 bg-white active:bg-gray-50 transition-colors"
+                     onclick="navigateToChat(event)" ontouchstart="handleTouchStart(event)" ontouchmove="handleTouchMove(event)" ontouchend="handleTouchEnd(event)">
+                    <div class="relative">
+                        <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80" class="w-12 h-12 rounded-full border border-gray-100 object-cover">
+                    </div>
+                    <div class="flex-1 ml-3 min-w-0 border-b border-gray-50 pb-3.5 pointer-events-none">
+                        <div class="flex justify-between items-baseline mb-1">
+                            <h3 class="font-bold text-gray-900 text-sm">面包仙人</h3>
+                            <span class="text-xs text-gray-400">08-22</span>
+                        </div>
+                        <p class="text-sm text-gray-500 truncate">我们已相互关注，开始聊天吧👋</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 系统消息 -->
+            <div class="swipe-item-container">
+                <div class="swipe-actions" onclick="deleteMessage(this)">删除</div>
+                <div class="swipe-content flex items-center px-4 py-3.5 bg-white active:bg-gray-50 transition-colors"
+                     onclick="navigateToChat(event)" ontouchstart="handleTouchStart(event)" ontouchmove="handleTouchMove(event)" ontouchend="handleTouchEnd(event)">
+                    <div class="relative">
+                        <div class="w-12 h-12 rounded-full bg-blue-400 flex items-center justify-center text-white border border-blue-100">
+                            <i class="fas fa-bell text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="flex-1 ml-3 min-w-0 border-b border-gray-50 pb-3.5 pointer-events-none">
+                        <div class="flex justify-between items-baseline mb-1">
+                            <h3 class="font-bold text-gray-900 text-sm">系统消息</h3>
+                            <span class="text-xs text-gray-400">08-01</span>
+                        </div>
+                        <p class="text-sm text-gray-500 truncate">烘匠诚邀您参加小调研</p>
+                    </div>
+                </div>
+            </div>
+
+             <!-- 猫咪_酱 -->
+             <div class="swipe-item-container">
+                <div class="swipe-actions" onclick="deleteMessage(this)">删除</div>
+                <div class="swipe-content flex items-center px-4 py-3.5 bg-white active:bg-gray-50 transition-colors"
+                     onclick="navigateToChat(event)" ontouchstart="handleTouchStart(event)" ontouchmove="handleTouchMove(event)" ontouchend="handleTouchEnd(event)">
+                    <div class="relative">
+                        <img src="https://randomuser.me/api/portraits/women/12.jpg" class="w-12 h-12 rounded-full border border-gray-100 object-cover">
+                    </div>
+                    <div class="flex-1 ml-3 min-w-0 border-b border-gray-50 pb-3.5 pointer-events-none">
+                        <div class="flex justify-between items-baseline mb-1">
+                            <h3 class="font-bold text-gray-900 text-sm">猫咪_酱</h3>
+                            <span class="text-xs text-gray-400">06-18</span>
+                        </div>
+                        <p class="text-sm text-gray-500 truncate">对方关注或回复你之前，24小时内最多只能...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 饱ww- -->
+            <div class="swipe-item-container">
+                <div class="swipe-actions" onclick="deleteMessage(this)">删除</div>
+                <div class="swipe-content flex items-center px-4 py-3.5 bg-white active:bg-gray-50 transition-colors"
+                     onclick="navigateToChat(event)" ontouchstart="handleTouchStart(event)" ontouchmove="handleTouchMove(event)" ontouchend="handleTouchEnd(event)">
+                    <div class="relative">
+                        <img src="https://randomuser.me/api/portraits/men/41.jpg" class="w-12 h-12 rounded-full border border-gray-100 object-cover">
+                    </div>
+                    <div class="flex-1 ml-3 min-w-0 border-b border-gray-50 pb-3.5 pointer-events-none">
+                        <div class="flex justify-between items-baseline mb-1">
+                            <h3 class="font-bold text-gray-900 text-sm">饱ww-</h3>
+                            <span class="text-xs text-gray-400">06-18</span>
+                        </div>
+                        <p class="text-sm text-gray-500 truncate">10分钟内在线</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Franble -->
+            <div class="swipe-item-container">
+                <div class="swipe-actions" onclick="deleteMessage(this)">删除</div>
+                <div class="swipe-content flex items-center px-4 py-3.5 bg-white active:bg-gray-50 transition-colors"
+                     onclick="navigateToChat(event)" ontouchstart="handleTouchStart(event)" ontouchmove="handleTouchMove(event)" ontouchend="handleTouchEnd(event)">
+                    <div class="relative">
+                        <img src="https://images.unsplash.com/photo-1556910103-1c02745a30bf?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80" class="w-12 h-12 rounded-full border border-gray-100 object-cover">
+                    </div>
+                    <div class="flex-1 ml-3 min-w-0 border-b border-gray-50 pb-3.5 pointer-events-none">
+                        <div class="flex justify-between items-baseline mb-1">
+                            <h3 class="font-bold text-gray-900 text-sm">Franble 臻麦面包</h3>
+                            <span class="text-xs text-gray-400">05-06</span>
+                        </div>
+                        <p class="text-sm text-gray-500 truncate">[笔记] 你肯定想不到谷物添加了多少！</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Contacts Modal -->
+    <div id="modal-contacts" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity opacity-0">
+        <div class="bg-white w-full h-full sm:w-96 sm:h-[80vh] sm:rounded-2xl flex flex-col transform transition-transform duration-300">
+            <!-- Header -->
+            <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                <button onclick="closeModal('modal-contacts')" class="w-8 h-8 flex items-center justify-center text-gray-600">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+                <h3 class="font-bold text-lg">好友通讯录</h3>
+                <div class="w-8"></div>
+            </div>
+            
+            <!-- Search -->
+            <div class="px-4 py-3 bg-gray-50">
+                <div class="relative">
+                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" placeholder="搜索好友" class="w-full pl-10 pr-4 py-2 bg-white rounded-lg text-sm focus:outline-none">
+                </div>
+            </div>
+
+            <!-- List -->
+            <div class="flex-1 overflow-y-auto">
+                <!-- New Friends -->
+                <div onclick="window.location.href='shequ-new-friends.html'" class="px-4 py-3 flex items-center border-b border-gray-50 active:bg-gray-50 cursor-pointer">
+                    <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center text-orange-500 mr-3">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                    <span class="font-bold text-gray-800">新的朋友</span>
+                    <span class="ml-auto bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">2</span>
+                </div>
+                
+                <!-- Group Chats -->
+                <div onclick="window.location.href='shequ-group-list.html'" class="px-4 py-3 flex items-center border-b border-gray-50 active:bg-gray-50 cursor-pointer">
+                    <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center text-green-500 mr-3">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <span class="font-bold text-gray-800">群聊</span>
+                </div>
+
+                <!-- A-Z List (Simplified) -->
+                <div class="bg-gray-50 px-4 py-1 text-xs text-gray-500 font-bold">A</div>
+                <div onclick="openContactDetail('Alice', 'https://randomuser.me/api/portraits/women/44.jpg', 'wxid_alice123', '上海')" class="px-4 py-3 flex items-center border-b border-gray-50 active:bg-gray-50">
+                    <img src="https://randomuser.me/api/portraits/women/44.jpg" class="w-10 h-10 rounded-full mr-3">
+                    <span class="text-gray-800 font-medium">Alice</span>
+                </div>
+                
+                <div class="bg-gray-50 px-4 py-1 text-xs text-gray-500 font-bold">B</div>
+                <div onclick="openContactDetail('面包仙人', 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80', 'bread_fairy', '北京')" class="px-4 py-3 flex items-center border-b border-gray-50 active:bg-gray-50">
+                    <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80" class="w-10 h-10 rounded-full mr-3">
+                    <span class="text-gray-800 font-medium">面包仙人</span>
+                </div>
+                <div onclick="openContactDetail('饱ww-', 'https://randomuser.me/api/portraits/men/41.jpg', 'bao_ww', '广州')" class="px-4 py-3 flex items-center border-b border-gray-50 active:bg-gray-50">
+                    <img src="https://randomuser.me/api/portraits/men/41.jpg" class="w-10 h-10 rounded-full mr-3">
+                    <span class="text-gray-800 font-medium">饱ww-</span>
+                </div>
+
+                <div class="bg-gray-50 px-4 py-1 text-xs text-gray-500 font-bold">J</div>
+                <div onclick="openContactDetail('Jack', 'https://randomuser.me/api/portraits/men/32.jpg', 'jack_baker', '深圳')" class="px-4 py-3 flex items-center border-b border-gray-50 active:bg-gray-50">
+                    <img src="https://randomuser.me/api/portraits/men/32.jpg" class="w-10 h-10 rounded-full mr-3">
+                    <span class="text-gray-800 font-medium">Jack</span>
+                </div>
+                
+                <div class="bg-gray-50 px-4 py-1 text-xs text-gray-500 font-bold">M</div>
+                <div onclick="openContactDetail('猫咪_酱', 'https://randomuser.me/api/portraits/women/12.jpg', 'cat_lover', '杭州')" class="px-4 py-3 flex items-center border-b border-gray-50 active:bg-gray-50">
+                    <img src="https://randomuser.me/api/portraits/women/12.jpg" class="w-10 h-10 rounded-full mr-3">
+                    <span class="text-gray-800 font-medium">猫咪_酱</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact Detail Modal (WeChat Style) -->
+    <div id="modal-contact-detail" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity opacity-0">
+        <div class="bg-white w-full h-full sm:w-96 sm:h-[80vh] sm:rounded-2xl flex flex-col transform transition-transform duration-300">
+            <!-- Header -->
+            <div class="flex items-center justify-between px-4 py-3 bg-white">
+                <button onclick="closeContactDetail()" class="w-8 h-8 flex items-center justify-center text-gray-700">
+                    <i class="fas fa-chevron-left text-lg"></i>
+                </button>
+                <button class="w-8 h-8 flex items-center justify-center text-gray-700">
+                    <i class="fas fa-ellipsis-h"></i>
+                </button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto bg-white">
+                <!-- Profile Info -->
+                <div class="px-6 pt-4 pb-8 flex items-start border-b border-gray-100">
+                    <img id="detail-avatar" src="" class="w-16 h-16 rounded-xl object-cover mr-5 border border-gray-100">
+                    <div class="flex-1 min-w-0 pt-1">
+                        <div class="flex items-center mb-1">
+                            <h2 id="detail-name" class="text-xl font-bold text-gray-900 mr-2 truncate"></h2>
+                            <i class="fas fa-mars text-blue-400 text-xs" id="detail-gender"></i>
+                        </div>
+                        <p class="text-xs text-gray-500 mb-1">烘匠号: <span id="detail-id"></span></p>
+                        <p class="text-xs text-gray-500">地区: <span id="detail-region"></span></p>
+                    </div>
+                </div>
+
+                <!-- Settings / Info Rows -->
+                <div class="border-t border-gray-100">
+                    <div onclick="window.location.href='shequ-contact-remarks.html'" class="px-5 py-4 flex items-center justify-between active:bg-gray-50 border-b border-gray-50 cursor-pointer">
+                        <span class="text-base text-gray-900">设置备注和标签</span>
+                        <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                    </div>
+                </div>
+                
+                <div class="h-2 bg-gray-50"></div>
+
+                <!-- Actions -->
+                <div class="px-4 mt-6 space-y-3">
+                    <button onclick="window.location.href = 'shequ-liaotian.html'" class="w-full py-3 bg-[#ff8c00] text-white font-bold rounded-xl active:bg-orange-700 transition-colors flex items-center justify-center shadow-md shadow-orange-100">
+                        <i class="fas fa-comment-alt mr-2"></i> 发消息
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Group Modal -->
+    <div id="modal-create-group" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity opacity-0">
+        <div class="bg-white w-full sm:w-96 rounded-t-2xl sm:rounded-2xl p-6 transform transition-transform translate-y-full sm:translate-y-0 duration-300">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold">创建群聊</h3>
+                <button onclick="closeModal('modal-create-group')" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-4 mb-6 max-h-60 overflow-y-auto">
+                <label class="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
+                    <input type="checkbox" class="w-5 h-5 text-orange-500 rounded focus:ring-orange-500 border-gray-300">
+                    <img src="https://randomuser.me/api/portraits/women/44.jpg" class="w-10 h-10 rounded-full">
+                    <span class="text-sm font-medium">小雪</span>
+                </label>
+                <label class="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
+                    <input type="checkbox" class="w-5 h-5 text-orange-500 rounded focus:ring-orange-500 border-gray-300">
+                    <img src="https://randomuser.me/api/portraits/men/32.jpg" class="w-10 h-10 rounded-full">
+                    <span class="text-sm font-medium">Jack</span>
+                </label>
+                <label class="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
+                    <input type="checkbox" class="w-5 h-5 text-orange-500 rounded focus:ring-orange-500 border-gray-300">
+                    <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80" class="w-10 h-10 rounded-full">
+                    <span class="text-sm font-medium">面包仙人</span>
+                </label>
+                <label class="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
+                    <input type="checkbox" class="w-5 h-5 text-orange-500 rounded focus:ring-orange-500 border-gray-300">
+                    <img src="https://randomuser.me/api/portraits/women/12.jpg" class="w-10 h-10 rounded-full">
+                    <span class="text-sm font-medium">Lisa</span>
+                </label>
+            </div>
+            <button onclick="alert('群聊创建成功！'); closeModal('modal-create-group')" class="w-full bg-orange-500 text-white font-bold py-3 rounded-xl hover:bg-orange-600 transition-colors">
+                立即创建
+            </button>
+        </div>
+    </div>
+
+    <!-- Add Friend Modal -->
+    <div id="modal-add-friend" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity opacity-0">
+        <div class="bg-white w-11/12 max-w-sm rounded-2xl p-6 transform scale-95 transition-transform duration-300">
+            <h3 class="text-lg font-bold text-center mb-6">添加好友</h3>
+            <div class="relative mb-6">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                    <i class="fas fa-search text-gray-400"></i>
+                </span>
+                <input type="text" placeholder="输入烘匠号 / 手机号" class="w-full bg-gray-50 border border-gray-200 text-sm rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500">
+            </div>
+            <div class="flex space-x-3">
+                <button onclick="closeModal('modal-add-friend')" class="flex-1 py-3 text-gray-500 font-medium hover:bg-gray-50 rounded-xl transition-colors">
+                    取消
+                </button>
+                <button onclick="alert('好友请求已发送！'); closeModal('modal-add-friend')" class="flex-1 py-3 bg-orange-500 text-white font-bold rounded-xl hover:bg-orange-600 transition-colors">
+                    搜索
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scan Modal -->
+    <div id="modal-scan" class="hidden fixed inset-0 z-50 flex flex-col bg-black transition-opacity opacity-0">
+        <!-- Header -->
+        <div class="flex justify-between items-center px-4 py-4 text-white z-10">
+            <button onclick="closeModal('modal-scan')" class="w-8 h-8 flex items-center justify-center bg-black/20 rounded-full backdrop-blur-md">
+                <i class="fas fa-times"></i>
+            </button>
+            <span class="font-medium">扫一扫</span>
+            <button class="w-8 h-8 flex items-center justify-center">
+                <i class="fas fa-image"></i>
+            </button>
+        </div>
+        
+        <!-- Scan Area -->
+        <div class="flex-1 relative flex items-center justify-center">
+            <div class="w-64 h-64 border-2 border-white/50 rounded-xl relative overflow-hidden">
+                <!-- Scan Line Animation -->
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-green-400 to-transparent animate-scan"></div>
+                <!-- Corner Markers -->
+                <div class="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-green-500 rounded-tl-sm"></div>
+                <div class="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-green-500 rounded-tr-sm"></div>
+                <div class="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-green-500 rounded-bl-sm"></div>
+                <div class="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-green-500 rounded-br-sm"></div>
+            </div>
+            <p class="absolute bottom-20 text-white/80 text-sm">将二维码放入框内，即可自动扫描</p>
+        </div>
+
+        <!-- Bottom Actions -->
+        <div class="pb-10 flex justify-center space-x-12 text-white/80 text-xs font-medium">
+            <div class="flex flex-col items-center space-y-2">
+                <div class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center">
+                    <i class="fas fa-qrcode"></i>
+                </div>
+                <span>我的二维码</span>
+            </div>
+            <div class="flex flex-col items-center space-y-2">
+                <div class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <span>开灯</span>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes scan {
+            0% { top: 0; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+        .animate-scan {
+            animation: scan 2s linear infinite;
+        }
+    </style>
+
+    <script>
+        // Swipe to Delete Logic
+        let touchStartX = 0;
+        let touchCurrentX = 0;
+        let currentSwipeItem = null;
+        let isSwiping = false;
+
+        function handleTouchStart(e) {
+            touchStartX = e.touches[0].clientX;
+            isSwiping = false;
+            // Reset any currently open item if it's not the one being touched
+            const targetContent = e.currentTarget;
+            if (currentSwipeItem && currentSwipeItem !== targetContent) {
+                currentSwipeItem.style.transform = 'translateX(0)';
+                currentSwipeItem = null;
+            }
+        }
+
+        function handleTouchMove(e) {
+            const touchX = e.touches[0].clientX;
+            const diffX = touchX - touchStartX;
+            const targetContent = e.currentTarget;
+
+            if (Math.abs(diffX) > 5) {
+                isSwiping = true;
+            }
+
+            // Only allow swiping left
+            if (diffX < 0) {
+                 // Limit swipe to -70px (width of delete button)
+                 // Add some resistance
+                 let translate = Math.max(diffX, -80);
+                 targetContent.style.transform = `translateX(${translate}px)`;
+            }
+        }
+
+        function handleTouchEnd(e) {
+            const touchEndX = e.changedTouches[0].clientX;
+            const diffX = touchEndX - touchStartX;
+            const targetContent = e.currentTarget;
+
+            if (diffX < -35) { // Threshold to snap open
+                targetContent.style.transform = 'translateX(-70px)';
+                currentSwipeItem = targetContent;
+                isSwiping = true; // Ensure click doesn't fire if snapped open
+            } else {
+                targetContent.style.transform = 'translateX(0)';
+                if (currentSwipeItem === targetContent) {
+                    currentSwipeItem = null;
+                }
+            }
+        }
+        
+        function navigateToChat(e) {
+            if (isSwiping) return;
+            // Also check if the item is currently open (swiped)
+            const targetContent = e.currentTarget;
+            if (targetContent.style.transform && targetContent.style.transform !== 'translateX(0px)' && targetContent.style.transform !== 'translateX(0)') {
+                 return;
+            }
+            window.location.href = 'shequ-liaotian.html';
+        }
+
+        function deleteMessage(btn) {
+            const container = btn.closest('.swipe-item-container');
+            if (confirm('确认删除此消息吗？')) {
+                container.style.height = container.offsetHeight + 'px'; // Set fixed height for transition
+                container.style.transition = 'height 0.3s ease-out, opacity 0.3s ease-out';
+                requestAnimationFrame(() => {
+                    container.style.height = '0';
+                    container.style.opacity = '0';
+                });
+                setTimeout(() => {
+                    container.remove();
+                }, 300);
+            } else {
+                // Reset swipe if cancelled
+                const content = container.querySelector('.swipe-content');
+                if (content) {
+                    content.style.transform = 'translateX(0)';
+                    currentSwipeItem = null;
+                }
+            }
+        }
+
+        // Toggle Menu Logic
+        function toggleMenu() {
+            const menu = document.getElementById('add-menu');
+            if (menu.classList.contains('hidden')) {
+                menu.classList.remove('hidden');
+                menu.classList.add('dropdown-enter');
+                requestAnimationFrame(() => {
+                    menu.classList.remove('dropdown-enter');
+                    menu.classList.add('dropdown-enter-active');
+                });
+            } else {
+                menu.classList.add('hidden');
+                menu.classList.remove('dropdown-enter-active');
+            }
+        }
+
+        // 点击页面其他地方关闭菜单
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('add-menu');
+            const button = event.target.closest('button');
+            const isAddButton = button && button.querySelector('.fa-plus-circle');
+            
+            // Fix: Check if click is inside menu or is the toggle button
+            // If we are opening a modal from the menu, the menu click event will propagate.
+            // But the modal opening logic is handled in the inline onclick handlers.
+            
+            if (!isAddButton && !menu.contains(event.target) && !menu.classList.contains('hidden')) {
+                 // Don't close if we just clicked an option inside (though onclick handlers will close it)
+                 // Actually, we want to close it if we click outside.
+                 // The inline handlers handle the "click inside" case by calling toggleMenu() again.
+                 menu.classList.add('hidden');
+                 menu.classList.remove('dropdown-enter-active');
+            }
+        });
+
+        // Search Toggle Logic
+        function toggleSearch() {
+            const title = document.getElementById('header-title');
+            const searchContainer = document.getElementById('search-container');
+            const actions = document.getElementById('header-actions');
+            const searchInput = document.getElementById('search-input');
+
+            if (searchContainer.classList.contains('hidden')) {
+                // Show Search
+                title.classList.add('hidden');
+                actions.classList.add('hidden');
+                searchContainer.classList.remove('hidden');
+                setTimeout(() => searchInput.focus(), 100);
+            } else {
+                // Hide Search
+                searchContainer.classList.add('hidden');
+                title.classList.remove('hidden');
+                actions.classList.remove('hidden');
+                searchInput.value = ''; // Clear search
+                filterMessages(); // Reset list
+            }
+        }
+
+        // Message Filtering Logic
+        function filterMessages() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            const messages = document.querySelectorAll('.mt-2 > div'); // Select all direct children divs of .mt-2 container
+
+            messages.forEach(msg => {
+                const text = msg.innerText.toLowerCase();
+                if (text.includes(query)) {
+                    msg.classList.remove('hidden');
+                } else {
+                    msg.classList.add('hidden');
+                }
+            });
+        }
+
+        // Contact Detail Logic
+        function openContactDetail(name, avatar, id, region) {
+            // Populate data
+            document.getElementById('detail-name').textContent = name;
+            document.getElementById('detail-avatar').src = avatar;
+            document.getElementById('detail-id').textContent = id;
+            document.getElementById('detail-region').textContent = region;
+
+            const modal = document.getElementById('modal-contact-detail');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                const inner = modal.querySelector('div');
+                if (inner) {
+                    if (inner.classList.contains('scale-95')) { // If we used scale animation
+                        inner.classList.remove('scale-95');
+                        inner.classList.add('scale-100');
+                    }
+                    if (inner.classList.contains('translate-x-full')) { // Slide from right (optional)
+                         inner.classList.remove('translate-x-full');
+                    }
+                }
+            }, 10);
+        }
+
+        function closeContactDetail() {
+             const modal = document.getElementById('modal-contact-detail');
+             modal.classList.add('opacity-0');
+             setTimeout(() => {
+                 modal.classList.add('hidden');
+             }, 300);
+        }
+
+        // Modal Logic
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.remove('hidden');
+            // Small delay to allow display:block to apply before opacity transition
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                const inner = modal.querySelector('div'); // The inner content div
+                if (inner) {
+                    if (inner.classList.contains('scale-95')) {
+                        inner.classList.remove('scale-95');
+                        inner.classList.add('scale-100');
+                    }
+                    if (inner.classList.contains('translate-y-full')) {
+                        inner.classList.remove('translate-y-full');
+                    }
+                }
+            }, 10);
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.add('opacity-0');
+            const inner = modal.querySelector('div');
+            if (inner) {
+                if (inner.classList.contains('scale-100')) {
+                    inner.classList.remove('scale-100');
+                    inner.classList.add('scale-95');
+                }
+                // For bottom sheet modal
+                if (modalId === 'modal-create-group') {
+                    inner.classList.add('translate-y-full');
+                }
+            }
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300); // Wait for transition
+        }
+    </script>
+</body>
+</html>

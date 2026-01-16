@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>推荐 - 社区 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #ffffff;
+            color: #1a1a1a;
+            -webkit-tap-highlight-color: transparent;
+            padding-bottom: 80px;
+        }
+        
+        /* Cookpad 风格配色 */
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+            --text-main: #333333;
+            --text-sub: #8b8b8b;
+            --bg-light: #f7f7f5;
+        }
+
+        .text-cookpad { color: var(--primary-dark); }
+        .bg-cookpad { background-color: var(--primary-dark); }
+        .border-cookpad { border-color: var(--primary-dark); }
+
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* 搜索栏样式 */
+        .search-header {
+            background-color: #ffffff;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        
+        .search-input-wrapper {
+            background-color: #f3f3f3;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        .search-input-wrapper:focus-within {
+            background-color: #ffffff;
+            box-shadow: 0 0 0 2px var(--primary-orange) inset;
+        }
+
+        /* 导航标签 */
+        .nav-tab { 
+            position: relative; 
+            font-size: 15px; 
+            color: var(--text-sub); 
+            padding: 10px 4px; 
+            font-weight: 600; 
+            transition: all 0.2s; 
+        }
+        .nav-tab.active { 
+            color: var(--text-main); 
+            font-size: 16px; 
+        }
+        .nav-tab.active::after { 
+            content: ''; 
+            position: absolute; 
+            bottom: 0; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            width: 20px; 
+            height: 3px; 
+            background-color: var(--primary-dark); 
+            border-radius: 2px; 
+        }
+
+        /* 食材/分类图标 */
+        .ingredient-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 4px;
+            background-color: #f8f8f8;
+            border: 1px solid #eeeeee;
+        }
+
+        /* 配方卡片 - Cookpad 风格 (列表式/大图式) */
+        .recipe-card {
+            /* margin-bottom: 24px;  Removed for Grid layout */
+        }
+        
+        .recipe-img-container {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            aspect-ratio: 4/3;
+            background-color: #eee;
+        }
+        
+        .cooksnap-badge {
+            display: flex;
+            align-items: center;
+            font-size: 12px;
+            color: var(--text-sub);
+            margin-top: 4px;
+        }
+        
+        .cooksnap-icon {
+            color: var(--primary-dark);
+            margin-right: 4px;
+        }
+
+        /* 底部导航 */
+        .bottom-nav { 
+            background: rgba(255, 255, 255, 0.98); 
+            backdrop-filter: blur(10px); 
+            border-top: 1px solid #f0f0f0; 
+            padding-bottom: env(safe-area-inset-bottom); 
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 50;
+        }
+        .bottom-nav-item { 
+            padding: 8px 0 4px; 
+            color: #999; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .bottom-nav-item.active { color: var(--primary-dark); }
+        .bottom-nav-item i { font-size: 22px; margin-bottom: 2px; }
+        .bottom-nav-item span { font-size: 10px; font-weight: 500; }
+    </style>
+</head>
+<body>
+    <!-- 顶部搜索栏 -->
+    <header class="search-header sticky top-0 z-30 pt-2 pb-0 px-4">
+        <div class="flex items-center space-x-3 mb-2">
+            <!-- 侧边栏入口 -->
+            <div class="relative cursor-pointer p-1" onclick="toggleUserDrawer()">
+                <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80" class="w-9 h-9 rounded-full border border-gray-200 object-cover">
+                <span class="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+            </div>
+
+            <div class="flex-1 relative search-input-wrapper">
+                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <input type="text" placeholder="搜索食谱、食材"
+                       class="w-full pl-10 pr-4 py-2.5 bg-transparent text-sm text-gray-700 focus:outline-none placeholder-gray-500">
+            </div>
+            <a href="shequ-xiaoxi.html" class="relative p-2 text-gray-600">
+                <i class="far fa-envelope text-xl"></i>
+                <span class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+            </a>
+        </div>
+        
+        <!-- 导航标签 -->
+        <div class="flex justify-start space-x-6 overflow-x-auto scrollbar-hide border-b border-gray-100">
+            <button class="nav-tab active whitespace-nowrap">关注</button>
+            <button class="nav-tab whitespace-nowrap" onclick="window.location.href='shequ-zhuye.html'">推荐</button>
+            <button class="nav-tab whitespace-nowrap">烘焙</button>
+            <button class="nav-tab whitespace-nowrap">轻餐</button>
+            <button class="nav-tab whitespace-nowrap">饮品</button>
+            <button class="nav-tab whitespace-nowrap">西餐</button>
+        </div>
+    </header>
+
+    <!-- 主内容区域 -->
+    <main class="px-2 pt-2">
+        <!-- Stories Bar -->
+        <div class="flex space-x-4 overflow-x-auto px-2 pb-4 scrollbar-hide mb-2 border-b border-gray-50">
+            <!-- Story Item 1 (User's own) -->
+            <div class="flex flex-col items-center flex-shrink-0 cursor-pointer w-14">
+                <div class="relative p-0.5 rounded-full border-2 border-gray-100 mb-1">
+                    <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80" class="w-11 h-11 rounded-full border border-white object-cover">
+                    <div class="absolute bottom-0 right-0 bg-blue-500 text-white rounded-full w-3.5 h-3.5 flex items-center justify-center border-2 border-white">
+                        <i class="fas fa-plus text-[8px]"></i>
+                    </div>
+                </div>
+                <span class="text-[10px] text-gray-700 truncate w-full text-center">我的日常</span>
+            </div>
+
+            <!-- Story Item 2 -->
+            <div class="flex flex-col items-center flex-shrink-0 cursor-pointer w-14">
+                <div class="relative p-0.5 rounded-full border-2 border-pink-500 mb-1">
+                    <img src="https://randomuser.me/api/portraits/women/44.jpg" class="w-11 h-11 rounded-full border border-white object-cover">
+                </div>
+                <span class="text-[10px] text-gray-700 truncate w-full text-center">苏苏的甜点</span>
+            </div>
+
+            <!-- Story Item 3 -->
+            <div class="flex flex-col items-center flex-shrink-0 cursor-pointer w-14">
+                <div class="relative p-0.5 rounded-full border-2 border-gray-200 mb-1">
+                    <img src="https://randomuser.me/api/portraits/men/32.jpg" class="w-11 h-11 rounded-full border border-white object-cover">
+                </div>
+                <span class="text-[10px] text-gray-500 truncate w-full text-center">面包大叔</span>
+            </div>
+            
+            <!-- Story Item 4 -->
+             <div class="flex flex-col items-center flex-shrink-0 cursor-pointer w-14">
+                <div class="relative p-0.5 rounded-full border-2 border-pink-500 mb-1">
+                    <img src="https://randomuser.me/api/portraits/women/68.jpg" class="w-11 h-11 rounded-full border border-white object-cover">
+                </div>
+                <span class="text-[10px] text-gray-700 truncate w-full text-center">小爱烘焙</span>
+            </div>
+            
+             <!-- Story Item 5 -->
+             <div class="flex flex-col items-center flex-shrink-0 cursor-pointer w-14">
+                <div class="relative p-0.5 rounded-full border-2 border-pink-500 mb-1">
+                    <img src="https://randomuser.me/api/portraits/men/85.jpg" class="w-11 h-11 rounded-full border border-white object-cover">
+                </div>
+                <span class="text-[10px] text-gray-700 truncate w-full text-center">Chef David</span>
+            </div>
+            
+             <!-- Story Item 6 -->
+             <div class="flex flex-col items-center flex-shrink-0 cursor-pointer w-14">
+                <div class="relative p-0.5 rounded-full border-2 border-gray-200 mb-1">
+                    <img src="https://randomuser.me/api/portraits/women/23.jpg" class="w-11 h-11 rounded-full border border-white object-cover">
+                </div>
+                <span class="text-[10px] text-gray-500 truncate w-full text-center">安娜的厨房</span>
+            </div>
+        </div>
+
+        <!-- Waterfall Feed -->
+        <div class="flex space-x-2">
+            <!-- Column 1 -->
+            <div class="flex-1 flex flex-col space-y-2">
+                <!-- Card 1 -->
+                <div class="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 pb-2 break-inside-avoid">
+                    <img src="https://images.unsplash.com/photo-1509440159596-0249088772ff?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" class="w-full h-auto object-cover">
+                    <div class="px-2 pt-2">
+                        <h3 class="text-sm font-bold text-gray-900 leading-snug mb-2 line-clamp-2">近期超爱的碱水小墩墩出炉啦！！</h3>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center min-w-0">
+                                <img src="https://randomuser.me/api/portraits/women/68.jpg" class="w-4 h-4 rounded-full mr-1.5 flex-shrink-0">
+                                <span class="text-[10px] text-gray-500 truncate max-w-[60px]">Molamola 酸面包</span>
+                            </div>
+                            <div class="flex items-center text-gray-400">
+                                <i class="far fa-heart text-xs mr-1"></i>
+                                <span class="text-[10px]">15</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Card 2 -->
+                 <div class="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 pb-2 break-inside-avoid">
+                    <img src="https://images.unsplash.com/photo-1582716401301-b2407dc7563d?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" class="w-full h-auto object-cover">
+                    <div class="px-2 pt-2">
+                        <h3 class="text-sm font-bold text-gray-900 leading-snug mb-2 line-clamp-2">巧克力曲奇</h3>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center min-w-0">
+                                <img src="https://randomuser.me/api/portraits/men/32.jpg" class="w-4 h-4 rounded-full mr-1.5 flex-shrink-0">
+                                <span class="text-[10px] text-gray-500 truncate max-w-[60px]">杰克大叔</span>
+                                <span class="ml-1 text-[8px] bg-gray-50 text-gray-400 border border-gray-100 px-1 rounded flex-shrink-0">互关</span>
+                            </div>
+                            <div class="flex items-center text-gray-400">
+                                <i class="far fa-heart text-xs mr-1"></i>
+                                <span class="text-[10px]">320</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Card 5 -->
+                <div class="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 pb-2 break-inside-avoid">
+                    <img src="https://images.unsplash.com/photo-1598373182133-52452f7691ef?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" class="w-full h-auto object-cover">
+                    <div class="px-2 pt-2">
+                        <h3 class="text-sm font-bold text-gray-900 leading-snug mb-2 line-clamp-2">日式生吐司打卡，组织细腻</h3>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center min-w-0">
+                                <img src="https://randomuser.me/api/portraits/women/23.jpg" class="w-4 h-4 rounded-full mr-1.5 flex-shrink-0">
+                                <span class="text-[10px] text-gray-500 truncate max-w-[60px]">安娜的厨房</span>
+                            </div>
+                            <div class="flex items-center text-gray-400">
+                                <i class="far fa-heart text-xs mr-1"></i>
+                                <span class="text-[10px]">45</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Column 2 -->
+            <div class="flex-1 flex flex-col space-y-2">
+                 <!-- Card 3 -->
+                <div class="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 pb-2 break-inside-avoid">
+                    <img src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" class="w-full h-auto object-cover">
+                    <div class="px-2 pt-2">
+                        <h3 class="text-sm font-bold text-gray-900 leading-snug mb-2 line-clamp-2">法式黑森林，周末的甜蜜时刻</h3>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center min-w-0">
+                                <img src="https://randomuser.me/api/portraits/women/44.jpg" class="w-4 h-4 rounded-full mr-1.5 flex-shrink-0">
+                                <span class="text-[10px] text-gray-500 truncate max-w-[60px]">苏苏的甜点</span>
+                            </div>
+                            <div class="flex items-center text-gray-400">
+                                <i class="far fa-heart text-xs mr-1"></i>
+                                <span class="text-[10px]">1.2k</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 4 -->
+                 <div class="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 pb-2 break-inside-avoid">
+                    <img src="https://images.unsplash.com/photo-1565958011703-44f9829ba187?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" class="w-full h-auto object-cover">
+                    <div class="px-2 pt-2">
+                        <h3 class="text-sm font-bold text-gray-900 leading-snug mb-2 line-clamp-2">草莓季不可错过的美味！</h3>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center min-w-0">
+                                <img src="https://randomuser.me/api/portraits/women/65.jpg" class="w-4 h-4 rounded-full mr-1.5 flex-shrink-0">
+                                <span class="text-[10px] text-gray-500 truncate max-w-[60px]">小烘焙师</span>
+                            </div>
+                            <div class="flex items-center text-gray-400">
+                                <i class="far fa-heart text-xs mr-1"></i>
+                                <span class="text-[10px]">88</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                 <!-- Card 6 -->
+                 <div class="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 pb-2 break-inside-avoid">
+                    <img src="https://images.unsplash.com/photo-1555507036-ab1f4038808a?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" class="w-full h-auto object-cover">
+                    <div class="px-2 pt-2">
+                        <h3 class="text-sm font-bold text-gray-900 leading-snug mb-2 line-clamp-2">抹茶红豆卷，下午茶首选</h3>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center min-w-0">
+                                <img src="https://randomuser.me/api/portraits/men/85.jpg" class="w-4 h-4 rounded-full mr-1.5 flex-shrink-0">
+                                <span class="text-[10px] text-gray-500 truncate max-w-[60px]">Chef David</span>
+                            </div>
+                            <div class="flex items-center text-gray-400">
+                                <i class="far fa-heart text-xs mr-1"></i>
+                                <span class="text-[10px]">156</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 个人中心侧边栏 -->
+    <div id="user-drawer-overlay" class="fixed inset-0 bg-black/50 z-[80] hidden transition-opacity duration-300 opacity-0 backdrop-blur-sm" onclick="toggleUserDrawer()"></div>
+    <div id="user-drawer" class="fixed top-0 left-0 bottom-0 w-[85%] max-w-sm bg-white z-[90] transform -translate-x-full transition-transform duration-300 shadow-2xl overflow-y-auto flex flex-col">
+        
+        <!-- 用户头部信息 -->
+        <div class="p-6 pb-4 bg-orange-50/50">
+            <div class="flex items-start justify-between">
+                <div class="relative">
+                    <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80" class="w-20 h-20 rounded-full border-4 border-white shadow-sm">
+                    <div class="absolute bottom-0 right-0 bg-orange-500 text-white text-[10px] px-1.5 py-0.5 rounded-full border-2 border-white">LV.5</div>
+                </div>
+                <button onclick="toggleUserDrawer()" class="p-2 text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="mt-4">
+                <h2 class="text-xl font-bold text-gray-900">玛丽烘焙</h2>
+                <p class="text-sm text-gray-500 mt-1">ID: 8839201</p>
+                <div class="mt-3 flex gap-2">
+                    <button class="text-xs font-medium bg-white border border-gray-200 px-3 py-1.5 rounded-full shadow-sm text-gray-700">编辑资料</button>
+                    <button class="text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200 px-3 py-1.5 rounded-full shadow-sm">
+                        <i class="fas fa-crown text-orange-500 mr-1"></i>会员中心
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 数据概览 -->
+        <div class="flex justify-around py-4 border-b border-gray-100 bg-white">
+            <div class="flex flex-col items-center cursor-pointer" onclick="window.location.href='shequ-yonghukangerenye.html?tab=recipes'">
+                <span class="font-bold text-lg text-gray-900">12</span>
+                <span class="text-xs text-gray-500">食谱</span>
+            </div>
+            <div class="flex flex-col items-center cursor-pointer" onclick="window.location.href='shequ-yonghukangerenye.html?tab=cooksnaps'">
+                <span class="font-bold text-lg text-gray-900">45</span>
+                <span class="text-xs text-gray-500">作品</span>
+            </div>
+            <div class="flex flex-col items-center cursor-pointer" onclick="window.location.href='shequ-yonghukangerenye.html?tab=fans'">
+                <span class="font-bold text-lg text-gray-900">1.2k</span>
+                <span class="text-xs text-gray-500">粉丝</span>
+            </div>
+            <div class="flex flex-col items-center cursor-pointer" onclick="window.location.href='shequ-yonghukangerenye.html?tab=following'">
+                <span class="font-bold text-lg text-gray-900">368</span>
+                <span class="text-xs text-gray-500">关注</span>
+            </div>
+        </div>
+
+        <!-- 菜单列表 -->
+        <div class="flex-1 overflow-y-auto py-2">
+            <!-- 创作与内容 -->
+            <div class="px-4 py-2">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 px-2">我的厨房</h3>
+                <a href="shequ-yonghukangerenye.html?tab=recipes" class="flex items-center px-3 py-3 rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors group">
+                    <div class="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center mr-3 group-hover:bg-orange-200 transition-colors">
+                        <i class="fas fa-book-open"></i>
+                    </div>
+                    <span class="text-gray-700 font-medium flex-1">我的食谱</span>
+                    <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                </a>
+                <a href="shequ-yonghukangerenye.html?tab=cooksnaps" class="flex items-center px-3 py-3 rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors group">
+                    <div class="w-8 h-8 rounded-lg bg-green-100 text-green-600 flex items-center justify-center mr-3 group-hover:bg-green-200 transition-colors">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                    <span class="text-gray-700 font-medium flex-1">我的作品 (Cooksnaps)</span>
+                    <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                </a>
+                <a href="shequ-yonghukangerenye.html?tab=collected" class="flex items-center px-3 py-3 rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors group">
+                    <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center mr-3 group-hover:bg-blue-200 transition-colors">
+                        <i class="fas fa-bookmark"></i>
+                    </div>
+                    <span class="text-gray-700 font-medium flex-1">收藏夹</span>
+                    <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                </a>
+                <a href="#" class="flex items-center px-3 py-3 rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors group">
+                    <div class="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 flex items-center justify-center mr-3 group-hover:bg-gray-200 transition-colors">
+                        <i class="fas fa-file-edit"></i>
+                    </div>
+                    <span class="text-gray-700 font-medium flex-1">草稿箱</span>
+                    <span class="bg-red-500 text-white text-[10px] px-1.5 rounded-full mr-2">2</span>
+                    <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                </a>
+            </div>
+
+            <div class="h-1 bg-gray-50 mx-4 my-1"></div>
+
+            <!-- 服务与工具 -->
+            <div class="px-4 py-2">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 px-2">服务</h3>
+                <a href="shequ-history.html" class="flex items-center px-3 py-3 rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors">
+                    <i class="fas fa-history text-gray-400 w-8 text-center mr-3"></i>
+                    <span class="text-gray-700 font-medium flex-1">浏览历史</span>
+                </a>
+                <a href="shequ-settings.html" class="flex items-center px-3 py-3 rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors">
+                    <i class="fas fa-cog text-gray-400 w-8 text-center mr-3"></i>
+                    <span class="text-gray-700 font-medium flex-1">设置</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 全部分类侧边栏 (从底部弹出) -->
+    <div id="category-drawer-overlay" class="fixed inset-0 bg-black/50 z-[80] hidden transition-opacity duration-300 opacity-0 backdrop-blur-sm" onclick="toggleCategoryDrawer()"></div>
+    <div id="category-drawer" class="fixed bottom-0 left-0 right-0 bg-white z-[90] rounded-t-2xl transform translate-y-full transition-transform duration-300 shadow-2xl max-h-[85vh] overflow-hidden flex flex-col">
+        
+        <!-- 标题栏 -->
+        <div class="sticky top-0 bg-white z-10 px-5 py-4 border-b border-gray-100 flex justify-between items-center rounded-t-2xl shrink-0">
+            <div class="flex items-center">
+                <button id="drawer-back-btn" class="mr-3 text-gray-400 hidden" onclick="backToLevel1()">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <h2 id="drawer-title" class="text-lg font-bold text-gray-800">全部分类</h2>
+            </div>
+            <button onclick="toggleCategoryDrawer()" class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- 内容区域容器 -->
+        <div class="flex-1 overflow-y-auto relative">
+            
+            <!-- Level 1: 大类展示 -->
+            <div id="drawer-level-1" class="p-5 pb-8 space-y-8 transition-transform duration-300">
+                
+                <!-- 1. 烘焙天地 -->
+                <div>
+                    <div class="flex items-center mb-3">
+                        <span class="w-1 h-4 bg-orange-500 rounded-full mr-2"></span>
+                        <h3 class="font-bold text-gray-800">烘焙天地</h3>
+                    </div>
+                    <div class="grid grid-cols-4 gap-3">
+                        <div onclick="openSubCategory('bread', '面包')" class="flex flex-col items-center space-y-1 cursor-pointer">
+                            <div class="w-12 h-12 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center text-xl">
+                                <i class="fas fa-bread-slice"></i>
+                            </div>
+                            <span class="text-xs text-gray-600">面包</span>
+                        </div>
+                        <div onclick="openSubCategory('cake', '蛋糕')" class="flex flex-col items-center space-y-1 cursor-pointer">
+                            <div class="w-12 h-12 rounded-xl bg-pink-50 text-pink-500 flex items-center justify-center text-xl">
+                                <i class="fas fa-birthday-cake"></i>
+                            </div>
+                            <span class="text-xs text-gray-600">蛋糕</span>
+                        </div>
+                        <div onclick="openSubCategory('cookie', '饼干')" class="flex flex-col items-center space-y-1 cursor-pointer">
+                            <div class="w-12 h-12 rounded-xl bg-yellow-50 text-yellow-600 flex items-center justify-center text-xl">
+                                <i class="fas fa-cookie"></i>
+                            </div>
+                            <span class="text-xs text-gray-600">饼干</span>
+                        </div>
+                        <div onclick="openSubCategory('tart', '塔派')" class="flex flex-col items-center space-y-1 cursor-pointer">
+                            <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-500 flex items-center justify-center text-xl">
+                                <i class="fas fa-cheese"></i>
+                            </div>
+                            <span class="text-xs text-gray-600">塔派</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. 西式轻食 -->
+                <div>
+                    <div class="flex items-center mb-3">
+                        <span class="w-1 h-4 bg-red-500 rounded-full mr-2"></span>
+                        <h3 class="font-bold text-gray-800">西式轻食</h3>
+                    </div>
+                    <div class="grid grid-cols-4 gap-3">
+                        <div onclick="openSubCategory('western_main', '主食')" class="flex flex-col items-center space-y-1 cursor-pointer">
+                            <div class="w-12 h-12 rounded-xl bg-red-50 text-red-500 flex items-center justify-center text-xl">
+                                <i class="fas fa-pizza-slice"></i>
+                            </div>
+                            <span class="text-xs text-gray-600">主食</span>
+                        </div>
+                        <div onclick="openSubCategory('western_light', '轻食')" class="flex flex-col items-center space-y-1 cursor-pointer">
+                            <div class="w-12 h-12 rounded-xl bg-green-50 text-green-600 flex items-center justify-center text-xl">
+                                <i class="fas fa-hamburger"></i>
+                            </div>
+                            <span class="text-xs text-gray-600">轻食</span>
+                        </div>
+                        <div onclick="openSubCategory('western_salad', '沙拉')" class="flex flex-col items-center space-y-1 cursor-pointer">
+                            <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-500 flex items-center justify-center text-xl">
+                                <i class="fas fa-leaf"></i>
+                            </div>
+                            <span class="text-xs text-gray-600">沙拉</span>
+                        </div>
+                        <div onclick="openSubCategory('western_brunch', '早午餐')" class="flex flex-col items-center space-y-1 cursor-pointer">
+                            <div class="w-12 h-12 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-xl">
+                                <i class="fas fa-bacon"></i>
+                            </div>
+                            <span class="text-xs text-gray-600">早午餐</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. 中式点心 -->
+                <div>
+                    <div class="flex items-center mb-3">
+                        <span class="w-1 h-4 bg-yellow-500 rounded-full mr-2"></span>
+                        <h3 class="font-bold text-gray-800">中式点心</h3>
+                    </div>
+                    <div class="grid grid-cols-4 gap-3">
+                        <div onclick="openSubCategory('chinese_pastry', '酥点')" class="flex flex-col items-center space-y-1 cursor-pointer">
+                            <div class="w-12 h-12 rounded-xl bg-yellow-50 text-yellow-600 flex items-center justify-center text-xl">
+                                <i class="fas fa-cookie-bite"></i>
+                            </div>
+                            <span class="text-xs text-gray-600">酥点</span>
+                        </div>
+                        <div onclick="openSubCategory('chinese_bun', '发酵面食')" class="flex flex-col items-center space-y-1 cursor-pointer">
+                            <div class="w-12 h-12 rounded-xl bg-gray-50 text-gray-600 flex items-center justify-center text-xl">
+                                <i class="fas fa-cloud"></i>
+                            </div>
+                            <span class="text-xs text-gray-600">发酵面食</span>
+                        </div>
+                        <div onclick="openSubCategory('chinese_ricecake', '糕团')" class="flex flex-col items-center space-y-1 cursor-pointer">
+                            <div class="w-12 h-12 rounded-xl bg-green-50 text-green-600 flex items-center justify-center text-xl">
+                                <i class="fas fa-cannabis"></i>
+                            </div>
+                            <span class="text-xs text-gray-600">糕团</span>
+                        </div>
+                        <div onclick="openSubCategory('chinese_festival', '节庆')" class="flex flex-col items-center space-y-1 cursor-pointer">
+                            <div class="w-12 h-12 rounded-xl bg-red-50 text-red-500 flex items-center justify-center text-xl">
+                                <i class="fas fa-gifts"></i>
+                            </div>
+                            <span class="text-xs text-gray-600">节庆</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. 饮品甜碗 -->
+                <div>
+                    <div class="flex items-center mb-3">
+                        <span class="w-1 h-4 bg-blue-500 rounded-full mr-2"></span>
+                        <h3 class="font-bold text-gray-800">饮品甜碗</h3>
+                    </div>
+                    <div class="grid grid-cols-4 gap-3">
+                        <div onclick="openSubCategory('drink_coffee', '咖啡')" class="flex flex-col items-center space-y-1 cursor-pointer">
+                            <div class="w-12 h-12 rounded-xl bg-stone-50 text-stone-600 flex items-center justify-center text-xl">
+                                <i class="fas fa-coffee"></i>
+                            </div>
+                            <span class="text-xs text-gray-600">咖啡</span>
+                        </div>
+                        <div onclick="openSubCategory('drink_tea', '茶饮')" class="flex flex-col items-center space-y-1 cursor-pointer">
+                            <div class="w-12 h-12 rounded-xl bg-orange-50 text-orange-400 flex items-center justify-center text-xl">
+                                <i class="fas fa-mug-hot"></i>
+                            </div>
+                            <span class="text-xs text-gray-600">茶饮</span>
+                        </div>
+                        <div onclick="openSubCategory('drink_ice', '冰品')" class="flex flex-col items-center space-y-1 cursor-pointer">
+                            <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center text-xl">
+                                <i class="fas fa-ice-cream"></i>
+                            </div>
+                            <span class="text-xs text-gray-600">冰品</span>
+                        </div>
+                        <div onclick="openSubCategory('drink_sugar', '糖水')" class="flex flex-col items-center space-y-1 cursor-pointer">
+                            <div class="w-12 h-12 rounded-xl bg-pink-50 text-pink-500 flex items-center justify-center text-xl">
+                                <i class="fas fa-glass-whiskey"></i>
+                            </div>
+                            <span class="text-xs text-gray-600">糖水</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Level 2: 子分类展示 (初始隐藏) -->
+            <div id="drawer-level-2" class="absolute inset-0 bg-white transform translate-x-full transition-transform duration-300 p-5 overflow-y-auto">
+                <div id="sub-category-container" class="flex flex-wrap gap-3">
+                    <!-- 动态插入子分类标签 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 悬浮菜单遮罩层 -->
+    <div id="fab-overlay" class="fixed inset-0 bg-black/50 z-[60] hidden transition-opacity duration-300 opacity-0 backdrop-blur-sm" onclick="toggleFabMenu()"></div>
+
+    <!-- 悬浮按钮容器 -->
+    <div class="fixed bottom-24 right-5 z-[70] flex flex-col items-end space-y-4">
+        
+        <!-- 子按钮组 -->
+        <div id="fab-menu" class="flex flex-col items-end space-y-4 transition-all duration-300 opacity-0 translate-y-10 pointer-events-none scale-90 origin-bottom">
+            
+            <!-- 子按钮 B: 晒作品 -->
+            <div class="flex items-center space-x-3">
+                <span class="text-sm font-medium text-gray-700 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-gray-100">晒作品</span>
+                <button onclick="handleCooksnap()" class="w-12 h-12 rounded-full bg-green-500 text-white shadow-lg flex items-center justify-center hover:bg-green-600 transition-colors pointer-events-auto transform active:scale-90">
+                    <i class="fas fa-camera text-lg"></i>
+                </button>
+            </div>
+
+            <!-- 子按钮 A: 写食谱 -->
+            <div class="flex items-center space-x-3">
+                <span class="text-sm font-medium text-gray-700 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-gray-100">写食谱</span>
+                <button onclick="handleWriteRecipe()" class="w-12 h-12 rounded-full bg-orange-500 text-white shadow-lg flex items-center justify-center hover:bg-orange-600 transition-colors pointer-events-auto transform active:scale-90">
+                    <i class="fas fa-pen text-lg"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 主按钮 -->
+        <button id="main-fab" onclick="toggleFabMenu()" class="w-14 h-14 rounded-full bg-[#ff8c00] text-white shadow-lg flex items-center justify-center transition-transform duration-300 active:scale-90 shadow-orange-500/40">
+            <i class="fas fa-plus text-2xl transition-transform duration-300" id="fab-icon"></i>
+        </button>
+    </div>
+
+    <!-- 底部导航栏 -->
+    <nav class="bottom-nav" id="mainBottomNav">
+        <div class="grid grid-cols-4">
+            <a href="../shouye/shouye-mobile.html" class="bottom-nav-item">
+                <i class="fas fa-home"></i>
+                <span>首页</span>
+            </a>
+            <a href="../cangku-gongneng/erp-zhuye-canku.html" class="bottom-nav-item">
+                <i class="fas fa-chart-pie"></i>
+                <span>ERP</span>
+            </a>
+            <a href="#" class="bottom-nav-item active">
+                <i class="fas fa-users"></i>
+                <span>社区</span>
+            </a>
+            <a href="../wode/wodezhuye.html" class="bottom-nav-item">
+                <i class="fas fa-user"></i>
+                <span>我的</span>
+            </a>
+        </div>
+    </nav>
+
+    <script>
+        // 关注按钮功能
+        function toggleFollow(btn) {
+            if (btn.classList.contains('bg-orange-100')) {
+                // 切换到已关注状态
+                btn.classList.remove('bg-orange-100', 'text-orange-600');
+                btn.classList.add('bg-transparent', 'text-gray-400', 'border', 'border-gray-300');
+                btn.textContent = '已关注';
+            } else {
+                // 切换到关注状态
+                btn.classList.add('bg-orange-100', 'text-orange-600');
+                btn.classList.remove('bg-transparent', 'text-gray-400', 'border', 'border-gray-300');
+                btn.textContent = '关注';
+            }
+        }
+
+        // 导航标签切换 (Updated for simple link behavior)
+        // Note: Actual navigation is handled by onclick attributes in HTML
+        
+        // 收藏功能
+        document.querySelectorAll('button i.fa-heart').forEach(icon => {
+            icon.parentElement.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (icon.classList.contains('far')) {
+                    icon.classList.remove('far');
+                    icon.classList.add('fas');
+                    icon.classList.add('text-red-500');
+                } else {
+                    icon.classList.remove('fas', 'text-red-500');
+                    icon.classList.add('far');
+                }
+            });
+        });
+
+        // 悬浮按钮点击 (已废弃，保留函数名以防万一，但实际逻辑已拆分)
+        function openCreateMenu() {
+            toggleFabMenu();
+        }
+
+        // 新版悬浮菜单逻辑
+        let isFabOpen = false;
+        const fabMenu = document.getElementById('fab-menu');
+        const fabIcon = document.getElementById('fab-icon');
+        const fabOverlay = document.getElementById('fab-overlay');
+        const mainFab = document.getElementById('main-fab');
+
+        function toggleFabMenu() {
+            isFabOpen = !isFabOpen;
+            
+            if (isFabOpen) {
+                // 打开菜单
+                fabMenu.classList.remove('opacity-0', 'translate-y-10', 'pointer-events-none', 'scale-90');
+                fabIcon.classList.add('rotate-45');
+                fabOverlay.classList.remove('hidden');
+                // 微小延迟以触发 opacity 动画
+                setTimeout(() => fabOverlay.classList.remove('opacity-0'), 10);
+            } else {
+                // 关闭菜单
+                fabMenu.classList.add('opacity-0', 'translate-y-10', 'pointer-events-none', 'scale-90');
+                fabIcon.classList.remove('rotate-45');
+                fabOverlay.classList.add('opacity-0');
+                setTimeout(() => fabOverlay.classList.add('hidden'), 300);
+            }
+        }
+
+        function handleWriteRecipe() {
+            // 跳转到发布食谱页面
+            window.location.href = '../../peifnagmokuai/mianbao/mianbaozhuye/peifang-zhuye.html';
+        }
+
+        function handleCooksnap() {
+            // 跳转到发布Cooksnap页面
+            alert('即将打开跟做发布页面 (Cooksnap)');
+            toggleFabMenu(); // 关闭菜单
+        }
+
+        // 用户侧边栏逻辑
+        const userDrawer = document.getElementById('user-drawer');
+        const userDrawerOverlay = document.getElementById('user-drawer-overlay');
+        let isDrawerOpen = false;
+
+        function toggleUserDrawer() {
+            isDrawerOpen = !isDrawerOpen;
+            if (isDrawerOpen) {
+                userDrawerOverlay.classList.remove('hidden');
+                // 微小延迟以触发 opacity 动画
+                setTimeout(() => {
+                    userDrawerOverlay.classList.remove('opacity-0');
+                    userDrawer.classList.remove('-translate-x-full');
+                }, 10);
+                // 防止背景滚动
+                document.body.style.overflow = 'hidden';
+            } else {
+                userDrawerOverlay.classList.add('opacity-0');
+                userDrawer.classList.add('-translate-x-full');
+                setTimeout(() => {
+                    userDrawerOverlay.classList.add('hidden');
+                }, 300);
+                document.body.style.overflow = '';
+            }
+        }
+
+        // 子分类数据映射
+        const subCategories = {
+            // 1. 烘焙天地
+            'bread': ['吐司', '欧包', '日式甜面包', '贝果', '法棍', '碱水包'],
+            'cake': ['戚风', '慕斯', '芝士蛋糕', '卷类', '磅蛋糕', '杯子蛋糕'],
+            'cookie': ['曲奇', '软曲奇', '司康', '玛德琳', '手指饼干'],
+            'tart': ['蛋挞', '水果塔', '派', '咸派', '千层酥'],
+            
+            // 2. 西式轻食
+            'western_main': ['披萨', '意面', '焗饭', '千层面', '烩饭'],
+            'western_light': ['三明治', '汉堡', '帕尼尼', '贝果三明治'],
+            'western_salad': ['温沙拉', '轻食碗', '油醋汁', '凯撒沙拉'],
+            'western_brunch': ['班尼迪克蛋', '法式吐司', '厚蛋烧', '美式早餐'],
+            
+            // 3. 中式点心
+            'chinese_pastry': ['蛋黄酥', '老婆饼', '桃酥', '鲜花饼', '牛舌饼'],
+            'chinese_bun': ['包子', '馒头', '花卷', '发糕', '烧卖'],
+            'chinese_ricecake': ['青团', '条头糕', '发糕', '驴打滚', '年糕'],
+            'chinese_festival': ['月饼', '粽子', '汤圆', '青团', '重阳糕'],
+            
+            // 4. 饮品甜碗
+            'drink_coffee': ['拿铁', '美式', '特调', '手冲', '冷萃'],
+            'drink_tea': ['奶茶', '果茶', '冷泡茶', '抹茶拿铁'],
+            'drink_ice': ['冰淇淋', '雪葩', '冰沙', '绵绵冰'],
+            'drink_sugar': ['杨枝甘露', '烧仙草', '双皮奶', '姜撞奶']
+        };
+
+        const drawerLevel1 = document.getElementById('drawer-level-1');
+        const drawerLevel2 = document.getElementById('drawer-level-2');
+        const drawerTitle = document.getElementById('drawer-title');
+        const drawerBackBtn = document.getElementById('drawer-back-btn');
+        const subCategoryContainer = document.getElementById('sub-category-container');
+
+        function openSubCategory(key, title) {
+            // 设置标题
+            drawerTitle.textContent = title;
+            drawerBackBtn.classList.remove('hidden');
+            
+            // 填充子分类
+            const items = subCategories[key] || [];
+            subCategoryContainer.innerHTML = items.map(item => `
+                <a href="#" class="px-4 py-2 bg-gray-50 text-gray-700 rounded-full text-sm font-medium hover:bg-orange-50 hover:text-orange-600 transition-colors border border-gray-100">
+                    ${item}
+                </a>
+            `).join('');
+            
+            // 切换视图
+            drawerLevel1.classList.add('-translate-x-full');
+            drawerLevel2.classList.remove('translate-x-full');
+        }
+
+        function backToLevel1() {
+            // 恢复标题
+            drawerTitle.textContent = '全部分类';
+            drawerBackBtn.classList.add('hidden');
+            
+            // 切换视图
+            drawerLevel1.classList.remove('-translate-x-full');
+            drawerLevel2.classList.add('translate-x-full');
+        }
+
+        // 全部分类侧边栏逻辑
+        const categoryDrawer = document.getElementById('category-drawer');
+        const categoryDrawerOverlay = document.getElementById('category-drawer-overlay');
+        let isCategoryDrawerOpen = false;
+
+        function toggleCategoryDrawer() {
+            isCategoryDrawerOpen = !isCategoryDrawerOpen;
+            if (isCategoryDrawerOpen) {
+                categoryDrawerOverlay.classList.remove('hidden');
+                // 微小延迟以触发 opacity 动画
+                setTimeout(() => {
+                    categoryDrawerOverlay.classList.remove('opacity-0');
+                    categoryDrawer.classList.remove('translate-y-full');
+                }, 10);
+                // 防止背景滚动
+                document.body.style.overflow = 'hidden';
+            } else {
+                categoryDrawerOverlay.classList.add('opacity-0');
+                categoryDrawer.classList.add('translate-y-full');
+                setTimeout(() => {
+                    categoryDrawerOverlay.classList.add('hidden');
+                }, 300);
+                document.body.style.overflow = '';
+            }
+        }
+
+        // 搜索功能
+        document.querySelector('input[type="text"]').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                console.log('搜索: ' + this.value);
+                // 执行搜索逻辑
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>创建群聊 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f9f9f9;
+            color: #1a1a1a;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+        
+        /* Toggle Switch */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #ff9f43;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #ff9f43;
+        }
+        
+        /* Custom inputs */
+        input::placeholder, textarea::placeholder {
+            color: #d1d5db;
+        }
+    </style>
+</head>
+<body class="bg-[#f9f9f9] min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-30 bg-white border-b border-gray-100">
+        <div class="flex items-center justify-between px-4 h-12">
+            <a href="javascript:history.back()" class="w-8 h-8 flex items-center justify-center text-gray-600">
+                <i class="fas fa-chevron-left text-lg"></i>
+            </a>
+            <h1 class="font-bold text-lg text-gray-800">创建群聊</h1>
+            <a href="shequ-face-to-face.html" class="text-sm text-gray-600">
+                面对面建群
+            </a>
+        </div>
+    </header>
+
+    <main class="flex-1 overflow-y-auto pb-24 p-4 space-y-4">
+        
+        <!-- Group Name -->
+        <div class="bg-white rounded-xl p-4">
+            <div class="flex justify-between items-center mb-2">
+                <label class="font-bold text-gray-900">群名称 <span class="text-red-500">*</span></label>
+                <span class="text-xs text-gray-400" id="name-count">0/24</span>
+            </div>
+            <input type="text" id="group-name" placeholder="请输入群名称" class="w-full text-base focus:outline-none" maxlength="24" oninput="updateCount('group-name', 'name-count')">
+        </div>
+
+        <!-- Group Intro -->
+        <div class="bg-white rounded-xl p-4">
+            <div class="flex justify-between items-center mb-2">
+                <label class="font-bold text-gray-900">群介绍 <span class="text-red-500">*</span></label>
+            </div>
+            <textarea id="group-intro" placeholder="简单介绍下群内讨论的话题，希望那些人加入群聊" class="w-full text-base focus:outline-none resize-none h-24" maxlength="100" oninput="updateCount('group-intro', 'intro-count')"></textarea>
+            <div class="flex justify-end mt-2">
+                <span class="text-xs text-gray-400" id="intro-count">0/100</span>
+            </div>
+        </div>
+
+        <!-- Settings List -->
+        <div class="bg-white rounded-xl overflow-hidden divide-y divide-gray-50">
+            
+            <!-- Type -->
+            <div onclick="openModal('modal-type')" class="flex items-center justify-between p-4 active:bg-gray-50 cursor-pointer">
+                <div>
+                    <div class="font-bold text-gray-900">群类型</div>
+                    <div class="text-xs text-gray-400 mt-0.5">帮助大家快速了解你的群聊</div>
+                </div>
+                <div class="flex items-center text-gray-400">
+                    <span id="selected-type" class="text-sm mr-2">未选择</span>
+                    <i class="fas fa-chevron-right text-xs"></i>
+                </div>
+            </div>
+
+            <!-- Location -->
+            <div onclick="openModal('modal-location')" class="flex items-center justify-between p-4 active:bg-gray-50 cursor-pointer">
+                <div>
+                    <div class="font-bold text-gray-900">地点</div>
+                    <div class="text-xs text-gray-400 mt-0.5">群聊将被更多附近的人看到</div>
+                </div>
+                <div class="flex items-center text-gray-400">
+                    <span id="selected-location" class="text-sm mr-2">未选择</span>
+                    <i class="fas fa-chevron-right text-xs"></i>
+                </div>
+            </div>
+
+            <!-- Threshold -->
+            <div onclick="openModal('modal-threshold')" class="flex items-center justify-between p-4 active:bg-gray-50 cursor-pointer">
+                <div>
+                    <div class="font-bold text-gray-900">进群门槛</div>
+                    <div class="text-xs text-gray-400 mt-0.5">设置条件挑选志同道合的群友</div>
+                </div>
+                <div class="flex items-center text-gray-400">
+                    <span id="selected-threshold" class="text-sm mr-2">未选择</span>
+                    <i class="fas fa-chevron-right text-xs"></i>
+                </div>
+            </div>
+
+            <!-- Profile Display -->
+            <div class="flex items-center justify-between p-4">
+                <div>
+                    <div class="font-bold text-gray-900">个人主页展示</div>
+                    <div class="text-xs text-gray-400 mt-0.5">开启后，群聊将在你的个人主页展示</div>
+                </div>
+                <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+                    <input type="checkbox" name="toggle" id="toggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer transition-all duration-300 left-0 checked:left-6 border-gray-300 checked:border-orange-500"/>
+                    <label for="toggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer transition-colors duration-300 checked:bg-orange-500"></label>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white p-4 pb-safe border-t border-gray-100">
+        <button onclick="createGroup()" class="w-full bg-[#ff8c00] text-white font-bold py-3.5 rounded-full shadow-lg shadow-orange-100 active:bg-orange-600 transition-colors">
+            立即创建
+        </button>
+        <p class="text-center text-[10px] text-gray-400 mt-3">
+            为维护群内信息生态健康，请遵守 <a href="#" class="text-blue-500">《群聊公约》</a>
+        </p>
+    </div>
+
+    <!-- Modal: Group Type -->
+    <div id="modal-type" class="hidden fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm transition-opacity opacity-0">
+        <div class="bg-white w-full rounded-t-2xl p-6 transform translate-y-full transition-transform duration-300">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-bold">选择群类型</h3>
+                <button onclick="closeModal('modal-type')" class="text-gray-400">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="selectType('烘焙')" class="p-4 bg-gray-50 rounded-xl text-center font-medium hover:bg-orange-50 hover:text-orange-500 transition-colors">烘焙</button>
+                <button onclick="selectType('西餐')" class="p-4 bg-gray-50 rounded-xl text-center font-medium hover:bg-orange-50 hover:text-orange-500 transition-colors">西餐</button>
+                <button onclick="selectType('中点')" class="p-4 bg-gray-50 rounded-xl text-center font-medium hover:bg-orange-50 hover:text-orange-500 transition-colors">中点</button>
+                <button onclick="selectType('饮品')" class="p-4 bg-gray-50 rounded-xl text-center font-medium hover:bg-orange-50 hover:text-orange-500 transition-colors">饮品</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Location -->
+    <div id="modal-location" class="hidden fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm transition-opacity opacity-0">
+        <div class="bg-white w-full rounded-t-2xl p-6 transform translate-y-full transition-transform duration-300 h-1/2 flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold">选择地点</h3>
+                <button onclick="closeModal('modal-location')" class="text-gray-400">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="relative mb-4">
+                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <input type="text" placeholder="搜索地点" class="w-full pl-10 pr-4 py-2 bg-gray-100 rounded-lg text-sm">
+            </div>
+            <div class="flex-1 overflow-y-auto space-y-2">
+                <div onclick="selectLocation('不显示位置')" class="p-3 border-b border-gray-50 flex justify-between items-center text-gray-500">
+                    <span>不显示位置</span>
+                </div>
+                <div onclick="selectLocation('上海·新天地')" class="p-3 border-b border-gray-50 flex justify-between items-center">
+                    <div>
+                        <div class="font-medium text-gray-800">上海·新天地</div>
+                        <div class="text-xs text-gray-400">黄浦区</div>
+                    </div>
+                </div>
+                <div onclick="selectLocation('北京·三里屯')" class="p-3 border-b border-gray-50 flex justify-between items-center">
+                    <div>
+                        <div class="font-medium text-gray-800">北京·三里屯</div>
+                        <div class="text-xs text-gray-400">朝阳区</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Threshold -->
+    <div id="modal-threshold" class="hidden fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm transition-opacity opacity-0">
+        <div class="bg-white w-full rounded-t-2xl p-6 transform translate-y-full transition-transform duration-300">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-bold">进群门槛</h3>
+                <button onclick="closeModal('modal-threshold')" class="text-gray-400">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-6">
+                <!-- Verification Method -->
+                <div>
+                    <h4 class="font-bold text-sm text-gray-900 mb-3">进群验证方式</h4>
+                    <div class="flex space-x-3">
+                        <button onclick="setVerifyMode(this, 'auto')" class="verify-btn flex-1 py-2 border-2 border-orange-500 bg-orange-50 text-orange-500 rounded-lg text-sm font-medium transition-colors">
+                            直接进群
+                        </button>
+                        <button onclick="setVerifyMode(this, 'manual')" class="verify-btn flex-1 py-2 border-2 border-gray-100 text-gray-600 rounded-lg text-sm font-medium transition-colors">
+                            需要验证
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Conditions -->
+                <div>
+                    <h4 class="font-bold text-sm text-gray-900 mb-3">申请条件</h4>
+                    <textarea id="threshold-condition" placeholder="设置申请条件，如：晒出你的烘焙作品..." class="w-full bg-gray-50 p-3 rounded-lg text-sm h-20 resize-none focus:outline-none focus:ring-1 focus:ring-orange-200"></textarea>
+                </div>
+                
+                <button onclick="saveThreshold()" class="w-full bg-orange-500 text-white font-bold py-3 rounded-xl">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateCount(inputId, countId) {
+            const input = document.getElementById(inputId);
+            const count = document.getElementById(countId);
+            const max = input.getAttribute('maxlength');
+            count.textContent = `${input.value.length}/${max}`;
+        }
+
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                const inner = modal.querySelector('div');
+                inner.classList.remove('translate-y-full');
+            }, 10);
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            const inner = modal.querySelector('div');
+            inner.classList.add('translate-y-full');
+            modal.classList.add('opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        // Selection Handlers
+        function selectType(type) {
+            document.getElementById('selected-type').textContent = type;
+            document.getElementById('selected-type').classList.add('text-gray-900');
+            closeModal('modal-type');
+        }
+
+        function selectLocation(loc) {
+            document.getElementById('selected-location').textContent = loc;
+            document.getElementById('selected-location').classList.add('text-gray-900');
+            closeModal('modal-location');
+        }
+
+        // Threshold Logic
+        let verifyMode = 'auto';
+        function setVerifyMode(btn, mode) {
+            verifyMode = mode;
+            // Reset styles
+            document.querySelectorAll('.verify-btn').forEach(b => {
+                b.classList.remove('border-orange-500', 'bg-orange-50', 'text-orange-500');
+                b.classList.add('border-gray-100', 'text-gray-600');
+            });
+            // Set active style
+            btn.classList.remove('border-gray-100', 'text-gray-600');
+            btn.classList.add('border-orange-500', 'bg-orange-50', 'text-orange-500');
+        }
+
+        function saveThreshold() {
+            const condition = document.getElementById('threshold-condition').value;
+            let text = verifyMode === 'auto' ? '直接进群' : '需要验证';
+            if (condition) text += ' + 条件';
+            
+            document.getElementById('selected-threshold').textContent = text;
+            document.getElementById('selected-threshold').classList.add('text-gray-900');
+            closeModal('modal-threshold');
+        }
+
+        function createGroup() {
+            const name = document.getElementById('group-name').value;
+            if (!name) {
+                alert('请输入群名称');
+                return;
+            }
+            alert('群聊 "' + name + '" 创建成功！');
+            window.location.href = 'shequ-xiaoxi.html';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>用户主页 - 社区</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #ffffff;
+            color: #1a1a1a;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+            --text-main: #333333;
+            --text-sub: #8b8b8b;
+            --bg-light: #f7f7f5;
+        }
+
+        .text-cookpad { color: var(--primary-dark); }
+        .bg-cookpad { background-color: var(--primary-dark); }
+        
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Tab 选中样式 */
+        .profile-tab.active {
+            color: var(--primary-dark);
+            border-bottom: 2px solid var(--primary-dark);
+            font-weight: 600;
+        }
+
+        /* 沉浸式顶部背景 */
+        .profile-bg {
+            background: linear-gradient(to bottom, #fff5eb, #ffffff);
+        }
+    </style>
+</head>
+<body class="bg-white min-h-screen pb-20">
+
+    <!-- 顶部导航栏 (透明/悬浮) -->
+    <div class="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-4 py-3 bg-white/90 backdrop-blur-sm border-b border-gray-100/50">
+        <button onclick="history.back()" class="w-8 h-8 flex items-center justify-center rounded-full active:bg-gray-100 text-gray-700">
+            <i class="fas fa-arrow-left text-lg"></i>
+        </button>
+        <div class="font-bold text-base opacity-0 transition-opacity" id="nav-title">玛丽烘焙</div>
+        <button class="w-8 h-8 flex items-center justify-center rounded-full active:bg-gray-100 text-gray-700">
+            <i class="fas fa-share-alt"></i>
+        </button>
+    </div>
+
+    <!-- 个人信息头部 -->
+    <div class="pt-16 px-5 pb-6 profile-bg">
+        <div class="flex items-start justify-between mb-4">
+            <!-- 头像 -->
+            <div class="relative">
+                <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80" class="w-20 h-20 rounded-full border-2 border-white shadow-sm object-cover">
+                <!-- 认证标识 -->
+                <div class="absolute bottom-0 right-0 bg-yellow-400 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full border border-white">
+                    <i class="fas fa-star"></i>
+                </div>
+            </div>
+            
+            <!-- 右侧按钮组 (编辑资料 + 设置) -->
+            <div class="flex space-x-2 mt-2">
+                <button class="px-4 py-1.5 rounded-full border border-gray-300 text-gray-700 text-xs font-bold active:bg-gray-50 transition-colors" onclick="window.location.href='shequ-edit-profile.html'">
+                    编辑资料
+                </button>
+            </div>
+        </div>
+
+        <!-- 名字与简介 -->
+        <div class="mb-4">
+            <h1 class="text-2xl font-bold text-gray-900 mb-1">玛丽烘焙</h1>
+            <p class="text-xs text-gray-500 mb-3 flex items-center">
+                <span class="bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded text-[10px] mr-2 font-medium">软件公司</span>
+                <span>ID: 8829103</span>
+            </p>
+            <p class="text-sm text-gray-700 leading-relaxed mb-3">
+                烘匠APP —— 专为烘焙行业量身打造 👨‍🍳<br>
+                烘焙师的专业助手<br>
+                使用指南: 配方合集 + 📹 详细视频教程<br>
+                ✨ 3.0版本全新上线，更多功能等你体验！
+            </p>
+        </div>
+
+        <!-- 数据概览 -->
+        <div class="flex items-center space-x-6 text-sm mb-6">
+            <div class="flex flex-col items-center">
+                <span class="font-bold text-gray-900 text-base">108</span>
+                <span class="text-gray-500 text-xs">关注</span>
+            </div>
+            <div class="flex flex-col items-center">
+                <span class="font-bold text-gray-900 text-base">3.5w</span>
+                <span class="text-gray-500 text-xs">粉丝</span>
+            </div>
+            <div class="flex flex-col items-center">
+                <span class="font-bold text-gray-900 text-base">2.8w</span>
+                <span class="text-gray-500 text-xs">获赞与收藏</span>
+            </div>
+        </div>
+
+        <!-- 功能入口卡片 (我的配方入口等) -->
+        <div class="grid grid-cols-3 gap-3 mb-2">
+            <a href="../../peifnagmokuai/mianbao/mianbaozhuye/peifang-zhuye.html" class="flex flex-col items-center justify-center bg-white border border-gray-100 rounded-xl py-3 shadow-sm active:scale-95 transition-transform">
+                <i class="fas fa-book-open text-orange-500 text-xl mb-1"></i>
+                <span class="text-xs font-bold text-gray-700">已保存的食谱</span>
+                <span class="text-[10px] text-gray-400">查看全部</span>
+            </a>
+            <a href="shequ-caogaoxiang.html" class="flex flex-col items-center justify-center bg-white border border-gray-100 rounded-xl py-3 shadow-sm active:scale-95 transition-transform relative">
+                <i class="fas fa-file-edit text-blue-500 text-xl mb-1"></i>
+                <span class="text-xs font-bold text-gray-700">草稿箱</span>
+                <span class="text-[10px] text-gray-400">2篇待发布</span>
+                <span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
+            </a>
+            <a href="shequ-my-groups.html" class="flex flex-col items-center justify-center bg-white border border-gray-100 rounded-xl py-3 shadow-sm active:scale-95 transition-transform">
+                <i class="fas fa-users text-green-500 text-xl mb-1"></i>
+                <span class="text-xs font-bold text-gray-700">群聊</span>
+                <span class="text-[10px] text-gray-400">查看详情</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- 标签页导航 (Sticky) -->
+    <div class="sticky top-[53px] z-40 bg-white border-b border-gray-100 flex text-center">
+        <div class="flex-1 py-3 text-sm text-gray-500 profile-tab active cursor-pointer" onclick="switchTab('recipes')">
+            公开食谱 (12)
+        </div>
+        <div class="flex-1 py-3 text-sm text-gray-500 profile-tab cursor-pointer" onclick="switchTab('cooksnaps')">
+            未公开食谱 (45)
+        </div>
+        <div class="flex-1 py-3 text-sm text-gray-500 profile-tab cursor-pointer" onclick="switchTab('favorites')">
+            收藏 (1.2k)
+        </div>
+    </div>
+
+    <!-- 内容区域 -->
+    <main class="p-4 min-h-[500px]">
+        
+        <!-- 1. 发布食谱列表 (Grid) -->
+        <div id="tab-recipes" class="tab-content animate-fade-in">
+            <div class="grid grid-cols-2 gap-3">
+                <!-- Card 1 -->
+                <div class="recipe-card mb-0 flex flex-col cursor-pointer" onclick="window.location.href='shequ-xiangqingye.html?is_author=true'">
+                    <div class="relative rounded-lg overflow-hidden aspect-[4/3] bg-gray-100 mb-2">
+                        <img src="https://images.unsplash.com/photo-1606101273930-51389ec96675?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover">
+                        <div class="absolute bottom-1 right-1 bg-black/60 backdrop-blur-sm text-white text-[10px] px-1.5 py-0.5 rounded font-medium">45分钟</div>
+                    </div>
+                    <h3 class="font-bold text-gray-900 text-sm leading-tight mb-1 line-clamp-2">零失败！法式牛角面包保姆级教程</h3>
+                    <div class="mt-auto flex items-center justify-between">
+                        <span class="text-xs text-gray-400">128跟做</span>
+                        <span class="text-xs text-orange-600 bg-orange-50 px-1 py-0.5 rounded">置顶</span>
+                    </div>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="recipe-card mb-0 flex flex-col cursor-pointer" onclick="window.location.href='shequ-xiangqingye.html?is_author=true'">
+                    <div class="relative rounded-lg overflow-hidden aspect-[4/3] bg-gray-100 mb-2">
+                        <img src="https://images.unsplash.com/photo-1509440159596-0249088772ff?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover">
+                    </div>
+                    <h3 class="font-bold text-gray-900 text-sm leading-tight mb-1 line-clamp-2">全麦欧包，无糖无油健康首选</h3>
+                    <div class="mt-auto flex items-center justify-between">
+                        <span class="text-xs text-gray-400">56跟做</span>
+                    </div>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="recipe-card mb-0 flex flex-col cursor-pointer" onclick="window.location.href='shequ-xiangqingye.html?is_author=true'">
+                    <div class="relative rounded-lg overflow-hidden aspect-[4/3] bg-gray-100 mb-2">
+                        <img src="https://images.unsplash.com/photo-1565958011703-44f9829ba187?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover">
+                    </div>
+                    <h3 class="font-bold text-gray-900 text-sm leading-tight mb-1 line-clamp-2">节日限定：草莓鲜奶油蛋糕</h3>
+                    <div class="mt-auto flex items-center justify-between">
+                        <span class="text-xs text-gray-400">230跟做</span>
+                    </div>
+                </div>
+
+                <!-- Card 4 -->
+                <div class="recipe-card mb-0 flex flex-col cursor-pointer" onclick="window.location.href='shequ-xiangqingye.html?is_author=true'">
+                    <div class="relative rounded-lg overflow-hidden aspect-[4/3] bg-gray-100 mb-2">
+                        <img src="https://images.unsplash.com/photo-1579306194872-64d3b7bac4c2?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover">
+                        <div class="absolute top-1 right-1 bg-black/30 rounded-full w-5 h-5 flex items-center justify-center backdrop-blur-sm">
+                            <i class="fas fa-play text-white text-[8px] ml-0.5"></i>
+                        </div>
+                    </div>
+                    <h3 class="font-bold text-gray-900 text-sm leading-tight mb-1 line-clamp-2">巴斯克芝士蛋糕，搅拌均匀就能做</h3>
+                    <div class="mt-auto flex items-center justify-between">
+                        <span class="text-xs text-gray-400">890跟做</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-6 text-center text-xs text-gray-400">
+                - 到底了 -
+            </div>
+        </div>
+
+        <!-- 2. 晒作品 (Cooksnap) -->
+        <div id="tab-cooksnaps" class="tab-content hidden animate-fade-in">
+            <div class="grid grid-cols-3 gap-1">
+                <img src="https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80" class="aspect-square object-cover bg-gray-100 cursor-pointer">
+                <img src="https://images.unsplash.com/photo-1488477181946-6428a0291777?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80" class="aspect-square object-cover bg-gray-100 cursor-pointer">
+                <img src="https://images.unsplash.com/photo-1482049016688-2d3e1b311543?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80" class="aspect-square object-cover bg-gray-100 cursor-pointer">
+                <img src="https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80" class="aspect-square object-cover bg-gray-100 cursor-pointer">
+                <img src="https://images.unsplash.com/photo-1506304485556-4c6607473b3f?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80" class="aspect-square object-cover bg-gray-100 cursor-pointer">
+                <div class="aspect-square bg-gray-50 flex items-center justify-center text-gray-300">
+                    <i class="fas fa-camera text-xl"></i>
+                </div>
+            </div>
+            <p class="mt-4 text-center text-xs text-gray-400">共展示最近 6 张作品</p>
+        </div>
+
+        <!-- 3. 收藏 (Favorites) -->
+        <div id="tab-favorites" class="tab-content hidden animate-fade-in">
+            <div class="grid grid-cols-2 gap-3">
+                <!-- Card 1 -->
+                <div class="recipe-card mb-0 flex flex-col cursor-pointer" onclick="window.location.href='shequ-xiangqingye.html'">
+                    <div class="relative rounded-lg overflow-hidden aspect-[4/3] bg-gray-100 mb-2">
+                        <img src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover">
+                        <div class="absolute bottom-1 right-1 bg-black/60 backdrop-blur-sm text-white text-[10px] px-1.5 py-0.5 rounded font-medium">60分钟</div>
+                    </div>
+                    <h3 class="font-bold text-gray-900 text-sm leading-tight mb-1 line-clamp-2">经典巧克力蛋糕，浓郁丝滑</h3>
+                    <div class="mt-auto flex items-center justify-between">
+                        <div class="flex items-center space-x-1">
+                            <img src="https://randomuser.me/api/portraits/women/44.jpg" class="w-4 h-4 rounded-full">
+                            <span class="text-xs text-gray-500 truncate w-16">苏苏的甜点</span>
+                        </div>
+                        <i class="fas fa-heart text-red-500 text-xs"></i>
+                    </div>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="recipe-card mb-0 flex flex-col cursor-pointer" onclick="window.location.href='shequ-xiangqingye.html'">
+                    <div class="relative rounded-lg overflow-hidden aspect-[4/3] bg-gray-100 mb-2">
+                        <img src="https://images.unsplash.com/photo-1621303837174-89787a7d4729?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover">
+                    </div>
+                    <h3 class="font-bold text-gray-900 text-sm leading-tight mb-1 line-clamp-2">日式生吐司，柔软拉丝</h3>
+                    <div class="mt-auto flex items-center justify-between">
+                        <div class="flex items-center space-x-1">
+                            <img src="https://randomuser.me/api/portraits/men/32.jpg" class="w-4 h-4 rounded-full">
+                            <span class="text-xs text-gray-500 truncate w-16">面包大叔</span>
+                        </div>
+                        <i class="fas fa-heart text-red-500 text-xs"></i>
+                    </div>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="recipe-card mb-0 flex flex-col cursor-pointer" onclick="window.location.href='shequ-xiangqingye.html'">
+                    <div class="relative rounded-lg overflow-hidden aspect-[4/3] bg-gray-100 mb-2">
+                        <img src="https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover">
+                    </div>
+                    <h3 class="font-bold text-gray-900 text-sm leading-tight mb-1 line-clamp-2">家庭版提拉米苏，不用烤箱</h3>
+                    <div class="mt-auto flex items-center justify-between">
+                        <div class="flex items-center space-x-1">
+                            <img src="https://randomuser.me/api/portraits/women/68.jpg" class="w-4 h-4 rounded-full">
+                            <span class="text-xs text-gray-500 truncate w-16">小爱烘焙</span>
+                        </div>
+                        <i class="fas fa-heart text-red-500 text-xs"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-6 text-center text-xs text-gray-400">
+                - 到底了 -
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // Tab 切换逻辑
+        function switchTab(tabName) {
+            // 1. 更新 Tab 样式
+            document.querySelectorAll('.profile-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+
+            // 2. 切换内容显示
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            document.getElementById('tab-' + tabName).classList.remove('hidden');
+        }
+
+        // 关注按钮逻辑
+        function toggleProfileFollow(btn) {
+            if (btn.classList.contains('bg-[#ff8c00]')) {
+                // 关注 -> 已关注
+                btn.classList.remove('bg-[#ff8c00]', 'text-white', 'shadow-sm', 'shadow-orange-200');
+                btn.classList.add('bg-gray-100', 'text-gray-500');
+                btn.textContent = '已关注';
+            } else {
+                // 已关注 -> 关注
+                btn.classList.add('bg-[#ff8c00]', 'text-white', 'shadow-sm', 'shadow-orange-200');
+                btn.classList.remove('bg-gray-100', 'text-gray-500');
+                btn.textContent = '关注';
+            }
+        }
+
+        // 滚动监听 (顶部标题显示)
+        window.addEventListener('scroll', () => {
+            const navTitle = document.getElementById('nav-title');
+            if (window.scrollY > 100) {
+                navTitle.classList.remove('opacity-0');
+            } else {
+                navTitle.classList.add('opacity-0');
+            }
+        });
+    </script>
+</body>
+</html>

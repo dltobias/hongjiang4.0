@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>作者主页 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #ffffff;
+            color: #1a1a1a;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+        }
+
+        /* Hide scrollbar */
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Tab Active State */
+        .tab-btn.active {
+            color: #1a1a1a;
+            font-weight: bold;
+            position: relative;
+        }
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 3px;
+            background-color: var(--primary-dark);
+            border-radius: 2px;
+        }
+        .tab-btn {
+            color: #9ca3af;
+            padding-bottom: 8px;
+        }
+
+        /* Grid Layout for Recipe Cards */
+        .recipe-card-img {
+            aspect-ratio: 4/3;
+        }
+    </style>
+</head>
+<body class="bg-white pb-10">
+
+    <!-- 顶部导航栏 (透明/悬浮) -->
+    <nav class="sticky top-0 z-50 bg-white/95 backdrop-blur-sm px-4 py-3 flex justify-between items-center border-b border-gray-50">
+        <button onclick="history.back()" class="w-8 h-8 flex items-center justify-center text-gray-800">
+            <i class="fas fa-arrow-left text-lg"></i>
+        </button>
+        <div class="font-bold text-gray-800">玛丽烘焙</div>
+        <button class="w-8 h-8 flex items-center justify-center text-gray-800" onclick="openShareModal()">
+            <i class="fas fa-ellipsis-h"></i>
+        </button>
+    </nav>
+
+    <!-- 个人信息区域 -->
+    <header class="px-5 pt-6 pb-6">
+        <div class="flex justify-between items-start mb-6">
+            <div class="flex items-center">
+                <div class="relative mr-4">
+                    <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80" class="w-20 h-20 rounded-full border-2 border-white shadow-md object-cover">
+                    <div class="absolute bottom-0 right-0 bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white">LV.5</div>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-gray-900 leading-tight mb-1">玛丽烘焙</h1>
+                    <p class="text-xs text-gray-500 leading-relaxed max-w-[180px]">专注法式甜点教学，用最简单的材料做出最美味的甜点。</p>
+                </div>
+            </div>
+            
+            <div class="flex space-x-2 mt-2">
+                <button onclick="toggleFollow(this)" class="bg-orange-500 text-white text-xs font-bold px-8 py-2.5 rounded-2xl transition-all active:scale-95 shadow-sm shadow-orange-200">
+                    关注
+                </button>
+                <button class="px-8 py-2.5 rounded-2xl border border-gray-200 text-xs font-bold text-gray-600 bg-white active:bg-gray-50 transition-all active:scale-95">
+                    私信
+                </button>
+            </div>
+        </div>
+
+        <!-- 数据统计栏 -->
+        <div class="flex justify-around items-center text-center">
+            <div>
+                <div class="text-lg font-bold text-gray-900">128</div>
+                <div class="text-xs text-gray-400 mt-0.5">关注</div>
+            </div>
+            <div class="w-px h-8 bg-gray-100"></div>
+            <div>
+                <div class="text-lg font-bold text-gray-900">1.2k</div>
+                <div class="text-xs text-gray-400 mt-0.5">粉丝</div>
+            </div>
+            <div class="w-px h-8 bg-gray-100"></div>
+            <div>
+                <div class="text-lg font-bold text-gray-900">3.5w</div>
+                <div class="text-xs text-gray-400 mt-0.5">获赞与收藏</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 内容 Tabs -->
+    <div class="sticky top-[57px] z-40 bg-white border-b border-gray-100 px-8 flex justify-between items-center mb-4">
+        <button class="tab-btn active text-sm transition-all" onclick="switchTab('recipes')">食谱</button>
+        <button class="tab-btn text-sm transition-all" onclick="switchTab('cooksnaps')">跟做</button>
+        <button class="tab-btn text-sm transition-all" onclick="switchTab('groups')">群聊</button>
+    </div>
+
+    <!-- 内容区域 -->
+    <main class="px-4 min-h-[50vh]">
+        
+        <!-- Tab 1: 食谱列表 -->
+        <div id="tab-recipes" class="grid grid-cols-2 gap-3 animate-fade-in">
+            <!-- Recipe Card 1 -->
+            <div class="flex flex-col cursor-pointer" onclick="window.location.href='shequ-xiangqingye.html'">
+                <div class="relative rounded-lg overflow-hidden mb-2 bg-gray-100">
+                    <img src="https://images.unsplash.com/photo-1606101273930-51389ec96675?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80" class="w-full recipe-card-img object-cover">
+                    <div class="absolute bottom-1 right-1 bg-black/60 backdrop-blur-sm text-white text-[10px] px-1.5 py-0.5 rounded font-medium">45分钟</div>
+                </div>
+                <h3 class="font-bold text-gray-900 text-sm leading-tight mb-1 line-clamp-2">法式牛角面包保姆级教程</h3>
+                <div class="flex items-center justify-between text-xs text-gray-400">
+                    <span>128人跟做</span>
+                    <i class="far fa-heart"></i>
+                </div>
+            </div>
+
+            <!-- Recipe Card 2 -->
+            <div class="flex flex-col cursor-pointer" onclick="window.location.href='shequ-xiangqingye.html'">
+                <div class="relative rounded-lg overflow-hidden mb-2 bg-gray-100">
+                    <img src="https://images.unsplash.com/photo-1555507036-ab1f4038808a?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80" class="w-full recipe-card-img object-cover">
+                    <div class="absolute top-1 right-1 bg-black/30 rounded-full w-6 h-6 flex items-center justify-center backdrop-blur-sm">
+                        <i class="fas fa-play text-white text-[10px] ml-0.5"></i>
+                    </div>
+                </div>
+                <h3 class="font-bold text-gray-900 text-sm leading-tight mb-1 line-clamp-2">丹麦酥皮制作指南</h3>
+                <div class="flex items-center justify-between text-xs text-gray-400">
+                    <span>89人跟做</span>
+                    <i class="far fa-heart"></i>
+                </div>
+            </div>
+
+            <!-- Recipe Card 3 -->
+            <div class="flex flex-col cursor-pointer" onclick="window.location.href='shequ-xiangqingye.html'">
+                <div class="relative rounded-lg overflow-hidden mb-2 bg-gray-100">
+                    <img src="https://images.unsplash.com/photo-1509440159596-0249088772ff?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80" class="w-full recipe-card-img object-cover">
+                </div>
+                <h3 class="font-bold text-gray-900 text-sm leading-tight mb-1 line-clamp-2">全麦乡村面包</h3>
+                <div class="flex items-center justify-between text-xs text-gray-400">
+                    <span>56人跟做</span>
+                    <i class="far fa-heart"></i>
+                </div>
+            </div>
+
+            <!-- Recipe Card 4 -->
+            <div class="flex flex-col cursor-pointer" onclick="window.location.href='shequ-xiangqingye.html'">
+                <div class="relative rounded-lg overflow-hidden mb-2 bg-gray-100">
+                    <img src="https://images.unsplash.com/photo-1586969593928-1c87c1f9c2ef?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80" class="w-full recipe-card-img object-cover">
+                </div>
+                <h3 class="font-bold text-gray-900 text-sm leading-tight mb-1 line-clamp-2">经典布里欧修</h3>
+                <div class="flex items-center justify-between text-xs text-gray-400">
+                    <span>230人跟做</span>
+                    <i class="far fa-heart"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: 跟做 (Cooksnaps) -->
+        <div id="tab-cooksnaps" class="grid grid-cols-3 gap-1 hidden animate-fade-in">
+            <div class="relative aspect-square bg-gray-100 cursor-pointer">
+                <img src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80" class="w-full h-full object-cover">
+            </div>
+            <div class="relative aspect-square bg-gray-100 cursor-pointer">
+                <img src="https://images.unsplash.com/photo-1558301211-0d8c8ddee6ec?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80" class="w-full h-full object-cover">
+            </div>
+            <div class="relative aspect-square bg-gray-100 cursor-pointer">
+                <img src="https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80" class="w-full h-full object-cover">
+            </div>
+            <div class="relative aspect-square bg-gray-100 cursor-pointer">
+                <img src="https://images.unsplash.com/photo-1587314168485-3236d6710814?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80" class="w-full h-full object-cover">
+            </div>
+            <div class="relative aspect-square bg-gray-100 cursor-pointer">
+                <img src="https://images.unsplash.com/photo-1464349095431-e93992015966?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80" class="w-full h-full object-cover">
+            </div>
+            <div class="relative aspect-square bg-gray-100 cursor-pointer">
+                <img src="https://images.unsplash.com/photo-1551024709-8f23befc6f87?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80" class="w-full h-full object-cover">
+            </div>
+        </div>
+
+        <!-- Tab 3: 群聊 -->
+        <div id="tab-groups" class="space-y-3 hidden animate-fade-in">
+             <div class="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-xl shadow-sm" onclick="window.location.href='shequ-liaotian.html'">
+                <div class="flex items-center">
+                    <img src="https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80" class="w-12 h-12 rounded-lg object-cover mr-3">
+                    <div>
+                        <h3 class="font-bold text-gray-900 text-sm">玛丽的烘焙交流群</h3>
+                        <p class="text-xs text-gray-500 mt-0.5">382 人在线 · 活跃</p>
+                    </div>
+                </div>
+                <button class="text-xs font-bold text-white bg-orange-500 px-3 py-1.5 rounded-full active:scale-95 transition-transform">
+                    加入
+                </button>
+            </div>
+
+            <div class="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-xl shadow-sm" onclick="window.location.href='shequ-liaotian.html'">
+                <div class="flex items-center">
+                    <img src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80" class="w-12 h-12 rounded-lg object-cover mr-3">
+                    <div>
+                        <h3 class="font-bold text-gray-900 text-sm">法式甜点进阶班</h3>
+                        <p class="text-xs text-gray-500 mt-0.5">156 人在线</p>
+                    </div>
+                </div>
+                <button class="text-xs font-bold text-white bg-orange-500 px-3 py-1.5 rounded-full active:scale-95 transition-transform">
+                    加入
+                </button>
+            </div>
+
+            <div class="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-xl shadow-sm" onclick="window.location.href='shequ-liaotian.html'">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 rounded-lg bg-orange-50 flex items-center justify-center text-orange-400 mr-3">
+                        <i class="fas fa-bread-slice text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-gray-900 text-sm">天然酵母研究社</h3>
+                        <p class="text-xs text-gray-500 mt-0.5">89 人在线</p>
+                    </div>
+                </div>
+                <button class="text-xs font-bold text-white bg-orange-500 px-3 py-1.5 rounded-full active:scale-95 transition-transform">
+                    加入
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Share Modal -->
+    <div class="fixed inset-0 z-[60] hidden" id="shareModal">
+        <div class="absolute inset-0 bg-black/40 transition-opacity opacity-0" id="shareMask" onclick="closeShareModal()"></div>
+        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl transform translate-y-full transition-transform duration-300" id="sharePanel">
+            <!-- Header -->
+            <div class="p-4 border-b border-gray-50 flex items-center justify-between relative">
+                 <div class="flex items-center">
+                    <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80" class="w-10 h-10 rounded-full border border-gray-100 mr-3">
+                    <div>
+                        <div class="font-bold text-gray-900 text-sm">玛丽烘焙</div>
+                        <div class="text-xs text-gray-400 mt-0.5 flex items-center">
+                            <i class="fas fa-pen mr-1"></i> 添加备注
+                        </div>
+                    </div>
+                </div>
+                <button class="text-gray-400 p-2" onclick="closeShareModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="p-4 pb-8">
+                <div class="text-xs text-gray-500 mb-3 font-medium">分享至</div>
+                
+                <!-- Recent Contacts -->
+                <div class="flex overflow-x-auto space-x-6 pb-4 scrollbar-hide mb-2 border-b border-gray-50">
+                    <div class="flex flex-col items-center flex-shrink-0 w-12">
+                        <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop" class="w-12 h-12 rounded-full mb-2 object-cover border border-gray-100">
+                        <span class="text-[10px] text-gray-500 text-center leading-tight">荣荣<br><span class="text-gray-300 scale-90 inline-block">昨天在线</span></span>
+                    </div>
+                    <div class="flex flex-col items-center flex-shrink-0 w-12">
+                        <img src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=100&h=100&fit=crop" class="w-12 h-12 rounded-full mb-2 object-cover border border-gray-100">
+                        <span class="text-[10px] text-gray-500 text-center leading-tight">王雷<br><span class="text-gray-300 scale-90 inline-block">今天在线</span></span>
+                    </div>
+                    <div class="flex flex-col items-center flex-shrink-0 w-12">
+                        <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop" class="w-12 h-12 rounded-full mb-2 object-cover border border-gray-100">
+                        <span class="text-[10px] text-gray-500 text-center leading-tight">暖玉生辉<br><span class="text-gray-300 scale-90 inline-block">今天在线</span></span>
+                    </div>
+                    <div class="flex flex-col items-center flex-shrink-0 w-12">
+                        <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-2 text-gray-400 border border-gray-100">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <span class="text-[10px] text-gray-500 text-center leading-tight">烘匠APP<br><span class="text-gray-300 scale-90 inline-block">的群聊</span></span>
+                    </div>
+                    <div class="flex flex-col items-center flex-shrink-0 w-12">
+                        <img src="https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=100&h=100&fit=crop" class="w-12 h-12 rounded-full mb-2 object-cover border border-gray-100">
+                        <span class="text-[10px] text-gray-500 text-center leading-tight">康俊<br><span class="text-gray-300 scale-90 inline-block">昨天在线</span></span>
+                    </div>
+                </div>
+
+                <!-- Share Apps -->
+                <div class="flex overflow-x-auto space-x-6 pb-6 scrollbar-hide">
+                    <div class="flex flex-col items-center flex-shrink-0 w-12">
+                        <div class="w-12 h-12 rounded-full bg-[#ff4d4f] flex items-center justify-center mb-2 text-white shadow-sm">
+                            <i class="fas fa-paper-plane"></i>
+                        </div>
+                        <span class="text-[10px] text-gray-500">私信好友</span>
+                    </div>
+                    <div class="flex flex-col items-center flex-shrink-0 w-12">
+                        <div class="w-12 h-12 rounded-full bg-[#07c160] flex items-center justify-center mb-2 text-white shadow-sm">
+                            <i class="fab fa-weixin"></i>
+                        </div>
+                        <span class="text-[10px] text-gray-500">微信好友</span>
+                    </div>
+                    <div class="flex flex-col items-center flex-shrink-0 w-12">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-[#7bb32e] to-[#5c8c24] flex items-center justify-center mb-2 text-white shadow-sm">
+                            <i class="fas fa-camera-retro"></i>
+                        </div>
+                        <span class="text-[10px] text-gray-500">朋友圈</span>
+                    </div>
+                    <div class="flex flex-col items-center flex-shrink-0 w-12">
+                        <div class="w-12 h-12 rounded-full bg-[#12b7f5] flex items-center justify-center mb-2 text-white shadow-sm">
+                            <i class="fab fa-qq"></i>
+                        </div>
+                        <span class="text-[10px] text-gray-500">QQ好友</span>
+                    </div>
+                    <div class="flex flex-col items-center flex-shrink-0 w-12">
+                        <div class="w-12 h-12 rounded-full bg-[#fecb2e] flex items-center justify-center mb-2 text-white shadow-sm">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <span class="text-[10px] text-gray-500">QQ空间</span>
+                    </div>
+                     <div class="flex flex-col items-center flex-shrink-0 w-12">
+                        <div class="w-12 h-12 rounded-full bg-[#e6162d] flex items-center justify-center mb-2 text-white shadow-sm">
+                            <i class="fab fa-weibo"></i>
+                        </div>
+                        <span class="text-[10px] text-gray-500">微博</span>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex overflow-x-auto space-x-6 scrollbar-hide pt-2 border-t border-gray-50">
+                    <div class="flex flex-col items-center flex-shrink-0 w-12">
+                        <div class="w-12 h-12 rounded-full bg-white border border-gray-200 flex items-center justify-center mb-2 text-gray-600 shadow-sm">
+                            <i class="fas fa-link"></i>
+                        </div>
+                        <span class="text-[10px] text-gray-500">复制链接</span>
+                    </div>
+                    <div class="flex flex-col items-center flex-shrink-0 w-12">
+                        <div class="w-12 h-12 rounded-full bg-white border border-gray-200 flex items-center justify-center mb-2 text-gray-600 shadow-sm">
+                            <i class="far fa-star"></i>
+                        </div>
+                        <span class="text-[10px] text-gray-500">设为星标</span>
+                    </div>
+                    <div class="flex flex-col items-center flex-shrink-0 w-12">
+                        <div class="w-12 h-12 rounded-full bg-white border border-gray-200 flex items-center justify-center mb-2 text-gray-600 shadow-sm">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <span class="text-[10px] text-gray-500">举报</span>
+                    </div>
+                    <div class="flex flex-col items-center flex-shrink-0 w-12">
+                        <div class="w-12 h-12 rounded-full bg-white border border-gray-200 flex items-center justify-center mb-2 text-gray-600 shadow-sm">
+                            <i class="fas fa-ban"></i>
+                        </div>
+                        <span class="text-[10px] text-gray-500">拉黑</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Share Modal Logic
+        function openShareModal() {
+            const modal = document.getElementById('shareModal');
+            const mask = document.getElementById('shareMask');
+            const panel = document.getElementById('sharePanel');
+            
+            modal.classList.remove('hidden');
+            // Force reflow
+            void modal.offsetWidth;
+            
+            mask.classList.remove('opacity-0');
+            panel.classList.remove('translate-y-full');
+        }
+
+        function closeShareModal() {
+            const modal = document.getElementById('shareModal');
+            const mask = document.getElementById('shareMask');
+            const panel = document.getElementById('sharePanel');
+            
+            mask.classList.add('opacity-0');
+            panel.classList.add('translate-y-full');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        // 关注按钮逻辑
+        function toggleFollow(btn) {
+            if (btn.classList.contains('bg-orange-500')) {
+                // 已关注状态
+                btn.classList.remove('bg-orange-500', 'text-white', 'shadow-orange-200');
+                btn.classList.add('bg-gray-100', 'text-gray-500', 'border', 'border-gray-200');
+                btn.textContent = '已关注';
+            } else {
+                // 未关注状态
+                btn.classList.add('bg-orange-500', 'text-white', 'shadow-orange-200');
+                btn.classList.remove('bg-gray-100', 'text-gray-500', 'border', 'border-gray-200');
+                btn.textContent = '关注';
+            }
+        }
+
+        // Tab 切换逻辑
+        function switchTab(tabName) {
+            // 更新按钮状态
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // 隐藏所有内容
+            document.getElementById('tab-recipes').classList.add('hidden');
+            document.getElementById('tab-cooksnaps').classList.add('hidden');
+            document.getElementById('tab-groups').classList.add('hidden');
+
+            // 显示选中内容
+            document.getElementById('tab-' + tabName).classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

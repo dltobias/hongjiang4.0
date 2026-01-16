@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>大家的跟做 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f7f7f5;
+            color: #1a1a1a;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .masonry-grid {
+            column-count: 2;
+            column-gap: 12px;
+        }
+        .masonry-item {
+            break-inside: avoid;
+            margin-bottom: 12px;
+        }
+    </style>
+</head>
+<body class="bg-[#f7f7f5] pb-10">
+
+    <!-- Header -->
+    <header class="fixed top-0 left-0 right-0 bg-white z-50 border-b border-gray-100">
+        <div class="flex items-center px-4 h-14">
+            <a href="javascript:history.back()" class="w-8 h-8 flex items-center justify-center text-gray-800 -ml-2">
+                <i class="fas fa-chevron-left text-lg"></i>
+            </a>
+            <h1 class="flex-1 text-center font-bold text-lg text-gray-900 mr-6">大家的跟做</h1>
+        </div>
+    </header>
+
+    <main class="pt-16 px-4">
+        
+        <!-- Write Button -->
+        <button class="w-full bg-white border border-gray-200 rounded-xl py-3 flex items-center justify-center text-gray-700 font-bold mb-6 shadow-sm active:bg-gray-50 transition-colors" onclick="alert('发布跟做页面')">
+            <i class="fas fa-camera text-xl mr-2 text-gray-400"></i>
+            <span>发布我的跟做</span>
+        </button>
+
+        <!-- Masonry Grid -->
+        <div class="masonry-grid">
+            
+            <!-- Card 1 -->
+            <div class="masonry-item bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm">
+                <img src="https://images.unsplash.com/photo-1623334044303-241021148842?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" class="w-full h-auto object-cover">
+                <div class="p-3">
+                    <div class="flex items-center mb-2">
+                        <img src="https://randomuser.me/api/portraits/women/44.jpg" class="w-5 h-5 rounded-full mr-2">
+                        <span class="text-xs text-gray-500 font-medium">小猫咪</span>
+                    </div>
+                    <p class="text-sm text-gray-800 leading-relaxed mb-3">
+                        外皮酥脆，里面超级柔软！直接吃也很好吃♪
+                    </p>
+                    <div class="flex items-center justify-between">
+                        <button class="w-8 h-8 flex items-center justify-center bg-gray-50 rounded-full text-gray-400">
+                            <i class="far fa-heart"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="masonry-item bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm">
+                <img src="https://images.unsplash.com/photo-1509440159596-0249088772ff?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" class="w-full h-auto object-cover">
+                <div class="p-3">
+                    <div class="flex items-center mb-2">
+                        <img src="https://randomuser.me/api/portraits/women/12.jpg" class="w-5 h-5 rounded-full mr-2">
+                        <span class="text-xs text-gray-500 font-medium">Romi</span>
+                    </div>
+                    <p class="text-sm text-gray-800 leading-relaxed mb-3">
+                        外脆里嫩，太美味了！今天早上配了自制的红豆黄油，简直完美。
+                    </p>
+                    <div class="flex items-center justify-between">
+                        <button class="w-8 h-8 flex items-center justify-center bg-gray-50 rounded-full text-gray-400">
+                            <i class="far fa-heart"></i>
+                        </button>
+                        <span class="text-xs text-gray-400"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="masonry-item bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm">
+                <img src="https://images.unsplash.com/photo-1586969593928-1c87c1f9c2ef?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" class="w-full h-auto object-cover">
+                <div class="p-3">
+                    <div class="flex items-center mb-2">
+                        <img src="https://randomuser.me/api/portraits/men/32.jpg" class="w-5 h-5 rounded-full mr-2">
+                        <span class="text-xs text-gray-500 font-medium">Tidagon</span>
+                    </div>
+                    <p class="text-sm text-gray-800 leading-relaxed mb-3">
+                        松软又酥脆，非常成功！谢谢分享食谱。
+                    </p>
+                    <div class="flex items-center justify-between">
+                        <button class="w-8 h-8 flex items-center justify-center bg-gray-50 rounded-full text-gray-400">
+                            <i class="far fa-heart"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 4 -->
+            <div class="masonry-item bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm">
+                <img src="https://images.unsplash.com/photo-1600618528240-fb9fc964b853?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" class="w-full h-auto object-cover">
+                <div class="p-3">
+                    <div class="flex items-center mb-2">
+                        <img src="https://randomuser.me/api/portraits/women/68.jpg" class="w-5 h-5 rounded-full mr-2">
+                        <span class="text-xs text-gray-500 font-medium">Neko</span>
+                    </div>
+                    <p class="text-sm text-gray-800 leading-relaxed mb-3">
+                        好吃！家人都很喜欢。
+                    </p>
+                    <div class="flex items-center justify-between">
+                        <button class="w-8 h-8 flex items-center justify-center bg-gray-50 rounded-full text-gray-400">
+                            <i class="far fa-heart"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 5 -->
+            <div class="masonry-item bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm">
+                <img src="https://images.unsplash.com/photo-1555507036-ab1f4038808a?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" class="w-full h-auto object-cover">
+                <div class="p-3">
+                    <div class="flex items-center mb-2">
+                        <img src="https://randomuser.me/api/portraits/men/45.jpg" class="w-5 h-5 rounded-full mr-2">
+                        <span class="text-xs text-gray-500 font-medium">Kenji</span>
+                    </div>
+                    <p class="text-sm text-gray-800 leading-relaxed mb-3">
+                        第一次尝试就成功了，层析分明。
+                    </p>
+                    <div class="flex items-center justify-between">
+                        <button class="w-8 h-8 flex items-center justify-center bg-gray-50 rounded-full text-gray-400">
+                            <i class="far fa-heart"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+</body>
+</html>
