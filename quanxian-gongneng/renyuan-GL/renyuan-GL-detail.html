@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>员工详情 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-green: #10b981;
+            --bg-light: #f7f7f5;
+            --bg-white: #ffffff;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+            -webkit-tap-highlight-color: transparent;
+        }
+        .card {
+            background: var(--bg-white);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            border: 1px solid rgba(0,0,0,0.03);
+        }
+        .tab-active {
+            color: #10b981;
+            border-bottom: 2px solid #10b981;
+            font-weight: bold;
+        }
+        .tab-inactive {
+            color: #6b7280;
+            border-bottom: 2px solid transparent;
+            font-weight: 500;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+
+    <!-- Header -->
+    <div class="bg-white shadow-sm border-b border-gray-100 z-30 flex-shrink-0">
+        <div class="px-4 py-3 flex items-center space-x-3">
+            <a href="renyuan-GL-list.html" class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            <div class="flex-1 overflow-hidden">
+                <h1 class="text-lg font-bold text-gray-800 truncate">李四</h1>
+            </div>
+            <button class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors">
+                <i class="fas fa-edit"></i>
+            </button>
+        </div>
+        
+        <!-- Tabs -->
+        <div class="flex overflow-x-auto no-scrollbar px-2">
+            <button onclick="switchTab('basic')" id="tab-basic" class="tab-active flex-1 py-3 text-sm whitespace-nowrap px-4">基本信息</button>
+            <button onclick="switchTab('qual')" id="tab-qual" class="tab-inactive flex-1 py-3 text-sm whitespace-nowrap px-4">资质证书</button>
+            <button onclick="switchTab('history')" id="tab-history" class="tab-inactive flex-1 py-3 text-sm whitespace-nowrap px-4">培训历史</button>
+            <button onclick="switchTab('logs')" id="tab-logs" class="tab-inactive flex-1 py-3 text-sm whitespace-nowrap px-4">操作日志</button>
+        </div>
+    </div>
+
+    <!-- Content Area -->
+    <div class="flex-1 overflow-y-auto p-4">
+        
+        <!-- Basic Info Tab -->
+        <div id="content-basic" class="space-y-4">
+            <div class="card p-4 flex items-center gap-4">
+                <div class="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 text-2xl font-bold">
+                    李
+                </div>
+                <div>
+                    <h2 class="text-lg font-bold text-gray-800">李四</h2>
+                    <div class="text-sm text-gray-500">质检部 - 质检员</div>
+                    <span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold mt-1 inline-block">在职</span>
+                </div>
+            </div>
+
+            <div class="card p-4">
+                <h3 class="text-sm font-bold text-gray-800 mb-3 border-l-4 border-purple-500 pl-2">个人信息</h3>
+                <div class="space-y-3 text-xs">
+                    <div>
+                        <div class="text-gray-400 mb-0.5">工号</div>
+                        <div class="font-bold text-gray-700 font-mono">EMP002</div>
+                    </div>
+                    <div>
+                        <div class="text-gray-400 mb-0.5">入职日期</div>
+                        <div class="font-bold text-gray-700">2022-06-20</div>
+                    </div>
+                    <div>
+                        <div class="text-gray-400 mb-0.5">手机号码</div>
+                        <div class="font-bold text-gray-700 font-mono">13912345678</div>
+                    </div>
+                    <div>
+                        <div class="text-gray-400 mb-0.5">身份证号</div>
+                        <div class="font-bold text-gray-700 font-mono">31011519900101XXXX</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Qualifications Tab -->
+        <div id="content-qual" class="hidden space-y-3">
+             <div class="card p-4">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="font-bold text-gray-800 text-sm">健康证</div>
+                    <span class="bg-orange-100 text-orange-700 px-2 py-0.5 rounded text-[10px] font-bold">即将到期</span>
+                </div>
+                <div class="text-xs text-gray-500 space-y-1 mb-3">
+                    <div>编号: JK20221101005</div>
+                    <div class="text-orange-500 font-bold">有效期至: 2023-11-01 (剩余5天)</div>
+                </div>
+                <button class="w-full py-2 border border-gray-200 rounded-lg text-xs font-bold text-gray-600 flex items-center justify-center hover:bg-gray-50">
+                    <i class="fas fa-eye mr-1"></i> 查看附件
+                </button>
+            </div>
+
+            <div class="card p-4">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="font-bold text-gray-800 text-sm">食品安全管理员证</div>
+                    <span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold">有效</span>
+                </div>
+                <div class="text-xs text-gray-500 space-y-1 mb-3">
+                    <div>编号: AQ20230515002</div>
+                    <div>有效期至: 2026-05-15</div>
+                </div>
+                <button class="w-full py-2 border border-gray-200 rounded-lg text-xs font-bold text-gray-600 flex items-center justify-center hover:bg-gray-50">
+                    <i class="fas fa-eye mr-1"></i> 查看附件
+                </button>
+            </div>
+        </div>
+
+        <!-- Training History Tab -->
+        <div id="content-history" class="hidden space-y-3">
+            <div class="card p-4 border-l-4 border-green-500">
+                <div class="flex justify-between items-center mb-1">
+                    <div class="font-bold text-gray-800 text-sm">食品安全卫生培训</div>
+                    <span class="text-green-600 font-bold text-xs">合格</span>
+                </div>
+                <div class="text-xs text-gray-500 mb-2">2023-10-25 | 2学时</div>
+                <div class="text-xs text-gray-400 bg-gray-50 p-2 rounded">
+                    内容: 新版食品安全法解读，车间卫生规范操作要点。
+                </div>
+            </div>
+
+            <div class="card p-4 border-l-4 border-green-500">
+                <div class="flex justify-between items-center mb-1">
+                    <div class="font-bold text-gray-800 text-sm">消防安全演练</div>
+                    <span class="text-green-600 font-bold text-xs">合格</span>
+                </div>
+                <div class="text-xs text-gray-500 mb-2">2023-09-15 | 1学时</div>
+                <div class="text-xs text-gray-400 bg-gray-50 p-2 rounded">
+                    内容: 灭火器使用方法，紧急疏散演练。
+                </div>
+            </div>
+        </div>
+
+        <!-- Logs Tab -->
+        <div id="content-logs" class="hidden space-y-3">
+            <div class="bg-gray-50 rounded-lg p-2 mb-2 text-xs text-gray-500 flex justify-between items-center">
+                <span>最近30天记录</span>
+                <i class="fas fa-filter"></i>
+            </div>
+            
+            <div class="card divide-y divide-gray-50">
+                <div class="p-3">
+                    <div class="flex justify-between mb-1">
+                        <span class="font-bold text-gray-800 text-xs">质检确认</span>
+                        <span class="text-[10px] text-gray-400">今天 10:30</span>
+                    </div>
+                    <div class="text-xs text-gray-500">
+                        批次: BATCH20231027001 (法式牛角包) - 合格
+                    </div>
+                </div>
+                <div class="p-3">
+                    <div class="flex justify-between mb-1">
+                        <span class="font-bold text-gray-800 text-xs">不合格品处理</span>
+                        <span class="text-[10px] text-gray-400">昨天 16:15</span>
+                    </div>
+                    <div class="text-xs text-gray-500">
+                        批次: BATCH20231026005 - 报废 (烤糊了)
+                    </div>
+                </div>
+                <div class="p-3">
+                    <div class="flex justify-between mb-1">
+                        <span class="font-bold text-gray-800 text-xs">质检确认</span>
+                        <span class="text-[10px] text-gray-400">昨天 09:20</span>
+                    </div>
+                    <div class="text-xs text-gray-500">
+                        批次: MAT-231026-001 (高筋面粉) - 合格
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Bottom Actions -->
+    <div id="bottom-actions" class="bg-white p-4 border-t border-gray-100 z-30 flex gap-3">
+        <button class="flex-1 bg-white border border-gray-200 text-gray-700 py-3 rounded-xl font-bold text-sm hover:bg-gray-50 transition-colors">
+            <i class="fas fa-file-export mr-1"></i> 导出档案
+        </button>
+        <button class="flex-1 bg-green-500 text-white py-3 rounded-xl font-bold text-sm hover:bg-green-600 transition-colors shadow-lg shadow-green-200">
+            <i class="fas fa-print mr-1"></i> 打印台账
+        </button>
+    </div>
+
+    <script>
+        function switchTab(tabName) {
+            // Update Tab Styles
+            ['basic', 'qual', 'history', 'logs'].forEach(t => {
+                const btn = document.getElementById('tab-' + t);
+                const content = document.getElementById('content-' + t);
+                
+                if (t === tabName) {
+                    btn.classList.replace('tab-inactive', 'tab-active');
+                    content.classList.remove('hidden');
+                } else {
+                    btn.classList.replace('tab-active', 'tab-inactive');
+                    content.classList.add('hidden');
+                }
+            });
+        }
+    </script>
+</body>
+</html>

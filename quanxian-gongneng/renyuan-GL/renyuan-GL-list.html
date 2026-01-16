@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>人员管理台账 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-green: #10b981;
+            --bg-light: #f7f7f5;
+            --bg-white: #ffffff;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+            -webkit-tap-highlight-color: transparent;
+        }
+        .card {
+            background: var(--bg-white);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            border: 1px solid rgba(0,0,0,0.03);
+        }
+        .tab-active {
+            background-color: #10b981;
+            color: white;
+            font-weight: bold;
+        }
+        .tab-inactive {
+            background-color: white;
+            color: #6b7280;
+            font-weight: 500;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+
+    <!-- Header -->
+    <div class="bg-white px-4 py-3 shadow-sm border-b border-gray-100 z-30 flex-shrink-0">
+        <div class="flex items-center space-x-3 mb-3">
+            <a href="../../tai-zhang/taizhang-zhuye.html" class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            <div class="flex-1">
+                <h1 class="text-lg font-bold text-gray-800">人员管理</h1>
+            </div>
+            <button class="w-9 h-9 flex items-center justify-center rounded-full bg-green-50 text-green-600 hover:bg-green-100 transition-colors">
+                <i class="fas fa-user-plus"></i>
+            </button>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="relative mb-3">
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+            <input type="text" placeholder="搜索员工姓名、工号" class="w-full bg-gray-50 border border-gray-200 rounded-lg py-2 pl-8 pr-4 text-xs focus:outline-none focus:border-green-400">
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+            <button onclick="switchTab('list')" id="tab-list" class="tab-active px-4 py-1.5 rounded-full text-xs whitespace-nowrap transition-colors">员工列表</button>
+            <button onclick="switchTab('training')" id="tab-training" class="tab-inactive px-4 py-1.5 rounded-full text-xs whitespace-nowrap transition-colors">培训记录</button>
+            <button onclick="switchTab('auth')" id="tab-auth" class="tab-inactive px-4 py-1.5 rounded-full text-xs whitespace-nowrap transition-colors">操作授权</button>
+        </div>
+    </div>
+
+    <!-- Content Area -->
+    <div class="flex-1 overflow-y-auto p-4">
+        
+        <!-- Staff List -->
+        <div id="list-list" class="space-y-3">
+            <!-- Staff 1 -->
+            <div class="card p-4" onclick="window.location.href='renyuan-GL-detail.html?id=EMP001'">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-lg">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-gray-800">张三</div>
+                            <div class="text-xs text-gray-500">EMP001 <span class="mx-1">|</span> 生产部 - 组长</div>
+                        </div>
+                    </div>
+                    <span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-bold">资质有效</span>
+                </div>
+                <div class="mt-2 pt-2 border-t border-gray-50 flex justify-between text-xs text-gray-500">
+                    <span>入职: 2022-03-15</span>
+                    <button class="px-2 py-1 bg-gray-50 text-gray-600 rounded hover:bg-gray-100 transition-colors">编辑</button>
+                </div>
+            </div>
+
+             <!-- Staff 2 -->
+             <div class="card p-4" onclick="window.location.href='renyuan-GL-detail.html?id=EMP002'">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600 font-bold text-lg">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-gray-800">李四</div>
+                            <div class="text-xs text-gray-500">EMP002 <span class="mx-1">|</span> 质检部 - 质检员</div>
+                        </div>
+                    </div>
+                    <span class="bg-orange-100 text-orange-700 px-2 py-0.5 rounded text-xs font-bold">健康证即将过期</span>
+                </div>
+                <div class="mt-2 pt-2 border-t border-gray-50 flex justify-between text-xs text-gray-500">
+                    <span>入职: 2022-06-20</span>
+                    <button class="px-2 py-1 bg-gray-50 text-gray-600 rounded hover:bg-gray-100 transition-colors">编辑</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Training Records List -->
+        <div id="list-training" class="space-y-3 hidden">
+            <div class="card p-4">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center text-green-600 font-bold">
+                            <i class="fas fa-chalkboard-teacher"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-gray-800">食品安全卫生培训</div>
+                            <div class="text-xs text-gray-500">TR-20231025</div>
+                        </div>
+                    </div>
+                    <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-bold">已完成</span>
+                </div>
+                <div class="mt-2 pt-2 border-t border-gray-50 flex justify-between text-xs text-gray-500">
+                    <span>2023-10-25 14:00</span>
+                    <span>参训: 15人</span>
+                </div>
+            </div>
+
+             <div class="card p-4">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-yellow-50 flex items-center justify-center text-yellow-600 font-bold">
+                            <i class="fas fa-fire-extinguisher"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-gray-800">消防安全演练</div>
+                            <div class="text-xs text-gray-500">TR-20230915</div>
+                        </div>
+                    </div>
+                    <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-bold">已完成</span>
+                </div>
+                <div class="mt-2 pt-2 border-t border-gray-50 flex justify-between text-xs text-gray-500">
+                    <span>2023-09-15 09:00</span>
+                    <span>参训: 30人</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Authorization List -->
+        <div id="list-auth" class="space-y-3 hidden">
+            <div class="card p-4">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600 font-bold">
+                            <i class="fas fa-id-card-alt"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-gray-800">张三</div>
+                            <div class="text-xs text-gray-500">授权岗位: 生产操作员</div>
+                        </div>
+                    </div>
+                    <button class="text-blue-600 text-xs font-bold">编辑权限</button>
+                </div>
+                <div class="flex flex-wrap gap-1 mt-2">
+                    <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px]">生产确认</span>
+                    <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px]">领料申请</span>
+                    <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px]">报损申请</span>
+                </div>
+            </div>
+             <div class="card p-4">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600 font-bold">
+                            <i class="fas fa-id-card-alt"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-gray-800">李四</div>
+                            <div class="text-xs text-gray-500">授权岗位: 质检员</div>
+                        </div>
+                    </div>
+                    <button class="text-blue-600 text-xs font-bold">编辑权限</button>
+                </div>
+                <div class="flex flex-wrap gap-1 mt-2">
+                    <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px]">质检确认</span>
+                    <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px]">不合格品处理</span>
+                    <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px]">台账导出</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function switchTab(tabName) {
+            // Hide all lists
+            ['list', 'training', 'auth'].forEach(t => {
+                document.getElementById('list-' + t).classList.add('hidden');
+                document.getElementById('tab-' + t).classList.replace('tab-active', 'tab-inactive');
+            });
+            
+            // Show selected list
+            document.getElementById('list-' + tabName).classList.remove('hidden');
+            document.getElementById('tab-' + tabName).classList.replace('tab-inactive', 'tab-active');
+        }
+    </script>
+</body>
+</html>

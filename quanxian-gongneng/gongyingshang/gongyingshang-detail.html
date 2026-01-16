@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>供应商详情 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        .tab-active { color: #f97316; border-bottom: 2px solid #f97316; }
+        .tab-inactive { color: #6b7280; }
+    </style>
+</head>
+<body class="bg-gray-50 pb-20">
+    <!-- 顶部导航栏 -->
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="px-4 h-14 flex items-center justify-between">
+            <a href="gongyingshang-list.html" class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            <h1 class="text-lg font-bold text-gray-800" id="pageTitle">供应商详情</h1>
+            <button onclick="toggleEdit()" class="w-10 h-10 flex items-center justify-center text-blue-500" id="editBtn">
+                <i class="fas fa-edit text-lg"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- 标签页切换 -->
+    <div class="bg-white border-b border-gray-100 sticky top-14 z-40">
+        <div class="flex justify-between px-4">
+            <button onclick="switchTab('basic')" class="flex-1 py-3 text-sm font-medium tab-active" id="tab-basic">基本信息</button>
+            <button onclick="switchTab('qualification')" class="flex-1 py-3 text-sm font-medium tab-inactive" id="tab-qualification">资质证书</button>
+            <button onclick="switchTab('purchase')" class="flex-1 py-3 text-sm font-medium tab-inactive" id="tab-purchase">采购记录</button>
+            <button onclick="switchTab('evaluation')" class="flex-1 py-3 text-sm font-medium tab-inactive" id="tab-evaluation">评价记录</button>
+        </div>
+    </div>
+
+    <!-- 内容区域 -->
+    <div class="p-4 space-y-4" id="contentArea">
+        
+        <!-- 1. 基本信息 -->
+        <div id="view-basic" class="space-y-4">
+            <div class="bg-white rounded-xl p-4 shadow-sm">
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-xs text-gray-400">供应商名称</label>
+                        <input type="text" id="detail-name" class="w-full text-gray-800 font-medium bg-transparent border-b border-gray-100 focus:border-orange-500 outline-none py-1" readonly>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-xs text-gray-400">编号</label>
+                            <input type="text" id="detail-id" class="w-full text-gray-600 text-sm bg-transparent border-b border-gray-100 outline-none py-1" readonly>
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-400">类型</label>
+                            <input type="text" id="detail-type" class="w-full text-gray-600 text-sm bg-transparent border-b border-gray-100 focus:border-orange-500 outline-none py-1" readonly>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-400">统一社会信用代码</label>
+                        <input type="text" id="detail-license" class="w-full text-gray-600 text-sm bg-transparent border-b border-gray-100 focus:border-orange-500 outline-none py-1" readonly>
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-400">联系人</label>
+                        <input type="text" id="detail-contact-person" class="w-full text-gray-600 text-sm bg-transparent border-b border-gray-100 focus:border-orange-500 outline-none py-1" readonly>
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-400">联系电话</label>
+                        <input type="text" id="detail-contact" class="w-full text-gray-600 text-sm bg-transparent border-b border-gray-100 focus:border-orange-500 outline-none py-1" readonly>
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-400">注册地址</label>
+                        <input type="text" id="detail-address" class="w-full text-gray-600 text-sm bg-transparent border-b border-gray-100 focus:border-orange-500 outline-none py-1" readonly>
+                    </div>
+                </div>
+                
+                <div class="mt-4 pt-4 border-t border-gray-100 hidden" id="saveActions">
+                    <button onclick="saveSupplier()" class="w-full bg-orange-500 text-white font-bold py-2 rounded-lg">保存修改</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. 资质证书 -->
+        <div id="view-qualification" class="hidden space-y-4">
+            <div class="bg-white rounded-xl p-4 shadow-sm">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-bold text-gray-800">营业执照</h3>
+                    <span class="px-2 py-1 bg-green-50 text-green-600 text-xs rounded">有效</span>
+                </div>
+                <div class="space-y-2 text-sm text-gray-600">
+                    <p>证书编号: <span id="cert-license-no">--</span></p>
+                    <p>有效期至: 2099-12-31</p>
+                </div>
+                <button class="mt-3 w-full border border-blue-200 text-blue-500 py-1.5 rounded-lg text-sm flex items-center justify-center">
+                    <i class="fas fa-download mr-2"></i> 下载附件
+                </button>
+            </div>
+            
+            <div class="bg-white rounded-xl p-4 shadow-sm">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-bold text-gray-800">食品经营许可证</h3>
+                    <span class="px-2 py-1 bg-yellow-50 text-yellow-600 text-xs rounded">即将到期</span>
+                </div>
+                <div class="space-y-2 text-sm text-gray-600">
+                    <p>证书编号: JY123456789</p>
+                    <p>有效期至: 2023-12-31</p>
+                </div>
+                <button class="mt-3 w-full border border-blue-200 text-blue-500 py-1.5 rounded-lg text-sm flex items-center justify-center">
+                    <i class="fas fa-download mr-2"></i> 下载附件
+                </button>
+            </div>
+            
+             <button class="w-full py-3 border border-dashed border-gray-300 text-gray-500 rounded-xl flex items-center justify-center">
+                <i class="fas fa-plus mr-2"></i> 添加资质证书
+            </button>
+        </div>
+
+        <!-- 3. 采购记录 -->
+        <div id="view-purchase" class="hidden space-y-4">
+            <!-- Stats -->
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-white p-3 rounded-xl shadow-sm">
+                    <p class="text-xs text-gray-400">本月采购次数</p>
+                    <p class="text-xl font-bold text-gray-800" id="stat-month-count">0</p>
+                </div>
+                <div class="bg-white p-3 rounded-xl shadow-sm">
+                    <p class="text-xs text-gray-400">累计采购金额</p>
+                    <p class="text-xl font-bold text-orange-500" id="stat-total-amount">¥0</p>
+                </div>
+            </div>
+
+            <div id="purchase-list" class="space-y-3">
+                <!-- Dynamic List -->
+            </div>
+        </div>
+
+        <!-- 4. 评价记录 -->
+        <div id="view-evaluation" class="hidden space-y-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl font-bold text-gray-800" id="overall-rating-display">4.5</span>
+                    <div class="text-yellow-400 text-sm" id="overall-stars">
+                        <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
+                    </div>
+                </div>
+                <button onclick="openEvaluationModal()" class="bg-orange-500 text-white px-4 py-2 rounded-lg text-sm shadow-md">
+                    <i class="fas fa-plus mr-1"></i> 添加评价
+                </button>
+            </div>
+
+            <div id="evaluation-list" class="space-y-3">
+                <!-- Dynamic List -->
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 评价弹窗 -->
+    <div id="evalModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-end justify-center">
+        <div class="bg-white w-full rounded-t-2xl p-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">添加评价</h3>
+            
+            <div class="space-y-4 mb-6">
+                <div>
+                    <label class="text-sm text-gray-600 block mb-1">评价日期</label>
+                    <input type="date" id="eval-date" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2">
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-sm text-gray-600 block mb-1">质量评分</label>
+                        <select id="eval-quality" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2">
+                            <option value="5">⭐⭐⭐⭐⭐ 5分</option>
+                            <option value="4">⭐⭐⭐⭐ 4分</option>
+                            <option value="3">⭐⭐⭐ 3分</option>
+                            <option value="2">⭐⭐ 2分</option>
+                            <option value="1">⭐ 1分</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-sm text-gray-600 block mb-1">交货评分</label>
+                        <select id="eval-delivery" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2">
+                            <option value="5">5分</option>
+                            <option value="4">4分</option>
+                            <option value="3">3分</option>
+                            <option value="2">2分</option>
+                            <option value="1">1分</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-sm text-gray-600 block mb-1">服务评分</label>
+                        <select id="eval-service" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2">
+                            <option value="5">5分</option>
+                            <option value="4">4分</option>
+                            <option value="3">3分</option>
+                            <option value="2">2分</option>
+                            <option value="1">1分</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-sm text-gray-600 block mb-1">评价内容</label>
+                    <textarea id="eval-comment" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 h-20" placeholder="请输入评价内容..."></textarea>
+                </div>
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="closeEvaluationModal()" class="flex-1 py-3 bg-gray-100 text-gray-600 font-bold rounded-xl">取消</button>
+                <button onclick="submitEvaluation()" class="flex-1 py-3 bg-green-500 text-white font-bold rounded-xl shadow-lg">提交评价</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentId = null;
+        let currentSupplier = null;
+        let isEditing = false;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            currentId = params.get('id');
+            const editMode = params.get('edit');
+            const tab = params.get('tab');
+
+            if (currentId === 'new') {
+                initNewSupplier();
+            } else if (currentId) {
+                loadSupplierData(currentId);
+            }
+
+            if (editMode === 'true') {
+                toggleEdit();
+            }
+            
+            if (tab) {
+                switchTab(tab);
+            }
+        });
+
+        function initNewSupplier() {
+            document.getElementById('pageTitle').innerText = '新增供应商';
+            document.getElementById('detail-id').value = '自动生成';
+            toggleEdit();
+            currentSupplier = {};
+        }
+
+        function loadSupplierData(id) {
+            // Load from localStorage (priority logic same as list page)
+            const factoryPresets = JSON.parse(localStorage.getItem('factoryPresets') || '{}');
+            const separateSuppliers = JSON.parse(localStorage.getItem('suppliers') || '[]');
+            const legacySuppliers = JSON.parse(localStorage.getItem('preset_supplier') || '[]');
+            
+            let suppliers = [];
+            if (factoryPresets.suppliers && factoryPresets.suppliers.length > 0) {
+                suppliers = factoryPresets.suppliers;
+            } else if (separateSuppliers.length > 0) {
+                suppliers = separateSuppliers;
+            } else if (legacySuppliers.length > 0) {
+                suppliers = legacySuppliers;
+            } else {
+                // Default demo data
+                suppliers = [
+                    { id: 'SUP001', name: '益海嘉里食品营销有限公司', type: '生产商', license: '91310000662459929P', contact: '13800138000', contactPerson: '王经理', address: '上海市浦东新区博成路1379号', status: 'valid', rating: 4.8 },
+                    { id: 'SUP002', name: '总统乳业 (President)', type: '品牌方', license: '913100006072899999', contact: '021-66668888', contactPerson: '李总', address: '上海市静安区', status: 'valid', rating: 5.0 }
+                ];
+            }
+
+            currentSupplier = suppliers.find(s => s.id === id || s.id === id.replace('-', '')); // Handle ID format differences
+            
+            if (!currentSupplier) {
+                // Mock data fallback if ID matches demo format
+                if (id === 'SUP-001' || id === 'SUP001') {
+                     currentSupplier = { id: 'SUP001', name: '益海嘉里食品营销有限公司', type: '生产商', license: '91310000662459929P', contact: '13800138000', contactPerson: '王经理', address: '上海市浦东新区博成路1379号', status: 'valid', rating: 4.8 };
+                } else {
+                    alert('未找到供应商信息');
+                    return;
+                }
+            }
+
+            renderDetail();
+            loadMockRecords();
+        }
+
+        function renderDetail() {
+            if(!currentSupplier) return;
+            
+            document.querySelector('h1').innerText = currentSupplier.name || '新供应商';
+            document.getElementById('detail-name').value = currentSupplier.name || '';
+            document.getElementById('detail-id').value = currentSupplier.id || '';
+            document.getElementById('detail-type').value = currentSupplier.type || '';
+            document.getElementById('detail-license').value = currentSupplier.license || '';
+            document.getElementById('detail-contact').value = currentSupplier.contact || '';
+            document.getElementById('detail-contact-person').value = currentSupplier.contactPerson || '';
+            document.getElementById('detail-address').value = currentSupplier.address || '';
+            
+            if(currentSupplier.license) {
+                document.getElementById('cert-license-no').innerText = currentSupplier.license;
+            }
+        }
+
+        function loadMockRecords() {
+            // Mock Purchase Records
+            const purchaseList = document.getElementById('purchase-list');
+            purchaseList.innerHTML = `
+                <div class="bg-white rounded-xl p-4 shadow-sm">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-bold text-gray-800">PO-20231025-001</span>
+                        <span class="text-xs text-gray-400">2023-10-25</span>
+                    </div>
+                    <div class="text-sm text-gray-600 mb-2">采购内容: 高筋面粉, 黄油</div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs bg-green-50 text-green-600 px-2 py-0.5 rounded">已完成</span>
+                        <span class="font-bold text-gray-800">¥ 5,200.00</span>
+                    </div>
+                </div>
+            `;
+            document.getElementById('stat-month-count').innerText = '3';
+            document.getElementById('stat-total-amount').innerText = '¥ 12,500.00';
+
+            // Mock Evaluation Records
+            const evalList = document.getElementById('evaluation-list');
+            evalList.innerHTML = `
+                <div class="bg-white rounded-xl p-4 shadow-sm">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-500">我</div>
+                            <div>
+                                <div class="text-sm font-bold text-gray-800">张店长</div>
+                                <div class="text-xs text-gray-400">2023-10-26</div>
+                            </div>
+                        </div>
+                        <div class="text-yellow-400 text-xs">
+                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-600 bg-gray-50 p-2 rounded">送货非常准时，面粉质量一如既往的稳定。</p>
+                </div>
+            `;
+        }
+
+        function switchTab(tab) {
+            // Reset Tabs
+            ['basic', 'qualification', 'purchase', 'evaluation'].forEach(t => {
+                document.getElementById(`tab-${t}`).className = t === 'qualification' || t === 'purchase' || t === 'evaluation' ? 'flex-1 py-3 text-sm font-medium tab-inactive' : 'flex-1 py-3 text-sm font-medium tab-inactive'; // Simplified class logic
+                
+                // Better logic
+                const btn = document.getElementById(`tab-${t}`);
+                if (t === tab) {
+                    btn.className = 'flex-1 py-3 text-sm font-medium tab-active whitespace-nowrap px-4';
+                } else {
+                    btn.className = 'flex-1 py-3 text-sm font-medium tab-inactive whitespace-nowrap px-4';
+                }
+                
+                // Toggle Content
+                const content = document.getElementById(t === 'basic' ? 'view-basic' : `view-${t}`);
+                if(content) {
+                    if (t === tab) content.classList.remove('hidden');
+                    else content.classList.add('hidden');
+                }
+            });
+        }
+
+        function toggleEdit() {
+            isEditing = !isEditing;
+            const inputs = document.querySelectorAll('#view-basic input');
+            const btn = document.getElementById('editBtn');
+            const saveArea = document.getElementById('saveActions');
+
+            if (isEditing) {
+                inputs.forEach(input => {
+                    if (input.id !== 'detail-id') { // ID usually not editable
+                        input.removeAttribute('readonly');
+                        input.classList.add('bg-white', 'border-orange-200');
+                        input.classList.remove('bg-transparent', 'border-gray-100');
+                    }
+                });
+                btn.classList.add('text-orange-500');
+                btn.classList.remove('text-blue-500');
+                saveArea.classList.remove('hidden');
+            } else {
+                inputs.forEach(input => {
+                    input.setAttribute('readonly', 'true');
+                    input.classList.add('bg-transparent', 'border-gray-100');
+                    input.classList.remove('bg-white', 'border-orange-200');
+                });
+                btn.classList.add('text-blue-500');
+                btn.classList.remove('text-orange-500');
+                saveArea.classList.add('hidden');
+            }
+        }
+
+        function saveSupplier() {
+            // Collect Data
+            const newData = {
+                id: document.getElementById('detail-id').value,
+                name: document.getElementById('detail-name').value,
+                type: document.getElementById('detail-type').value,
+                license: document.getElementById('detail-license').value,
+                contact: document.getElementById('detail-contact').value,
+                contactPerson: document.getElementById('detail-contact-person').value,
+                address: document.getElementById('detail-address').value,
+                status: 'valid' // Default
+            };
+
+            // Save to localStorage (Updating factoryPresets for consistency)
+            const factoryPresets = JSON.parse(localStorage.getItem('factoryPresets') || '{}');
+            if (!factoryPresets.suppliers) factoryPresets.suppliers = [];
+            
+            const idx = factoryPresets.suppliers.findIndex(s => s.id === newData.id);
+            if (idx !== -1) {
+                factoryPresets.suppliers[idx] = { ...factoryPresets.suppliers[idx], ...newData };
+            } else {
+                factoryPresets.suppliers.push(newData);
+            }
+            
+            localStorage.setItem('factoryPresets', JSON.stringify(factoryPresets));
+            // Also update separate key for compatibility if needed
+            localStorage.setItem('suppliers', JSON.stringify(factoryPresets.suppliers));
+
+            alert('保存成功！');
+            toggleEdit();
+        }
+
+        // Evaluation Modal Logic
+        function openEvaluationModal() {
+            document.getElementById('evalModal').classList.remove('hidden');
+            document.getElementById('eval-date').valueAsDate = new Date();
+        }
+
+        function closeEvaluationModal() {
+            document.getElementById('evalModal').classList.add('hidden');
+        }
+
+        function submitEvaluation() {
+            alert('评价已提交！');
+            closeEvaluationModal();
+            // In real app, add to evaluation list
+        }
+    </script>
+</body>
+</html>
