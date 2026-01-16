@@ -1,0 +1,1463 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>配方详情</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+            --text-main: #333333;
+            --text-sub: #8b8b8b;
+            --bg-light: #f7f7f5;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-main);
+            padding-bottom: 180px;
+        }
+
+        /* 顶部导航 - 透明渐变效果 */
+        .nav-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 50;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 100%);
+            transition: background 0.3s;
+        }
+        
+        .nav-header.scrolled {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #f0f0f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .nav-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            transition: all 0.2s;
+        }
+        
+        .nav-header.scrolled .nav-btn {
+            background: #f5f5f5;
+            color: #666;
+        }
+
+        .nav-title {
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s;
+            font-weight: 700;
+            font-size: 16px;
+            color: #333;
+        }
+        
+        .nav-header.scrolled .nav-title {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Hero Image */
+        .hero-image {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+        }
+
+        /* 内容卡片 */
+        .content-card {
+            background: white;
+            border-radius: 24px 24px 0 0;
+            margin-top: -24px;
+            position: relative;
+            z-index: 10;
+            padding: 20px 16px; /* Reduced padding */
+            min-height: 500px;
+        }
+
+        .tag-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-right: 8px;
+        }
+        
+        .tag-primary { background: #fff7ed; color: var(--primary-dark); }
+        .tag-gray { background: #f3f4f6; color: #6b7280; }
+
+        /* 标签页 - Segmented Control 风格 */
+        .tab-group {
+            display: flex;
+            background: #f3f4f6; /* Gray-100 */
+            padding: 4px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+        
+        .tab-item {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 0;
+            border-radius: 8px;
+            color: #6b7280;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid transparent;
+        }
+
+        .tab-item:active {
+            transform: scale(0.98);
+        }
+
+        .tab-item.active {
+            background: white;
+            color: var(--primary-dark);
+            font-weight: 600;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            border-color: rgba(0,0,0,0.05);
+        }
+        
+        .tab-item i {
+            margin-right: 6px;
+            font-size: 14px;
+        }
+
+        /* Hide old elements */
+        .tab-icon-box, .tab-label {
+            display: contents; /* Allow children to behave as direct children of flex parent */
+        }
+        .tab-icon-box {
+            display: none; /* Actually just hide the box wrapper style */
+        }
+        
+        /* 列表项 - Compact */
+        .list-row {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px dashed #f0f0f0;
+        }
+        .list-row:last-child { border-bottom: none; }
+        
+        .step-circle {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--primary-orange);
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        /* 底部操作栏 */
+        .bottom-action-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 12px 20px;
+            padding-bottom: calc(12px + env(safe-area-inset-bottom));
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
+            display: flex;
+            gap: 12px;
+            z-index: 100;
+        }
+        
+        .btn-action {
+            flex: 1;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 15px;
+            text-align: center;
+        }
+        
+        .btn-outline {
+            border: 1px solid #e5e7eb;
+            color: #374151;
+            background: white;
+        }
+
+        .btn-fill {
+            background: var(--primary-dark);
+            color: white;
+            box-shadow: 0 4px 12px rgba(255, 140, 0, 0.3);
+            border: none;
+        }
+        .btn-fill:active {
+            transform: scale(0.98);
+        }
+        
+        /* 材料分组样式 - Optimized Compact Card (Flush Header) */
+        .ingredient-group-card {
+            background: white;
+            border-radius: 12px;
+            padding: 0;
+            margin-bottom: 12px;
+            border: 1px solid #f0f0f0;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+            overflow: hidden;
+        }
+
+        .group-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0;
+            padding: 8px 12px;
+            background: #f9fafb !important;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .ingredient-group-card > div:last-child {
+             padding: 0 12px 8px 12px;
+        }
+
+        .group-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 8px;
+            font-size: 12px;
+        }
+
+        .group-title {
+            font-weight: 700;
+            font-size: 15px;
+            color: #333;
+        }
+        
+        /* 颜色变体 - Optimized for Clarity */
+        .group-flour .group-icon { background: #ffedd5; color: #9a3412; } /* Orange-100/800 (Deep Wheat) */
+        .group-sponge .group-icon { background: #dcfce7; color: #15803d; } /* Green-100/700 */
+        .group-wet .group-icon { background: #dbeafe; color: #1d4ed8; } /* Blue-100/700 */
+        .group-dry .group-icon { background: #f1f5f9; color: #334155; } /* Slate-100/700 */
+        .group-aux .group-icon { background: #fef9c3; color: #a16207; } /* Yellow-100/700 */
+
+        /* 面团变化款卡片 */
+        .dough-variant-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+            border: 1px solid #f0f0f0;
+            margin-bottom: 16px;
+        }
+
+        .variant-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px dashed #f0f0f0;
+        }
+
+        .variant-title {
+            display: flex;
+            align-items: center;
+            font-weight: 700;
+            font-size: 17px;
+            color: #1f2937;
+        }
+        
+        .variant-icon {
+            width: 32px;
+            height: 32px;
+            background: #fff7ed;
+            color: var(--primary-dark);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-size: 14px;
+        }
+
+        .stepper-control {
+            display: flex;
+            align-items: center;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 2px;
+        }
+
+        .stepper-btn {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .stepper-btn.disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            background: #f3f4f6;
+        }
+
+        .stepper-control.disabled {
+            background: #f3f4f6;
+            border-color: #e5e7eb;
+        }
+
+        .stepper-value {
+            width: 32px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 15px;
+            color: #374151;
+        }
+
+        .stepper-value.disabled {
+            color: #9ca3af;
+        }
+
+        .variant-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+        }
+
+        .variant-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .variant-link {
+            color: var(--primary-dark);
+            margin-left: 4px;
+            font-size: 12px;
+        }
+
+        .variant-data {
+            text-align: right;
+        }
+
+        .variant-weight {
+            color: var(--primary-dark);
+            font-weight: 700;
+            font-size: 20px;
+            line-height: 1.2;
+        }
+        
+        .variant-weight span {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .variant-cost {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 2px;
+        }
+
+        .variant-summary {
+            background: #fff7ed;
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #ffedd5;
+        }
+
+        /* 底部汇总浮窗 */
+        .summary-footer {
+            position: fixed;
+            bottom: 80px; /* Above action bar */
+            left: 16px;
+            right: 16px;
+            background: white;
+            border-radius: 16px;
+            padding: 16px 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 90;
+            border: 1px solid #f0f0f0;
+        }
+        
+        .summary-total-weight {
+            display: flex;
+            align-items: center;
+        }
+        
+        .summary-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--primary-dark);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-size: 18px;
+            box-shadow: 0 2px 8px rgba(255, 140, 0, 0.3);
+        }
+
+        .summary-cost {
+            text-align: right;
+        }
+
+        /* 渐变色彩定义 */
+        .gradient-primary {
+            background: linear-gradient(135deg, var(--primary-orange) 0%, var(--primary-dark) 100%);
+        }
+
+        /* 步骤图片展开/收起样式 */
+        .step-images {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            transition: all 0.3s ease;
+            margin-top: 12px;
+        }
+        
+        .step-images.expanded {
+            grid-template-columns: 1fr;
+        }
+        
+        .step-images.expanded img {
+            aspect-ratio: 1/1;
+            width: 100%;
+            height: auto;
+        }
+
+        .step-images img {
+            border-radius: 8px;
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <header class="nav-header" id="navHeader">
+        <button onclick="goBack()" class="nav-btn">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <div class="nav-title" id="navTitle">配方详情</div>
+        <div class="flex gap-3">
+            <button onclick="window.location.href='recipe-edit.html'" class="nav-btn">
+                <i class="fas fa-pen"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- 顶部大图 -->
+    <img src="https://images.unsplash.com/photo-1509440159596-0249088772ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+         class="hero-image" id="recipeImage" alt="Recipe Image">
+
+    <!-- 内容区域 -->
+    <main class="content-card" id="mainContent">
+        <div class="mb-6" id="recipeIntro">
+            <div class="flex justify-between items-start">
+                <h1 class="text-2xl font-bold text-gray-900 mb-3" id="recipeTitle">经典吐司面包</h1>
+                <button onclick="toggleFocusMode()" id="introToggleBtn" class="text-gray-400 hover:text-orange-600 p-2 -mr-2 -mt-2 transition-colors">
+                    <i class="fas fa-eye-slash"></i>
+                </button>
+            </div>
+            
+            <div id="recipeDetails" class="transition-all duration-300">
+                <div class="flex flex-wrap gap-2 mb-4">
+                    <span class="tag-badge tag-primary">面包</span>
+                    <span class="tag-badge tag-gray"><i class="far fa-clock mr-1"></i> 3小时</span>
+                    <span class="tag-badge tag-gray"><i class="fas fa-fire mr-1"></i> 280千卡</span>
+                </div>
+                
+                <p class="text-gray-500 text-sm leading-relaxed">
+                    这是一款经典的软欧包配方，口感松软，奶香浓郁。适合作为早餐或下午茶，制作简单，成功率极高。
+                </p>
+            </div>
+        </div>
+
+        <!-- 标签切换 -->
+        <div class="tab-group" id="tabGroup">
+            <div class="tab-item active" data-tab="ingredients">
+                <i class="fas fa-bread-slice"></i> 配方
+            </div>
+            <div class="tab-item" data-tab="notes">
+                <i class="fas fa-clipboard-list"></i> SOP
+            </div>
+            <div class="tab-item" data-tab="steps">
+                <i class="fas fa-list-ol"></i> 步骤
+            </div>
+        </div>
+
+        <!-- 标签内容区域 -->
+        <div id="tabContent">
+            <!-- 食材列表 (默认显示) -->
+            <div id="ingredientsContent" class="tab-content-panel space-y-1 mb-8">
+                <div id="ingredientsList">
+                    <!-- JS填充 -->
+                </div>
+                <!-- 面团变化款列表 -->
+                <div id="doughVariantsList" class="mt-8">
+                    <!-- JS填充 -->
+                </div>
+            </div>
+
+            <!-- 制作步骤 (隐藏) -->
+            <div id="stepsContent" class="tab-content-panel hidden mb-8">
+                <div id="stepsList" class="space-y-6">
+                    <!-- JS填充 -->
+                </div>
+            </div>
+
+            <!-- 备注笔记 (SOP) -->
+            <div id="notesContent" class="tab-content-panel hidden mb-8">
+                <div class="bg-yellow-50 rounded-xl p-4 border border-yellow-100">
+                    <div class="flex items-center mb-2">
+                        <i class="fas fa-clipboard-check text-yellow-600 mr-2"></i>
+                        <span class="text-sm font-bold text-yellow-800">SOP / 注意事项</span>
+                    </div>
+                    <p id="notesText" class="text-sm text-yellow-800 leading-relaxed whitespace-pre-line">
+                        <!-- JS填充 -->
+                    </p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 底部汇总浮窗 -->
+    <div id="summaryFooter" class="summary-footer hidden">
+        <div class="summary-total-weight">
+            <div class="summary-icon">
+                <i class="fas fa-balance-scale"></i>
+            </div>
+            <div>
+                <div class="text-xs text-gray-500 font-medium">面团总重</div>
+                <div class="text-lg font-bold text-gray-900" id="globalTotalWeight">0kg</div>
+            </div>
+        </div>
+        <div class="summary-cost">
+            <div class="text-xs text-gray-500 font-medium">总成本</div>
+            <div class="text-lg font-bold text-orange-600" id="globalTotalCost">¥ 0.00</div>
+        </div>
+    </div>
+
+    <!-- 底部操作栏 -->
+    <div class="bottom-action-bar">
+        <button class="btn-action btn-outline" onclick="window.print()">
+            <i class="fas fa-print mr-1"></i> 打印
+        </button>
+        <button class="btn-action btn-fill" onclick="showCopyOptionsModal()">
+            <i class="fas fa-copy mr-1"></i> 复制
+        </button>
+    </div>
+
+    <!-- 复制选项弹窗 -->
+    <div id="copyOptionsModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-2xl p-6 mx-4 w-full max-w-sm shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-gray-800">复制配方</h3>
+                <button onclick="closeCopyOptionsModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <p class="text-gray-500 mb-6 text-sm">请选择您希望将此配方复制到的位置：</p>
+            
+            <div class="space-y-3 mb-2">
+                <button onclick="confirmCopy('book')" class="w-full flex items-center p-4 border border-gray-100 rounded-xl hover:bg-orange-50 hover:border-orange-200 transition-all group text-left">
+                    <div class="w-10 h-10 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center mr-3 group-hover:bg-orange-500 group-hover:text-white transition-colors">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <div>
+                        <div class="font-bold text-gray-800 text-sm">恢复至配方本</div>
+                        <div class="text-xs text-gray-400 mt-0.5">保存到我的私有配方列表</div>
+                    </div>
+                    <i class="fas fa-chevron-right ml-auto text-gray-300"></i>
+                </button>
+                
+                <button onclick="confirmCopy('community')" class="w-full flex items-center p-4 border border-gray-100 rounded-xl hover:bg-blue-50 hover:border-blue-200 transition-all group text-left">
+                    <div class="w-10 h-10 bg-blue-100 text-blue-500 rounded-full flex items-center justify-center mr-3 group-hover:bg-blue-500 group-hover:text-white transition-colors">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div>
+                        <div class="font-bold text-gray-800 text-sm">分享至社区</div>
+                        <div class="text-xs text-gray-400 mt-0.5">发布并与他人分享灵感</div>
+                    </div>
+                    <i class="fas fa-chevron-right ml-auto text-gray-300"></i>
+                </button>
+
+                <button onclick="confirmCopy('friend')" class="w-full flex items-center p-4 border border-gray-100 rounded-xl hover:bg-green-50 hover:border-green-200 transition-all group text-left">
+                    <div class="w-10 h-10 bg-green-100 text-green-500 rounded-full flex items-center justify-center mr-3 group-hover:bg-green-500 group-hover:text-white transition-colors">
+                        <i class="fas fa-comment-dots"></i>
+                    </div>
+                    <div>
+                        <div class="font-bold text-gray-800 text-sm">发送给好友</div>
+                        <div class="text-xs text-gray-400 mt-0.5">通过消息直接分享配方</div>
+                    </div>
+                    <i class="fas fa-chevron-right ml-auto text-gray-300"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 图片全屏预览 -->
+    <div id="fullImageModal" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 hidden" onclick="this.classList.add('hidden')">
+        <img src="" alt="配方大图" class="max-w-[90vw] max-h-[90vh] object-contain rounded-xl">
+        <button class="absolute top-4 right-4 bg-white bg-opacity-20 text-white rounded-full p-3 hover:bg-opacity-40 transition-all" onclick="event.stopPropagation(); this.parentElement.classList.add('hidden')">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+
+    <script>
+        // 滚动效果
+        window.addEventListener('scroll', () => {
+            const header = document.getElementById('navHeader');
+            if (window.scrollY > 50) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+
+        // 配方数据源
+        const recipesData = {
+            '经典吐司面包': {
+                image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+                tags: [
+                    { text: '面包', class: 'tag-primary' },
+                    { text: '<i class="far fa-clock mr-1"></i> 3小时', class: 'tag-gray' },
+                    { text: '<i class="fas fa-fire mr-1"></i> 280千卡', class: 'tag-gray' }
+                ],
+                desc: '这是一款经典的软欧包配方，口感松软，奶香浓郁。适合作为早餐或下午茶，制作简单，成功率极高。',
+                totalWeight: '465g',
+                groups: [
+                    {
+                        type: 'flour', title: '面粉', icon: 'fa-wheat-awn', class: 'group-flour',
+                        items: [{ name: '高筋面粉', amount: '250', unit: 'g', percent: 100 }]
+                    },
+                    {
+                        type: 'sponge', title: '种面', icon: 'fa-seedling', class: 'group-sponge',
+                        items: [
+                            { name: '波兰种', amount: '100', unit: 'g', percent: 40 },
+                            { name: '鲁邦种', amount: '50', unit: 'g', percent: 20 }
+                        ] 
+                    },
+                    {
+                        type: 'wet', title: '湿料', icon: 'fa-droplet', class: 'group-wet',
+                        items: [{ name: '牛奶', amount: '160', unit: 'ml', percent: 64 }]
+                    },
+                    {
+                        type: 'dry', title: '干料', icon: 'fa-cube', class: 'group-dry',
+                        items: [
+                            { name: '细砂糖', amount: '30', unit: 'g', percent: 12 },
+                            { name: '耐高糖酵母', amount: '3', unit: 'g', percent: 1.2 },
+                            { name: '盐', amount: '2', unit: 'g', percent: 0.8 }
+                        ]
+                    },
+                    {
+                        type: 'aux', title: '辅料', icon: 'fa-mortar-pestle', class: 'group-aux',
+                        items: [{ name: '无盐黄油', amount: '20', unit: 'g', percent: 8 }]
+                    }
+                ],
+                doughVariants: [
+                     {
+                        id: 'base',
+                        name: '基础面团',
+                        icon: 'fa-bread-slice',
+                        defaultCount: 1,
+                        items: [
+                             { name: '基础面团', weight: 943, cost: 4.20 },
+                             { name: '酥菠萝皮', weight: 150, cost: 2.80, link: true }
+                        ]
+                    },
+                    {
+                        id: 'cranberry',
+                        name: '蔓越莓吐司',
+                        icon: 'fa-cookie-bite',
+                        defaultCount: 1,
+                        items: [
+                             { name: '基础面团', weight: 480, cost: 2.13 },
+                             { name: '蔓越莓干', weight: 80, cost: 3.60 },
+                             { name: '核桃配方', weight: 40, cost: 2.40, link: true }
+                        ]
+                    }
+                ],
+                steps: [
+                    { 
+                        title: '和面',
+                        desc: '将面粉、糖、盐放入搅拌缸，加入牛奶和鸡蛋，搅拌至无干粉。注意面粉要过筛，避免颗粒。',
+                        images: [
+                            'https://images.unsplash.com/photo-1506459225024-1428097a7e18?w=400&h=400&fit=crop'
+                        ]
+                    },
+                    { 
+                        title: '揉面',
+                        desc: '揉至面团光滑，加入软化的黄油，继续揉至扩展阶段，面团表面光滑有弹性。',
+                        images: [
+                            'https://images.unsplash.com/photo-1589367920969-ab8e050bbb04?w=400&h=400&fit=crop',
+                            'https://images.unsplash.com/photo-1600326145552-327f74b9c189?w=400&h=400&fit=crop'
+                        ]
+                    },
+                    { 
+                        title: '一发',
+                        desc: '将面团放入发酵盒，发酵至2倍大。用手指戳洞不回缩即可。',
+                        images: [
+                            'https://images.unsplash.com/photo-1612200058850-8e661d819ded?w=400&h=400&fit=crop',
+                            'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=400&fit=crop',
+                            'https://images.unsplash.com/photo-1506459225024-1428097a7e18?w=400&h=400&fit=crop'
+                        ]
+                    },
+                    { 
+                        title: '整形',
+                        desc: '分割面团，每个500g，滚圆松弛后整形，放入吐司模具中。',
+                        images: [
+                            'https://images.unsplash.com/photo-1589367920969-ab8e050bbb04?w=400&h=400&fit=crop'
+                        ]
+                    },
+                    { 
+                        title: '二发',
+                        desc: '发酵至8分满，面团顶部接近模具边缘即可。',
+                        images: [
+                            'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=400&fit=crop',
+                            'https://images.unsplash.com/photo-1612200058850-8e661d819ded?w=400&h=400&fit=crop'
+                        ]
+                    },
+                    { 
+                        title: '烘烤',
+                        desc: '烤箱预热，烘烤至表面金黄，出炉后立即脱模晾凉。',
+                        images: [
+                            'https://images.unsplash.com/photo-1506459225024-1428097a7e18?w=400&h=400&fit=crop',
+                            'https://images.unsplash.com/photo-1600326145552-327f74b9c189?w=400&h=400&fit=crop'
+                        ]
+                    }
+                ],
+                notes: '1. 面粉吸水性不同，牛奶请预留10g左右调整。\n2. 烤箱温差大，请根据自家烤箱调整温度和时间。\n3. 出炉后立即震模，防止缩腰。',
+                sop: [
+                    {
+                        title: '和面标准',
+                        icon: 'fa-cog',
+                        items: [
+                            { label: '水温', value: '4-6℃' },
+                            { label: '初始慢速', value: '3-5分钟' },
+                            { label: '中速揉面', value: '5-8分钟' },
+                            { label: '快速揉面', value: '2-3分钟' },
+                            { label: '最终慢速', value: '1-2分钟' },
+                            { label: '出面温度', value: '24-26℃' }
+                        ]
+                    },
+                    {
+                        title: '发酵标准',
+                        icon: 'fa-seedling',
+                        items: [
+                            { label: '温度', value: '28-30℃' },
+                            { label: '湿度', value: '75-80%' },
+                            { label: '时间', value: '60-90分钟' },
+                            { label: '体积', value: '2-2.5倍大' }
+                        ]
+                    },
+                    {
+                        title: '分割标准',
+                        icon: 'fa-cut',
+                        items: [
+                            { label: '重量', value: '每份克数' },
+                            { label: '松弛时间', value: '15-20分钟' },
+                            { label: '成型方式', value: '按产品定义' },
+                            { label: '操作温度', value: '24-26℃' }
+                        ]
+                    },
+                    {
+                        title: '醒发标准',
+                        icon: 'fa-clock',
+                        items: [
+                            { label: '温度', value: '28-32℃' },
+                            { label: '湿度', value: '75-85%' },
+                            { label: '时间', value: '45-60分钟' },
+                            { label: '膨胀程度', value: '80-85%' }
+                        ]
+                    },
+                    {
+                        title: '烤制标准',
+                        icon: 'fa-fire',
+                        items: [
+                            { label: '预热温度', value: '180-200℃' },
+                            { label: '烤制时间', value: '35-40分钟' },
+                            { label: '蒸汽量', value: '100-150ml' },
+                            { label: '成品颜色', value: '金黄色' }
+                        ]
+                    }
+                ]
+            },
+            '浓郁巧克力蛋糕': {
+                image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+                tags: [
+                    { text: '蛋糕', class: 'tag-primary' },
+                    { text: '<i class="far fa-clock mr-1"></i> 1小时', class: 'tag-gray' },
+                    { text: '<i class="fas fa-fire mr-1"></i> 350千卡', class: 'tag-gray' }
+                ],
+                desc: '浓郁丝滑的巧克力蛋糕，每一口都是满满的幸福感。选用高品质黑巧克力，苦甜适中。',
+                totalWeight: '450g',
+                groups: [
+                    {
+                        type: 'flour', title: '面粉', icon: 'fa-wheat-awn', class: 'group-flour',
+                        items: [{ name: '低筋面粉', amount: '100g' }]
+                    },
+                    {
+                        type: 'wet', title: '湿料', icon: 'fa-droplet', class: 'group-wet',
+                        items: [{ name: '鸡蛋', amount: '3个' }]
+                    },
+                    {
+                        type: 'dry', title: '干料', icon: 'fa-cube', class: 'group-dry',
+                        items: [
+                            { name: '细砂糖', amount: '80g' },
+                            { name: '可可粉', amount: '20g' }
+                        ]
+                    },
+                    {
+                        type: 'aux', title: '辅料', icon: 'fa-mortar-pestle', class: 'group-aux',
+                        items: [
+                            { name: '黑巧克力(70%)', amount: '120g' },
+                            { name: '无盐黄油', amount: '100g' }
+                        ]
+                    }
+                ],
+                steps: [
+                    { desc: '黑巧克力和黄油隔水融化，搅拌均匀备用。' },
+                    { desc: '鸡蛋加细砂糖打发至颜色变浅，体积膨胀。' },
+                    { desc: '将巧克力液倒入蛋液中，轻柔翻拌均匀。' },
+                    { desc: '筛入低筋面粉和可可粉，翻拌至无干粉。' },
+                    { desc: '倒入模具，烤箱预热170度，烤25-30分钟。' }
+                ],
+                notes: '1. 巧克力品质直接影响口感，建议使用法芙娜等品牌。\n2. 全蛋打发比较困难，可以坐温水打发。\n3. 蛋糕出炉后会回缩是正常的，这是布朗尼口感的特征。',
+                tips: '巧克力融化温度不宜过高，建议隔水融化。打发蛋白时注意分次加入糖。'
+            },
+            '香草曲奇饼干': {
+                image: 'https://images.unsplash.com/photo-1499636136210-6f4ee915583e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+                tags: [
+                    { text: '饼干', class: 'tag-primary' },
+                    { text: '<i class="far fa-clock mr-1"></i> 45分钟', class: 'tag-gray' },
+                    { text: '<i class="fas fa-fire mr-1"></i> 180千卡', class: 'tag-gray' }
+                ],
+                desc: '酥脆可口的经典曲奇，黄油香气与香草风味完美融合。下午茶的最佳伴侣。',
+                totalWeight: '410g',
+                groups: [
+                    {
+                        type: 'flour', title: '面粉', icon: 'fa-wheat-awn', class: 'group-flour',
+                        items: [{ name: '低筋面粉', amount: '200g' }]
+                    },
+                    {
+                        type: 'wet', title: '湿料', icon: 'fa-droplet', class: 'group-wet',
+                        items: [
+                            { name: '鸡蛋液', amount: '30g' },
+                            { name: '香草精', amount: '2滴' }
+                        ]
+                    },
+                    {
+                        type: 'dry', title: '干料', icon: 'fa-cube', class: 'group-dry',
+                        items: [{ name: '糖粉', amount: '50g' }]
+                    },
+                    {
+                        type: 'aux', title: '辅料', icon: 'fa-mortar-pestle', class: 'group-aux',
+                        items: [{ name: '无盐黄油', amount: '130g' }]
+                    }
+                ],
+                steps: [
+                    { desc: '黄油软化至手指轻按有印记，加糖粉打发至体积膨发发白。' },
+                    { desc: '分次加入常温鸡蛋液，每次都搅打均匀。' },
+                    { desc: '加入香草精搅拌均匀。' },
+                    { desc: '筛入低筋面粉，切拌至无干粉。' },
+                    { desc: '装入裱花袋，挤出喜欢的花纹。' },
+                    { desc: '烤箱预热170度，烤15-20分钟至边缘金黄。' }
+                ],
+                notes: '1. 黄油一定要充分软化，否则很难挤。\n2. 鸡蛋液必须是常温的，否则容易油水分离。\n3. 冬天面糊容易变硬，可以用热毛巾捂一下裱花袋。',
+                tips: '黄油软化要到位，手指按压有印记即可。挤花时动作要利落。'
+            },
+            '草莓慕斯': {
+                image: 'https://images.unsplash.com/photo-1551024506-0bccd828d307?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+                tags: [
+                    { text: '甜点', class: 'tag-primary' },
+                    { text: '<i class="far fa-clock mr-1"></i> 4小时', class: 'tag-gray' },
+                    { text: '<i class="fas fa-fire mr-1"></i> 220千卡', class: 'tag-gray' }
+                ],
+                desc: '无需烤箱的清爽甜点，酸甜草莓与顺滑奶油的完美邂逅。颜值与美味并存。',
+                totalWeight: '780g',
+                groups: [
+                    {
+                        type: 'wet', title: '湿料', icon: 'fa-droplet', class: 'group-wet',
+                        items: [
+                            { name: '新鲜草莓', amount: '300g' },
+                            { name: '淡奶油', amount: '250ml' },
+                            { name: '酸奶', amount: '100g' }
+                        ]
+                    },
+                    {
+                        type: 'dry', title: '干料', icon: 'fa-cube', class: 'group-dry',
+                        items: [
+                            { name: '吉利丁片', amount: '10g' },
+                            { name: '细砂糖', amount: '40g' }
+                        ]
+                    },
+                    {
+                        type: 'aux', title: '辅料', icon: 'fa-mortar-pestle', class: 'group-aux',
+                        items: [{ name: '消化饼干', amount: '80g' }]
+                    }
+                ],
+                steps: [
+                    { desc: '消化饼干压碎，加入融化黄油拌匀，铺在模具底部压实，冷藏备用。' },
+                    { desc: '吉利丁片冷水泡软，草莓打成果泥。' },
+                    { desc: '淡奶油加糖打发至6分发（有纹路但流动）。' },
+                    { desc: '吉利丁隔水融化，加入草莓泥中，再与酸奶混合。' },
+                    { desc: '将果泥混合物与打发的淡奶油翻拌均匀。' },
+                    { desc: '倒入模具，冷藏4小时以上。' }
+                ],
+                notes: '1. 吉利丁融化温度不要超过60度。\n2. 混合时注意温差，防止结块。\n3. 脱模时可以用热毛巾捂一下模具外壁。',
+                tips: '吉利丁片需要提前用冷水泡软。慕斯液混合时注意温度不能太高。'
+            }
+        };
+
+        // Tab切换逻辑
+        const tabs = document.querySelectorAll('.tab-item');
+        const contents = document.querySelectorAll('.tab-content-panel');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // 移除所有激活状态
+                tabs.forEach(t => t.classList.remove('active'));
+                contents.forEach(c => c.classList.add('hidden'));
+
+                // 激活当前Tab
+                tab.classList.add('active');
+                const targetId = tab.dataset.tab + 'Content';
+                document.getElementById(targetId).classList.remove('hidden');
+            });
+        });
+
+        // 复制弹窗逻辑
+        function showCopyOptionsModal() {
+            document.getElementById('copyOptionsModal').classList.remove('hidden');
+        }
+
+        function showReadOnlyToast() {
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/80 text-white px-6 py-4 rounded-xl z-50 flex flex-col items-center shadow-2xl max-w-xs text-center backdrop-blur-md';
+            toast.innerHTML = `
+                <i class="fas fa-lock text-yellow-400 text-3xl mb-3"></i>
+                <div class="font-bold text-lg mb-1">配方已存档</div>
+                <div class="text-sm text-gray-300 leading-relaxed">
+                    这是原始配方备份，仅供查看。
+                    <br/>如需调整份量或生产，
+                    <br/>请<span class="text-white font-bold underline">复制</span>至配方本操作。
+                </div>
+            `;
+            document.body.appendChild(toast);
+            
+            // Animation
+            toast.style.opacity = '0';
+            toast.style.transition = 'all 0.3s ease';
+            requestAnimationFrame(() => {
+                toast.style.opacity = '1';
+                toast.style.transform = 'translate(-50%, -50%) scale(1)';
+            });
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translate(-50%, -50%) scale(0.9)';
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+
+        function closeCopyOptionsModal() {
+            document.getElementById('copyOptionsModal').classList.add('hidden');
+        }
+
+        function confirmCopy(type) {
+            closeCopyOptionsModal();
+            
+            // 显示加载/处理提示
+            let loadingMsg = '';
+            if (type === 'book') loadingMsg = '正在恢复至配方本...';
+            else if (type === 'community') loadingMsg = '正在准备分享内容...';
+            else if (type === 'friend') loadingMsg = '正在启动消息发送...';
+
+            // 创建一个临时的 Toast
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/80 text-white px-6 py-3 rounded-lg z-50 flex items-center shadow-lg';
+            toast.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> ${loadingMsg}`;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+                if (type === 'book') {
+                    alert('成功！配方已恢复到“我的配方”列表。');
+                } else if (type === 'community') {
+                    alert('准备就绪！跳转至社区发布页面...');
+                    // window.location.href = 'community-publish.html'; // 假设的跳转
+                } else if (type === 'friend') {
+                    alert('已生成分享链接，请选择好友发送。');
+                    // 实际逻辑可能是调用系统分享或应用内IM
+                }
+            }, 1000);
+        }
+
+        // 获取URL参数并更新页面
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            let name = params.get('name');
+            
+            // 默认显示第一个，如果有参数则使用参数
+            if (!name) name = '经典吐司面包';
+            else name = decodeURIComponent(name);
+
+            document.getElementById('recipeTitle').textContent = name;
+            document.getElementById('navTitle').textContent = name;
+            document.title = name + ' - 详情';
+            
+            const data = recipesData[name] || recipesData['经典吐司面包']; // Fallback
+            
+            // 更新图片
+            document.getElementById('recipeImage').src = data.image;
+            
+            // 更新标签
+            const tagContainer = document.querySelector('.flex.flex-wrap.gap-2.mb-4');
+            tagContainer.innerHTML = data.tags.map(tag => 
+                `<span class="tag-badge ${tag.class}">${tag.text}</span>`
+            ).join('');
+            
+            // 更新描述
+            document.querySelector('p.text-gray-500').textContent = data.desc;
+            
+            // 更新食材
+            const ingredientsList = document.getElementById('ingredientsList');
+            let ingredientsHTML = '';
+
+            // 渲染分组
+            if (data.groups) {
+                data.groups.forEach(group => {
+                    if (group.items && group.items.length > 0) {
+                        ingredientsHTML += `
+                        <div class="ingredient-group-card ${group.class}">
+                            <div class="group-header">
+                                <div class="group-icon"><i class="fas ${group.icon}"></i></div>
+                                <div class="group-title">${group.title}</div>
+                            </div>
+                            <div class="space-y-0">
+                                ${group.items.map(item => `
+                                <div class="list-row">
+                                    <span class="flex-1 text-gray-700 font-medium">${item.name}</span>
+                                    ${item.percent !== undefined ? `
+                                    <div class="text-right">
+                                        <div class="text-lg font-bold text-gray-900 leading-none">${item.amount}<span class="text-sm">${item.unit}</span></div>
+                                        <div class="text-xs text-gray-400 mt-0.5">${item.percent}%</div>
+                                    </div>
+                                    ` : `
+                                    <span class="font-medium text-gray-900">${item.amount}</span>
+                                    `}
+                                </div>
+                                `).join('')}
+                            </div>
+                        </div>`;
+                    } else if (name === '经典吐司面包') {
+                        // 特殊处理：如果是演示用的经典面包，且分区为空，也显示出来占位(如种面)
+                         ingredientsHTML += `
+                        <div class="ingredient-group-card ${group.class}">
+                            <div class="group-header">
+                                <div class="group-icon"><i class="fas ${group.icon}"></i></div>
+                                <div class="group-title">${group.title}</div>
+                            </div>
+                            <div class="p-4 text-center text-gray-400 text-sm">
+                                此配方无${group.title}
+                            </div>
+                        </div>`;
+                    }
+                });
+            } else if (data.ingredients) {
+                // Fallback for old structure if any
+                 ingredientsHTML += `<h3 class="font-bold text-gray-800 mb-3 text-lg">食材</h3>` + 
+                    data.ingredients.map(item => `
+                    <div class="list-row">
+                        <span class="flex-1 text-gray-700">${item.name}</span>
+                        <span class="font-medium text-gray-900">${item.amount}</span>
+                    </div>
+                `).join('');
+            }
+            
+            ingredientsList.innerHTML = ingredientsHTML;
+
+            // 更新步骤
+            const stepsList = document.getElementById('stepsList');
+            if(data.steps) {
+                renderSteps(data.steps);
+            } else {
+                stepsList.innerHTML = '<p class="text-gray-400 text-center py-4">暂无步骤信息</p>';
+            }
+
+            // 更新笔记
+            /* 
+            const notesText = document.getElementById('notesText');
+            if(data.notes) {
+                notesText.textContent = data.notes;
+                document.getElementById('notesContent').classList.remove('hidden'); // Ensure content is accessible, but hidden by default via class toggle
+                document.getElementById('notesContent').classList.add('hidden'); // Reset to hidden state
+            } else {
+                 notesText.textContent = '暂无备注笔记';
+            }
+            */
+            
+            // 重新初始化Tab状态 (确保显示第一个)
+            const activeTab = document.querySelector('.tab-item.active');
+            if (activeTab) activeTab.click();
+            else document.querySelector('.tab-item[data-tab="ingredients"]').click();
+
+            // 渲染面团变化款
+            if (data.doughVariants) {
+                renderDoughVariants(data.doughVariants);
+            }
+
+            // 渲染SOP
+            if (data.sop) {
+                renderSOP(data.sop);
+            }
+        });
+
+        function renderSOP(sopData) {
+            const container = document.getElementById('notesContent');
+            if (!sopData || sopData.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-center py-4">暂无SOP信息</p>';
+                return;
+            }
+
+            let html = `
+            <div class="space-y-6 mb-8">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xl font-bold text-slate-800">制作标准 (SOP)</h2>
+                </div>
+                <div id="sopList" class="space-y-4">
+            `;
+
+            sopData.forEach(step => {
+                html += `
+                <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
+                    <div class="flex items-center mb-3">
+                        <div class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                            <i class="fas ${step.icon} text-orange-600"></i>
+                        </div>
+                        <input type="text" value="${step.title}" class="ml-3 font-medium text-slate-700 bg-transparent border-none outline-none focus:bg-slate-50 px-2 py-1 rounded">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        ${step.items.map(item => `
+                        <div class="relative">
+                            <div class="flex flex-col w-full">
+                                <input type="text" 
+                                    class="w-full px-2 py-1 bg-transparent border-0 border-b border-gray-200 text-xs font-medium text-gray-700 focus:border-orange-400 focus:ring-0 mb-1" 
+                                    value="${item.label}">
+                                <input type="text" 
+                                    value="${item.value}"
+                                    class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all">
+                            </div>
+                        </div>
+                        `).join('')}
+                    </div>
+                </div>`;
+            });
+
+            html += `
+                </div>
+            </div>`;
+
+            container.innerHTML = html;
+        }
+
+        function renderDoughVariants(variants) {
+            const container = document.getElementById('doughVariantsList');
+            const summaryFooter = document.getElementById('summaryFooter');
+            
+            if (!variants || variants.length === 0) {
+                container.innerHTML = '';
+                summaryFooter.classList.add('hidden');
+                return;
+            }
+
+            // Show footer
+            summaryFooter.classList.remove('hidden');
+
+            let html = '';
+            variants.forEach(variant => {
+                // Initialize default count if not set
+                if (typeof variant.currentCount === 'undefined') {
+                    variant.currentCount = variant.defaultCount || 1;
+                }
+
+                // Calculate single unit totals
+                let singleWeight = 0;
+                let singleCost = 0;
+                variant.items.forEach(item => {
+                    singleWeight += item.weight;
+                    singleCost += item.cost;
+                });
+                
+                // Store calculated values for update logic
+                variant.singleWeight = singleWeight;
+                variant.singleCost = singleCost;
+
+                // Format initial total weight display
+                let totalWeightDisplay = '';
+                const totalW = singleWeight * variant.currentCount;
+                if (totalW >= 1000) {
+                     totalWeightDisplay = (totalW / 1000).toFixed(2) + 'kg';
+                } else {
+                     totalWeightDisplay = totalW + 'g';
+                }
+
+                html += `
+                <div class="dough-variant-card" id="variant-${variant.id}">
+                    <div class="variant-header">
+                        <div class="variant-title">
+                            <div class="variant-icon"><i class="fas ${variant.icon}"></i></div>
+                            ${variant.name}
+                        </div>
+                        <div class="flex items-center">
+                            <span class="text-xs text-gray-400 mr-2">标准份量:</span>
+                            <div class="stepper-control disabled" onclick="showReadOnlyToast()">
+                                <button class="stepper-btn disabled">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <div class="stepper-value disabled" id="count-${variant.id}">${variant.currentCount}</div>
+                                <button class="stepper-btn disabled">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-0 mb-4">
+                        ${variant.items.map(item => `
+                        <div class="variant-row border-b border-dashed border-gray-100 last:border-0">
+                            <div class="flex items-center">
+                                <span class="variant-name">${item.name}</span>
+                                ${item.link ? '<i class="fas fa-external-link-alt variant-link"></i>' : ''}
+                            </div>
+                            <div class="variant-data">
+                                <div class="text-lg font-bold text-blue-600 leading-none">${item.weight}<span class="text-sm">g</span></div>
+                                <div class="variant-cost">成本: ¥${item.cost.toFixed(2)}</div>
+                            </div>
+                        </div>
+                        `).join('')}
+                    </div>
+
+                    <div class="variant-summary">
+                        <div>
+                            <div class="text-sm font-bold text-gray-800">单个总重:</div>
+                            <div class="text-xs text-gray-400 mt-1">总重量:</div>
+                            <div class="text-xs text-gray-400">总成本:</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="variant-weight text-blue-600">${singleWeight}<span>g</span></div>
+                            <div class="text-xs text-gray-600 font-bold mt-1" id="total-weight-${variant.id}">${totalWeightDisplay}</div>
+                            <div class="text-xs text-gray-600 font-bold" id="total-cost-${variant.id}">¥ ${(singleCost * variant.currentCount).toFixed(2)}</div>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            
+            container.innerHTML = html;
+            updateGlobalSummary();
+        }
+
+        function updateVariant(variantId, change) {
+            // Find variant data
+            const name = document.getElementById('recipeTitle').textContent;
+            const data = recipesData[name] || recipesData['经典吐司面包'];
+            const variant = data.doughVariants.find(v => v.id === variantId);
+            
+            if (!variant) return;
+
+            let newCount = variant.currentCount + change;
+            if (newCount < 1) newCount = 1; // Minimum 1
+
+            variant.currentCount = newCount;
+            
+            // Update DOM
+            document.getElementById(`count-${variant.id}`).textContent = newCount;
+            
+            // Update totals for this variant
+            const currentTotalWeight = variant.singleWeight * newCount;
+            let totalWeightDisplay = '';
+            if (currentTotalWeight >= 1000) {
+                 totalWeightDisplay = (currentTotalWeight / 1000).toFixed(2) + 'kg';
+            } else {
+                 totalWeightDisplay = currentTotalWeight + 'g';
+            }
+
+            document.getElementById(`total-weight-${variant.id}`).textContent = totalWeightDisplay;
+            document.getElementById(`total-cost-${variant.id}`).textContent = '¥ ' + (variant.singleCost * newCount).toFixed(2);
+
+            updateGlobalSummary();
+        }
+
+        function updateGlobalSummary() {
+            const name = document.getElementById('recipeTitle').textContent;
+            const data = recipesData[name] || recipesData['经典吐司面包'];
+            if (!data || !data.doughVariants) return;
+
+            let globalWeight = 0;
+            let globalCost = 0;
+
+            data.doughVariants.forEach(v => {
+                globalWeight += v.singleWeight * v.currentCount;
+                globalCost += v.singleCost * v.currentCount;
+            });
+
+            // Format global weight
+            let weightStr = '';
+            if (globalWeight >= 1000) {
+                weightStr = (globalWeight / 1000).toFixed(2) + 'kg';
+            } else {
+                weightStr = globalWeight + 'g';
+            }
+
+            document.getElementById('globalTotalWeight').textContent = weightStr;
+            document.getElementById('globalTotalCost').textContent = '¥ ' + globalCost.toFixed(2);
+        }
+
+        function renderSteps(stepsData) {
+            const container = document.getElementById('stepsList');
+            if (!stepsData || stepsData.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-center py-4">暂无步骤信息</p>';
+                return;
+            }
+
+            let html = '<div class="space-y-4">';
+            
+            stepsData.forEach((step, index) => {
+                const stepNum = index + 1;
+                // If the step object is just { desc: '...' } (old format fallback), normalize it
+                const title = step.title || '步骤';
+                const desc = step.desc || (typeof step === 'string' ? step : '');
+                const images = step.images || [];
+
+                html += `
+                <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="font-semibold text-slate-800 flex items-center gap-2">
+                            <div class="w-8 h-8 bg-orange-100 text-orange-600 rounded-lg flex items-center justify-center text-sm font-bold">${stepNum}</div>
+                            ${title}
+                        </h3>
+                        ${images.length > 0 ? `
+                        <div class="flex items-center gap-2">
+                            <button class="text-slate-400 hover:text-slate-600 p-1" onclick="toggleStepImages(this)" title="展开/收起图片">
+                                <i class="fas fa-th-large"></i>
+                            </button>
+                        </div>` : ''}
+                    </div>
+                    <div class="step-content">
+                        <p class="text-slate-800 leading-relaxed mb-3 text-sm">${desc}</p>
+                        ${images.length > 0 ? `
+                        <div class="step-images">
+                            ${images.map(img => `
+                            <div class="relative">
+                                <img src="${img}" alt="${title}" class="rounded-lg object-cover">
+                                <button class="absolute bottom-2 right-2 bg-black bg-opacity-60 text-white rounded-full p-2 hover:bg-opacity-80 transition-all w-8 h-8 flex items-center justify-center" onclick="showStepImage(this)" title="放大图片">
+                                    <i class="fas fa-search-plus text-xs"></i>
+                                </button>
+                            </div>
+                            `).join('')}
+                        </div>` : ''}
+                    </div>
+                </div>`;
+            });
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function toggleStepImages(btn) {
+            // Find the closest step card
+            const card = btn.closest('.bg-white');
+            const imagesGrid = card.querySelector('.step-images');
+            
+            if (imagesGrid) {
+                imagesGrid.classList.toggle('expanded');
+                // Toggle icon
+                const icon = btn.querySelector('i');
+                if (imagesGrid.classList.contains('expanded')) {
+                    icon.classList.remove('fa-th-large');
+                    icon.classList.add('fa-list');
+                } else {
+                    icon.classList.remove('fa-list');
+                    icon.classList.add('fa-th-large');
+                }
+            }
+        }
+
+        function showStepImage(btn) {
+            const img = btn.previousElementSibling; // The image is the previous sibling
+            const src = img.src;
+            const modal = document.getElementById('fullImageModal');
+            const modalImg = modal.querySelector('img');
+            
+            modalImg.src = src;
+            modal.classList.remove('hidden');
+        }
+
+        function goBack() {
+            window.history.back();
+        }
+
+        // 专注模式逻辑
+        function toggleFocusMode() {
+            const details = document.getElementById('recipeDetails');
+            const btn = document.getElementById('introToggleBtn');
+            const icon = btn.querySelector('i');
+            
+            if (details.classList.contains('hidden')) {
+                // Show
+                details.classList.remove('hidden');
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                // Hide
+                details.classList.add('hidden');
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+    </script>
+</body>
+</html>

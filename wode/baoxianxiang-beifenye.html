@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>已备份配方 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Cookpad 风格配色 */
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+            --text-main: #333333;
+            --text-sub: #8b8b8b;
+            --bg-light: #f7f7f5;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f7f7f5;
+            color: #1a1a1a;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .text-cookpad { color: var(--primary-dark); }
+        .bg-cookpad { background-color: var(--primary-dark); }
+        
+        /* 顶部导航栏样式统一 */
+        .nav-header {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #f0f0f0;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            padding-top: env(safe-area-inset-top);
+        }
+
+        .card {
+            transition: all 0.3s ease;
+            background: #fff;
+            border: 1px solid #f0f0f0;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+        
+        /* 分类栏样式 - Cookpad 风格 */
+        .category-sidebar {
+            width: 90px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            background-color: #fff;
+            border-right: 1px solid #f0f0f0;
+        }
+        
+        .category-item {
+            transition: all 0.2s ease;
+            margin: 0 8px 8px 8px;
+            border-radius: 12px;
+            color: var(--text-sub);
+            padding: 8px;
+        }
+        
+        .category-item:hover {
+            background-color: #f8f8f8;
+            color: var(--text-main);
+        }
+        
+        .category-item.active {
+            background-color: #fff7ed; /* Light orange bg */
+            color: var(--primary-dark);
+            box-shadow: none;
+            font-weight: 600;
+            border: 1px solid #ffedd5;
+        }
+        
+        .category-item.active .w-8 {
+            background-color: var(--primary-orange) !important;
+            color: white !important;
+        }
+        
+        .category-item.active .text-gray-800 {
+            color: var(--primary-dark) !important;
+        }
+        
+        .category-item.active .text-gray-500 {
+            color: var(--primary-orange) !important;
+            opacity: 0.8;
+        }
+        
+        /* 滚动条美化 */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 0px; /* 隐藏滚动条 */
+        }
+        
+        /* 搜索框样式统一 */
+        .search-input-wrapper {
+            background-color: #f3f3f3;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .search-input-wrapper:focus-within {
+            background-color: #ffffff;
+            box-shadow: 0 0 0 2px var(--primary-orange) inset;
+        }
+
+        /* 选中状态 */
+        .recipe-card.selected {
+            border-color: var(--primary-orange);
+            background-color: #fffaf0;
+        }
+
+        /* 复选框样式 */
+        .custom-checkbox:checked {
+            background: var(--primary-orange);
+            border-color: var(--primary-orange);
+        }
+        
+        .custom-checkbox:hover {
+            border-color: var(--primary-orange);
+        }
+
+        /* 按钮样式统一 */
+        .btn-primary {
+            background: linear-gradient(135deg, #ff9f43 0%, #ff8c00 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(255, 140, 0, 0.3);
+        }
+        .btn-primary:hover {
+            transform: translateY(-1px);
+        }
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+        .btn-primary:disabled {
+            background: #e5e7eb;
+            color: #9ca3af;
+            box-shadow: none;
+        }
+        
+        /* 标签颜色统一调整为更柔和的色调 */
+        .bg-amber-100 { background-color: #fff7ed; }
+        .text-amber-600 { color: #ea580c; }
+        .bg-pink-100 { background-color: #fdf2f8; }
+        .text-pink-600 { color: #db2777; }
+        .bg-blue-100 { background-color: #eff6ff; }
+        .text-blue-600 { color: #2563eb; }
+        
+        /* 通用文字颜色 */
+        .text-gray-800 { color: #333; }
+        .text-gray-500 { color: #888; }
+        
+        /* 新手引导样式保留但适配颜色 */
+        .tutorial-spotlight {
+            border-color: var(--primary-orange);
+            box-shadow: 0 0 0 6px rgba(255, 159, 67, 0.4), 0 0 0 9999px rgba(0, 0, 0, 0.6);
+        }
+        
+        @keyframes tutorialPulseSpotlight {
+            0%, 100% { 
+                border-color: var(--primary-orange);
+                box-shadow: 0 0 0 6px rgba(255, 159, 67, 0.4), 0 0 0 9999px rgba(0, 0, 0, 0.6);
+            }
+            50% { 
+                border-color: var(--primary-dark);
+                box-shadow: 0 0 0 12px rgba(255, 159, 67, 0.2), 0 0 0 9999px rgba(0, 0, 0, 0.6);
+            }
+        }
+
+        /* 备份按钮样式覆盖 */
+        .backup-button {
+            background: linear-gradient(135deg, #ff9f43 0%, #ff8c00 100%);
+            box-shadow: 0 4px 12px rgba(255, 140, 0, 0.3);
+        }
+        
+        .backup-button:hover:not(:disabled) {
+            background: linear-gradient(135deg, #ffb347 0%, #ff9f43 100%);
+            box-shadow: 0 6px 16px rgba(255, 140, 0, 0.4);
+        }
+
+        /* 选中计数器 */
+        .selected-counter {
+            background: #fff7ed;
+            color: #c2410c;
+            border: 1px solid #ffedd5;
+        }
+        
+        .selected-counter.has-selection {
+            background: #ecfccb;
+            color: #3f6212;
+            border-color: #bef264;
+        }
+
+        /* 新手引导其他样式保留 */
+        .tutorial-tooltip {
+            position: fixed;
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+            max-width: 340px;
+            z-index: 10001;
+            animation: tutorialSlideIn 0.5s ease;
+            border: 2px solid #e5e7eb;
+        }
+        /* ... 其他引导样式保持不变，但在上面的CSS中已经包含 ... */
+    </style>
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <header class="nav-header px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center">
+            <button onclick="goBack()" class="text-gray-600 hover:text-orange-500 transition-colors mr-4">
+                <i class="fas fa-arrow-left text-lg"></i>
+            </button>
+            <h1 class="text-lg font-bold text-gray-900">配方备份</h1>
+        </div>
+    </header>
+
+    <!-- 搜索栏 -->
+    <div class="px-4 mt-4 mb-2">
+        <div class="relative search-input-wrapper">
+            <input type="text" placeholder="搜索配方名称..." 
+                   class="w-full bg-transparent rounded-xl px-4 py-3 pl-10 text-sm text-gray-700 focus:outline-none placeholder-gray-400"
+                   id="searchInput">
+            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            <button class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-orange-500 hidden w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-100 transition-all duration-200" 
+                    id="clearSearch" 
+                    onclick="clearSearchInput()">
+                <i class="fas fa-times text-xs"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 主内容区域 - 左右两栏布局 -->
+    <div class="flex main-content mt-4 h-[calc(100vh-130px)]">
+        <!-- 左侧分类栏 -->
+        <div class="category-sidebar h-full custom-scrollbar">
+            <div class="py-2" id="categorySidebar">
+                <!-- 分类项 -->
+                <div class="category-item active px-2 py-3 text-center cursor-pointer flex flex-col items-center" data-category="all" onclick="selectCategory('all', this)">
+                    <div class="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center mb-1">
+                        <i class="fas fa-th text-xs"></i>
+                    </div>
+                    <div class="text-xs font-medium text-gray-800">全部</div>
+                    <div class="text-[10px] text-gray-500 mt-0.5">24</div>
+                </div>
+                
+                <div class="category-item px-2 py-3 text-center cursor-pointer flex flex-col items-center" data-category="bread" onclick="selectCategory('bread', this)">
+                    <div class="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center mb-1">
+                        <i class="fas fa-bread-slice text-orange-500 text-xs"></i>
+                    </div>
+                    <div class="text-xs font-medium text-gray-600">面包</div>
+                    <div class="text-[10px] text-gray-400 mt-0.5">8</div>
+                </div>
+                
+                <div class="category-item px-2 py-3 text-center cursor-pointer flex flex-col items-center" data-category="cake" onclick="selectCategory('cake', this)">
+                    <div class="w-8 h-8 rounded-full bg-pink-50 flex items-center justify-center mb-1">
+                        <i class="fas fa-birthday-cake text-pink-500 text-xs"></i>
+                    </div>
+                    <div class="text-xs font-medium text-gray-600">蛋糕</div>
+                    <div class="text-[10px] text-gray-400 mt-0.5">6</div>
+                </div>
+                
+                <div class="category-item px-2 py-3 text-center cursor-pointer flex flex-col items-center" data-category="cookie" onclick="selectCategory('cookie', this)">
+                    <div class="w-8 h-8 rounded-full bg-yellow-50 flex items-center justify-center mb-1">
+                        <i class="fas fa-cookie-bite text-yellow-600 text-xs"></i>
+                    </div>
+                    <div class="text-xs font-medium text-gray-600">饼干</div>
+                    <div class="text-[10px] text-gray-400 mt-0.5">4</div>
+                </div>
+                
+                <div class="category-item px-2 py-3 text-center cursor-pointer flex flex-col items-center" data-category="dessert" onclick="selectCategory('dessert', this)">
+                    <div class="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center mb-1">
+                        <i class="fas fa-ice-cream text-green-500 text-xs"></i>
+                    </div>
+                    <div class="text-xs font-medium text-gray-600">甜点</div>
+                    <div class="text-[10px] text-gray-400 mt-0.5">3</div>
+                </div>
+                
+                <div class="category-item px-2 py-3 text-center cursor-pointer flex flex-col items-center" data-category="drink" onclick="selectCategory('drink', this)">
+                    <div class="w-8 h-8 rounded-full bg-stone-50 flex items-center justify-center mb-1">
+                        <i class="fas fa-coffee text-stone-600 text-xs"></i>
+                    </div>
+                    <div class="text-xs font-medium text-gray-600">饮品</div>
+                    <div class="text-[10px] text-gray-400 mt-0.5">2</div>
+                </div>
+                
+                <div class="category-item px-2 py-3 text-center cursor-pointer flex flex-col items-center" data-category="other" onclick="selectCategory('other', this)">
+                    <div class="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center mb-1">
+                        <i class="fas fa-utensils text-red-500 text-xs"></i>
+                    </div>
+                    <div class="text-xs font-medium text-gray-600">其他</div>
+                    <div class="text-[10px] text-gray-400 mt-0.5">1</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 右侧配方列表 -->
+        <div class="flex-1 px-4 h-full overflow-y-auto custom-scrollbar pb-20" id="recipeList">
+            
+            <!-- 全选和备份控制栏 -->
+            <div class="bg-white rounded-xl p-3 mb-4 shadow-sm border border-gray-100 flex items-center justify-between sticky top-0 z-10" id="selectionControlBar">
+                <div class="flex items-center space-x-3">
+                    <input type="checkbox" 
+                           class="w-4 h-4 text-orange-500 bg-gray-100 border-gray-300 rounded focus:ring-orange-500 focus:ring-2 custom-checkbox" 
+                           id="selectAllCheckbox" 
+                           onclick="toggleSelectAll()">
+                    <label for="selectAllCheckbox" class="text-sm font-medium text-gray-700 cursor-pointer">全选</label>
+                    <div class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500" id="selectedCount">已选 0</div>
+                </div>
+                <button class="backup-button text-white px-4 py-1.5 rounded-full text-xs font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md" 
+                        id="confirmBackupBtn" 
+                        onclick="showConfirmBackupModal()" 
+                        disabled>
+                    <i class="fas fa-cloud-upload-alt mr-1.5"></i>备份
+                </button>
+            </div>
+            
+            <!-- 配方卡片列表 -->
+            <div class="space-y-3">
+                <!-- 配方卡片1 -->
+                <div class="bg-gray-50 rounded-xl p-3 shadow-none border border-gray-100 transition-all recipe-card opacity-60" 
+                     data-category="bread" 
+                     data-recipe-id="recipe-1"
+                     style="touch-action: pan-y; cursor: not-allowed;">
+                    <div class="flex items-center space-x-3">
+                        <img src="https://images.unsplash.com/photo-1509440159596-0249088772ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80" 
+                             class="w-14 h-14 rounded-lg object-cover border border-gray-200 grayscale opacity-70" alt="经典吐司面包">
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm font-bold text-gray-500 truncate">经典吐司面包</div>
+                            <div class="flex items-center mt-1">
+                                <span class="text-[10px] bg-green-100 text-green-600 px-1.5 py-0.5 rounded font-medium">已备份</span>
+                                <span class="text-[10px] text-gray-400 ml-2">2天前</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 配方卡片2 -->
+                <div class="bg-white rounded-xl p-3 shadow-sm border border-gray-100 transition-all hover:shadow-md active:scale-[0.99] recipe-card" 
+                     data-category="cake" 
+                     data-recipe-id="recipe-2"
+                     onclick="toggleRecipeSelection('recipe-2', event)" 
+                     style="touch-action: pan-y;">
+                    <div class="flex items-center space-x-3">
+                        <div onclick="event.stopPropagation()">
+                            <input type="checkbox" 
+                                   class="recipe-checkbox w-5 h-5 text-orange-500 bg-white border-gray-300 rounded focus:ring-orange-500 focus:ring-2 custom-checkbox" 
+                                   id="checkbox-recipe-2" 
+                                   onchange="toggleRecipeSelection('recipe-2', event)">
+                        </div>
+                        <img src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80" 
+                             class="w-14 h-14 rounded-lg object-cover border border-gray-100" alt="浓郁巧克力蛋糕">
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm font-bold text-gray-800 truncate">浓郁巧克力蛋糕</div>
+                            <div class="flex items-center mt-1 justify-between">
+                                <span class="text-[10px] text-gray-400">1周前</span>
+                                <span class="text-[10px] bg-pink-50 text-pink-500 px-2 py-0.5 rounded-full">蛋糕</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 配方卡片3 -->
+                <div class="bg-white rounded-xl p-3 shadow-sm border border-gray-100 transition-all hover:shadow-md active:scale-[0.99] recipe-card" 
+                     data-category="cookie" 
+                     data-recipe-id="recipe-3"
+                     onclick="toggleRecipeSelection('recipe-3', event)" 
+                     style="touch-action: pan-y;">
+                    <div class="flex items-center space-x-3">
+                        <div onclick="event.stopPropagation()">
+                            <input type="checkbox" 
+                                   class="recipe-checkbox w-5 h-5 text-orange-500 bg-white border-gray-300 rounded focus:ring-orange-500 focus:ring-2 custom-checkbox" 
+                                   id="checkbox-recipe-3" 
+                                   onchange="toggleRecipeSelection('recipe-3', event)">
+                        </div>
+                        <img src="https://images.unsplash.com/photo-1499636136210-6f4ee915583e?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80" 
+                             class="w-14 h-14 rounded-lg object-cover border border-gray-100" alt="香草曲奇饼干">
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm font-bold text-gray-800 truncate">香草曲奇饼干</div>
+                            <div class="flex items-center mt-1 justify-between">
+                                <span class="text-[10px] text-gray-400">3天前</span>
+                                <span class="text-[10px] bg-yellow-50 text-yellow-600 px-2 py-0.5 rounded-full">饼干</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 配方卡片4 -->
+                <div class="bg-white rounded-xl p-3 shadow-sm border border-gray-100 transition-all hover:shadow-md active:scale-[0.99] recipe-card" 
+                     data-category="dessert" 
+                     data-recipe-id="recipe-4"
+                     onclick="toggleRecipeSelection('recipe-4', event)" 
+                     style="touch-action: pan-y;">
+                    <div class="flex items-center space-x-3">
+                        <div onclick="event.stopPropagation()">
+                            <input type="checkbox" 
+                                   class="recipe-checkbox w-5 h-5 text-orange-500 bg-white border-gray-300 rounded focus:ring-orange-500 focus:ring-2 custom-checkbox" 
+                                   id="checkbox-recipe-4" 
+                                   onchange="toggleRecipeSelection('recipe-4', event)">
+                        </div>
+                        <img src="https://images.unsplash.com/photo-1551024506-0bccd828d307?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80" 
+                             class="w-14 h-14 rounded-lg object-cover border border-gray-100" alt="草莓慕斯">
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm font-bold text-gray-800 truncate">草莓慕斯</div>
+                            <div class="flex items-center mt-1 justify-between">
+                                <span class="text-[10px] text-gray-400">5天前</span>
+                                <span class="text-[10px] bg-green-50 text-green-500 px-2 py-0.5 rounded-full">甜点</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 配方卡片5 -->
+                <div class="bg-white rounded-xl p-3 shadow-sm border border-gray-100 transition-all hover:shadow-md active:scale-[0.99] recipe-card" 
+                     data-category="bread" 
+                     data-recipe-id="recipe-5"
+                     onclick="toggleRecipeSelection('recipe-5', event)" 
+                     style="touch-action: pan-y;">
+                    <div class="flex items-center space-x-3">
+                        <div onclick="event.stopPropagation()">
+                            <input type="checkbox" 
+                                   class="recipe-checkbox w-5 h-5 text-orange-500 bg-white border-gray-300 rounded focus:ring-orange-500 focus:ring-2 custom-checkbox" 
+                                   id="checkbox-recipe-5" 
+                                   onchange="toggleRecipeSelection('recipe-5', event)">
+                        </div>
+                        <img src="https://images.unsplash.com/photo-1555507036-ab1f4038808a?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80" 
+                             class="w-14 h-14 rounded-lg object-cover border border-gray-100" alt="法式长棍面包">
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm font-bold text-gray-800 truncate">法式长棍面包</div>
+                            <div class="flex items-center mt-1 justify-between">
+                                <span class="text-[10px] text-gray-400">2周前</span>
+                                <span class="text-[10px] bg-orange-50 text-orange-500 px-2 py-0.5 rounded-full">面包</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 配方卡片6 -->
+                <div class="bg-white rounded-xl p-3 shadow-sm border border-gray-100 transition-all hover:shadow-md active:scale-[0.99] recipe-card" 
+                     data-category="dessert" 
+                     data-recipe-id="recipe-6"
+                     onclick="toggleRecipeSelection('recipe-6', event)" 
+                     style="touch-action: pan-y;">
+                    <div class="flex items-center space-x-3">
+                        <div onclick="event.stopPropagation()">
+                            <input type="checkbox" 
+                                   class="recipe-checkbox w-5 h-5 text-orange-500 bg-white border-gray-300 rounded focus:ring-orange-500 focus:ring-2 custom-checkbox" 
+                                   id="checkbox-recipe-6" 
+                                   onchange="toggleRecipeSelection('recipe-6', event)">
+                        </div>
+                        <img src="https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80" 
+                             class="w-14 h-14 rounded-lg object-cover border border-gray-100" alt="法式马卡龙">
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm font-bold text-gray-800 truncate">法式马卡龙</div>
+                            <div class="flex items-center mt-1 justify-between">
+                                <span class="text-[10px] text-gray-400">4天前</span>
+                                <span class="text-[10px] bg-green-50 text-green-500 px-2 py-0.5 rounded-full">甜点</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 新手引导弹窗 (保持原样但样式适配) -->
+    <div id="userGuideModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-2xl mx-4 w-full max-w-lg h-[80vh] flex flex-col shadow-2xl">
+            <!-- 弹窗头部 -->
+            <div class="flex items-center justify-between p-4 border-b border-gray-100">
+                <h3 class="text-lg font-bold text-gray-800">新手引导</h3>
+                <button onclick="closeUserGuide()" class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-times text-sm"></i>
+                </button>
+            </div>
+            
+            <!-- 引导内容 -->
+            <div class="flex-1 overflow-y-auto p-5">
+                <div class="space-y-6">
+                    <!-- 搜索功能 -->
+                    <div class="bg-orange-50 border border-orange-100 rounded-xl p-4">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-search text-orange-500 mr-2"></i>
+                            <h4 class="font-bold text-gray-800">搜索功能</h4>
+                        </div>
+                        <p class="text-sm text-gray-600 leading-relaxed">在顶部搜索框中输入配方名称，可以快速找到您需要的配方。支持模糊搜索，输入关键词即可。</p>
+                    </div>
+                    
+                    <!-- 分类筛选 -->
+                    <div class="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-filter text-orange-500 mr-2"></i>
+                            <h4 class="font-bold text-gray-800">分类筛选</h4>
+                        </div>
+                        <p class="text-sm text-gray-600 leading-relaxed">点击左侧分类图标可以按类别筛选配方，如面包、蛋糕、饼干等。</p>
+                    </div>
+                    
+                    <!-- 备份功能 -->
+                    <div class="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-cloud-upload-alt text-orange-500 mr-2"></i>
+                            <h4 class="font-bold text-gray-800">备份配方</h4>
+                        </div>
+                        <p class="text-sm text-gray-600 leading-relaxed">勾选需要备份的配方，然后点击右上角的"备份"按钮，即可将配方安全存储到云端。</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-4 border-t border-gray-100">
+                <button onclick="closeUserGuide()" class="w-full bg-gradient-to-r from-[#ff9f43] to-[#ff8c00] text-white font-bold py-3 rounded-xl shadow-lg shadow-orange-200 active:scale-95 transition-transform">
+                    我知道了
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟数据
+        let recipes = [
+            { id: 'recipe-1', name: '经典吐司面包', category: 'bread', date: '2天前', backedUp: true },
+            { id: 'recipe-2', name: '浓郁巧克力蛋糕', category: 'cake', date: '1周前', backedUp: false },
+            { id: 'recipe-3', name: '香草曲奇饼干', category: 'cookie', date: '3天前', backedUp: false },
+            { id: 'recipe-4', name: '草莓慕斯', category: 'dessert', date: '5天前', backedUp: false },
+            { id: 'recipe-5', name: '法式长棍面包', category: 'bread', date: '2周前', backedUp: false },
+            { id: 'recipe-6', name: '法式马卡龙', category: 'dessert', date: '4天前', backedUp: false }
+        ];
+
+        let selectedRecipes = new Set();
+        let currentCategory = 'all';
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            // 检查是否显示引导
+            if (!localStorage.getItem('backupTutorialShown')) {
+                // setTimeout(() => document.getElementById('userGuideModal').classList.remove('hidden'), 500);
+            }
+        });
+
+        function goBack() {
+            window.history.back();
+        }
+
+        // 分类筛选
+        function selectCategory(category, element) {
+            currentCategory = category;
+            
+            // 更新UI
+            document.querySelectorAll('.category-item').forEach(item => {
+                item.classList.remove('active');
+                // 恢复图标颜色
+                const icon = item.querySelector('.w-8');
+                const text = item.querySelector('.text-xs');
+                const count = item.querySelector('.text-[10px]');
+                
+                // Reset to default styling handled by CSS hover/active states
+            });
+            
+            element.classList.add('active');
+            
+            // 筛选配方
+            const cards = document.querySelectorAll('.recipe-card');
+            cards.forEach(card => {
+                if (category === 'all' || card.dataset.category === category) {
+                    card.classList.remove('hidden');
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+        }
+
+        // 搜索功能
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const keyword = e.target.value.toLowerCase();
+            const clearBtn = document.getElementById('clearSearch');
+            
+            if (keyword) {
+                clearBtn.classList.remove('hidden');
+            } else {
+                clearBtn.classList.add('hidden');
+            }
+            
+            const cards = document.querySelectorAll('.recipe-card');
+            cards.forEach(card => {
+                const name = card.querySelector('.font-bold').textContent.toLowerCase();
+                const category = card.dataset.category;
+                
+                const matchCategory = currentCategory === 'all' || category === currentCategory;
+                const matchKeyword = name.includes(keyword);
+                
+                if (matchCategory && matchKeyword) {
+                    card.classList.remove('hidden');
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+        });
+
+        function clearSearchInput() {
+            const input = document.getElementById('searchInput');
+            input.value = '';
+            input.dispatchEvent(new Event('input'));
+            input.focus();
+        }
+
+        // 选择功能
+        function toggleRecipeSelection(id, event) {
+            // 阻止冒泡
+            if (event) event.stopPropagation();
+            
+            // 如果点击的是整个卡片，需要手动切换checkbox状态
+            const checkbox = document.getElementById('checkbox-' + id);
+            if (!checkbox) return; // 已备份的没有checkbox
+            
+            // 如果事件源不是checkbox本身，切换checkbox
+            if (event && event.target !== checkbox && event.target.tagName !== 'INPUT') {
+                checkbox.checked = !checkbox.checked;
+            }
+            
+            const card = document.querySelector(`.recipe-card[data-recipe-id="${id}"]`);
+            
+            if (checkbox.checked) {
+                selectedRecipes.add(id);
+                if (card) card.classList.add('selected');
+            } else {
+                selectedRecipes.delete(id);
+                if (card) card.classList.remove('selected');
+            }
+            
+            updateSelectionUI();
+        }
+
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAllCheckbox');
+            const visibleCards = Array.from(document.querySelectorAll('.recipe-card:not(.hidden):not(.opacity-60)'));
+            
+            if (selectAll.checked) {
+                visibleCards.forEach(card => {
+                    const id = card.dataset.recipeId;
+                    const checkbox = document.getElementById('checkbox-' + id);
+                    if (checkbox) {
+                        checkbox.checked = true;
+                        selectedRecipes.add(id);
+                        card.classList.add('selected');
+                    }
+                });
+            } else {
+                visibleCards.forEach(card => {
+                    const id = card.dataset.recipeId;
+                    const checkbox = document.getElementById('checkbox-' + id);
+                    if (checkbox) {
+                        checkbox.checked = false;
+                        selectedRecipes.delete(id);
+                        card.classList.remove('selected');
+                    }
+                });
+            }
+            
+            updateSelectionUI();
+        }
+
+        function updateSelectionUI() {
+            const count = selectedRecipes.size;
+            document.getElementById('selectedCount').textContent = `已选 ${count}`;
+            
+            const btn = document.getElementById('confirmBackupBtn');
+            btn.disabled = count === 0;
+            if (count > 0) {
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+            
+            // 更新全选框状态
+            const visibleCards = Array.from(document.querySelectorAll('.recipe-card:not(.hidden):not(.opacity-60)'));
+            const selectAll = document.getElementById('selectAllCheckbox');
+            
+            if (visibleCards.length > 0 && visibleCards.every(c => selectedRecipes.has(c.dataset.recipeId))) {
+                selectAll.checked = true;
+                selectAll.indeterminate = false;
+            } else if (selectedRecipes.size > 0) {
+                selectAll.checked = false;
+                selectAll.indeterminate = true;
+            } else {
+                selectAll.checked = false;
+                selectAll.indeterminate = false;
+            }
+        }
+
+        function showConfirmBackupModal() {
+            if (selectedRecipes.size === 0) return;
+            
+            if (confirm(`确定要备份选中的 ${selectedRecipes.size} 个配方吗？`)) {
+                // 模拟备份过程
+                const btn = document.getElementById('confirmBackupBtn');
+                const originalContent = btn.innerHTML;
+                
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 备份中...';
+                
+                setTimeout(() => {
+                    alert('备份成功！');
+                    btn.innerHTML = originalContent;
+                    btn.disabled = false;
+                    
+                    // 重置选择
+                    selectedRecipes.clear();
+                    updateSelectionUI();
+                    document.querySelectorAll('.recipe-checkbox').forEach(cb => cb.checked = false);
+                    document.querySelectorAll('.recipe-card').forEach(c => c.classList.remove('selected'));
+                    document.getElementById('selectAllCheckbox').checked = false;
+                    document.getElementById('selectAllCheckbox').indeterminate = false;
+                    
+                }, 1500);
+            }
+        }
+
+        function closeUserGuide() {
+            document.getElementById('userGuideModal').classList.add('hidden');
+            localStorage.setItem('backupTutorialShown', 'true');
+        }
+    </script>
+</body>
+</html>

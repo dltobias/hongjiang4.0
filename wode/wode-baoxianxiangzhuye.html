@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>已备份配方 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Cookpad Design System */
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+            --text-main: #333333;
+            --text-sub: #8b8b8b;
+            --bg-light: #f7f7f5;
+            --bg-white: #ffffff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-main);
+            -webkit-tap-highlight-color: transparent;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* 滚动条美化 */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 3px;
+        }
+        
+        /* 顶部导航 */
+        header {
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        /* 分类栏样式 */
+        .category-sidebar {
+            width: 90px;
+            background-color: #ffffff;
+            border-right: 1px solid #f0f0f0;
+        }
+        
+        .category-item {
+            transition: all 0.2s ease;
+            margin: 4px 8px;
+            border-radius: 8px;
+            border: 1px solid transparent;
+        }
+        
+        .category-item:hover {
+            background-color: #f7f7f5;
+        }
+        
+        .category-item.active {
+            background-color: #fff7ed;
+            border-color: #ffedd5;
+            color: var(--primary-dark);
+        }
+        
+        .category-item.active .text-gray-800 {
+            color: var(--primary-dark) !important;
+            font-weight: 600;
+        }
+        
+        .category-item.active i {
+            color: var(--primary-dark) !important;
+        }
+        
+        /* 配方卡片样式 - 标准版 (与备份页一致) */
+        .recipe-card {
+            margin-bottom: 12px;
+            position: relative;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            border: 1px solid #f0f0f0;
+        }
+
+        .swipe-container {
+            position: relative;
+            overflow: hidden;
+            border-radius: 12px;
+        }
+        
+        .swipe-content {
+            position: relative;
+            z-index: 2;
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            background: white;
+            padding: 12px; /* Standard padding p-3 */
+        }
+        
+        .swipe-content .flex.items-center.space-x-3 img {
+            width: 56px;  /* Standard w-14 */
+            height: 56px; /* Standard h-14 */
+            border-radius: 8px;
+        }
+        
+        .swipe-content h3 {
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        
+        .swipe-content .text-xs {
+            font-size: 12px;
+        }
+        
+        .swipe-actions {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            z-index: 1;
+            border-radius: 0 12px 12px 0;
+        }
+        
+        .swipe-action-btn {
+            height: 100%;
+            min-width: 70px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: 500;
+            border: none;
+        }
+        
+        .swipe-action-btn.delete { background: #ef4444; }
+        .swipe-action-btn.edit { background: #3b82f6; }
+        .swipe-action-btn.duplicate { background: #10b981; }
+
+        /* 滑动状态 */
+        .recipe-card.swiping .swipe-content { transition: none; }
+        .recipe-card.swiped .swipe-content { transform: translateX(-210px); }
+
+        /* 备份状态显示区域 - 极简条 */
+        .backup-status-strip {
+            background: var(--safe-light);
+            border-radius: 4px;
+            height: 4px;
+            width: 100%;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .backup-progress-fill {
+            background: linear-gradient(90deg, #9ca3af 0%, #374151 100%); /* 灰 -> 深灰 */
+        }
+
+        /* 按钮样式 */
+        .btn-primary {
+            background: linear-gradient(135deg, #ff9f43 0%, #ff8c00 100%);
+            color: white;
+            font-weight: 600;
+            border-radius: 99px;
+            box-shadow: 0 4px 12px rgba(255, 140, 0, 0.2);
+            transition: all 0.2s;
+        }
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        /* 多选模式 */
+        .multi-select-toolbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: #ffffff;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            z-index: 1000;
+            transform: translateY(-100%);
+            transition: transform 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .multi-select-toolbar.active {
+            transform: translateY(0);
+        }
+
+        .recipe-card.selected {
+            transform: scale(0.98);
+        }
+        .recipe-card.selected .swipe-content {
+            border-color: var(--primary-orange);
+            background-color: #fff7ed;
+        }
+
+        .recipe-checkbox {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 22px;
+            height: 22px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 50%;
+            display: none;
+            z-index: 10;
+        }
+        
+        .multi-select-active .recipe-checkbox {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .recipe-checkbox-input {
+            appearance: none;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        .recipe-checkbox-input:checked {
+            background-color: var(--primary-orange);
+            border-color: var(--primary-orange);
+            background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
+        }
+
+        /* 选中计数器 */
+        .selection-counter {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 999;
+            transition: transform 0.3s;
+        }
+        .selection-counter.active {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* 弹窗通用样式 */
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+        }
+
+        /* 新手引导 - 已移除 */
+    </style>
+</head>
+<body>
+    <!-- 顶部状态栏 -->
+    <header class="flex-none px-4 py-3 flex justify-between items-center bg-white/95 backdrop-blur-sm border-b border-gray-50 z-30">
+        <div class="flex items-center space-x-3">
+            <button onclick="goBack()" class="text-gray-600 hover:text-orange-500 transition-colors w-8 h-8 flex items-center justify-center rounded-full active:bg-gray-100">
+                <i class="fas fa-arrow-left text-lg"></i>
+            </button>
+            <h1 class="text-lg font-bold text-gray-900">已备份配方</h1>
+        </div>
+        <!-- 顶部操作按钮 - 已移除 -->
+    </header>
+
+    <!-- 顶部功能区容器 -->
+    <div class="flex-none">
+        <!-- 搜索栏 + 状态 -->
+        <div class="px-4 py-2">
+            <div class="relative search-input-wrapper flex items-center">
+                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <input type="text" placeholder="搜索已备份配方..." 
+                       class="w-full bg-transparent rounded-lg pl-10 pr-24 py-2.5 text-sm text-gray-700 focus:outline-none placeholder-gray-500"
+                       id="searchInput">
+                <button class="absolute right-20 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 hidden w-6 h-6 flex items-center justify-center rounded-full" 
+                        id="clearSearch" 
+                        onclick="clearSearchInput()">
+                    <i class="fas fa-times text-xs"></i>
+                </button>
+                
+                <!-- 嵌入式状态显示 -->
+                <div class="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
+                    <div class="flex flex-col items-end">
+                        <span class="text-[10px] text-gray-400 font-medium" id="usedCountText">24/50</span>
+                        <div class="w-12 h-1 bg-gray-200 rounded-full overflow-hidden">
+                            <div class="backup-progress-fill h-full rounded-full transition-all duration-500" id="backupProgressFill" style="width: 48%"></div>
+                        </div>
+                    </div>
+                    <i class="fas fa-cloud text-gray-300 text-sm"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 悬浮按钮 (Backup FAB) -->
+    <div class="fixed bottom-8 right-5 z-[70]">
+        <button onclick="goToBackup()" class="w-14 h-14 rounded-full bg-[#374151] text-white shadow-lg flex items-center justify-center transition-transform duration-300 active:scale-90 shadow-gray-500/40">
+            <i class="fas fa-cloud-upload-alt text-xl"></i>
+        </button>
+    </div>
+
+    <!-- 多选模式工具栏 -->
+    <div class="multi-select-toolbar" id="multiSelectToolbar">
+        <div class="flex items-center">
+            <button class="text-gray-500 mr-4" onclick="exitMultiSelectMode()">取消</button>
+            <span class="font-bold text-gray-800">选择配方</span>
+        </div>
+        <div class="flex items-center space-x-4">
+            <label class="flex items-center space-x-2 text-sm text-gray-600">
+                <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()" class="rounded text-orange-500 focus:ring-orange-500">
+                <span>全选</span>
+            </label>
+            <div class="flex space-x-2">
+                <button class="w-8 h-8 rounded-full bg-red-50 text-red-500 flex items-center justify-center" onclick="batchDelete()">
+                    <i class="fas fa-trash-alt text-sm"></i>
+                </button>
+                <button class="w-8 h-8 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center" onclick="batchCopy()">
+                    <i class="fas fa-copy text-sm"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主内容区域 - 左右两栏布局 -->
+    <div class="flex main-content border-t border-gray-100 flex-1 min-h-0">
+        <!-- 左侧分类栏 -->
+        <div class="category-sidebar overflow-y-auto custom-scrollbar py-2" id="categorySidebar">
+            <!-- 分类项将通过JS动态生成 -->
+            <div class="category-item active px-2 py-3 text-center cursor-pointer" data-category="all" onclick="selectCategory('all', this)">
+                <div class="mb-1"><i class="fas fa-th text-gray-400"></i></div>
+                <div class="text-xs text-gray-500">全部</div>
+            </div>
+            <!-- 更多分类... -->
+            
+            <!-- 分类设置按钮 -->
+            <div class="mt-4 px-2">
+                <button onclick="showCategorySettings()" class="w-full py-2 rounded-lg bg-gray-50 text-gray-500 hover:bg-gray-100">
+                    <i class="fas fa-cog text-xs"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- 右侧配方列表 -->
+        <div class="flex-1 px-4 py-3 overflow-y-auto custom-scrollbar bg-gray-50" id="recipeList">
+            <!-- 配方卡片列表 -->
+            <div class="space-y-3">
+                <!-- 配方卡片示例 (JS会动态管理这些) -->
+                <div class="recipe-card" data-category="bread" data-recipe-id="1" data-recipe-name="经典吐司面包">
+                    <div class="swipe-container">
+                        <div class="swipe-actions">
+                            <button class="swipe-action-btn delete" onclick="deleteRecipe(1, '经典吐司面包')">
+                                <i class="fas fa-trash mb-1"></i>删除
+                            </button>
+                            <button class="swipe-action-btn edit" onclick="editRecipe(1, '经典吐司面包')">
+                                <i class="fas fa-edit mb-1"></i>编辑
+                            </button>
+                            <button class="swipe-action-btn duplicate" onclick="duplicateRecipe(1, '经典吐司面包')">
+                                <i class="fas fa-copy mb-1"></i>复制
+                            </button>
+                        </div>
+                        <div class="swipe-content" onclick="openRecipeDetail('经典吐司面包')">
+                            <!-- 多选复选框 -->
+                            <div class="recipe-checkbox" onclick="event.stopPropagation(); toggleRecipeSelection(this)">
+                                <input type="checkbox" class="recipe-checkbox-input">
+                            </div>
+                            
+                            <div class="flex items-center space-x-3">
+                                <img src="https://images.unsplash.com/photo-1509440159596-0249088772ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=120&q=80" 
+                                     class="w-14 h-14 rounded-lg object-cover bg-gray-100" alt="经典吐司面包">
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="text-sm font-bold text-gray-900 truncate mb-1">经典吐司面包</h3>
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center text-xs text-gray-400">
+                                            <i class="far fa-clock mr-1"></i> 2天前
+                                        </div>
+                                        <span class="inline-block px-2 py-0.5 bg-orange-50 text-orange-600 text-xs rounded border border-orange-100">面包</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recipe-card" data-category="cake" data-recipe-id="2" data-recipe-name="浓郁巧克力蛋糕">
+                    <div class="swipe-container">
+                        <div class="swipe-actions">
+                            <button class="swipe-action-btn delete" onclick="deleteRecipe(2, '浓郁巧克力蛋糕')"><i class="fas fa-trash mb-1"></i>删除</button>
+                            <button class="swipe-action-btn edit" onclick="editRecipe(2, '浓郁巧克力蛋糕')"><i class="fas fa-edit mb-1"></i>编辑</button>
+                            <button class="swipe-action-btn duplicate" onclick="duplicateRecipe(2, '浓郁巧克力蛋糕')"><i class="fas fa-copy mb-1"></i>复制</button>
+                        </div>
+                        <div class="swipe-content" onclick="openRecipeDetail('浓郁巧克力蛋糕')">
+                            <div class="recipe-checkbox" onclick="event.stopPropagation(); toggleRecipeSelection(this)"><input type="checkbox" class="recipe-checkbox-input"></div>
+                            <div class="flex items-center space-x-3">
+                                <img src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?ixlib=rb-4.0.3&auto=format&fit=crop&w=120&q=80" class="w-14 h-14 rounded-lg object-cover bg-gray-100">
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="text-sm font-bold text-gray-900 truncate mb-1">浓郁巧克力蛋糕</h3>
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center text-xs text-gray-400"><i class="far fa-clock mr-1"></i> 1周前</div>
+                                        <span class="inline-block px-2 py-0.5 bg-pink-50 text-pink-600 text-xs rounded border border-pink-100">蛋糕</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="recipe-card" data-category="cookie" data-recipe-id="3" data-recipe-name="香草曲奇饼干">
+                    <div class="swipe-container">
+                        <div class="swipe-actions">
+                            <button class="swipe-action-btn delete" onclick="deleteRecipe(3, '香草曲奇饼干')"><i class="fas fa-trash mb-1"></i>删除</button>
+                            <button class="swipe-action-btn edit" onclick="editRecipe(3, '香草曲奇饼干')"><i class="fas fa-edit mb-1"></i>编辑</button>
+                            <button class="swipe-action-btn duplicate" onclick="duplicateRecipe(3, '香草曲奇饼干')"><i class="fas fa-copy mb-1"></i>复制</button>
+                        </div>
+                        <div class="swipe-content" onclick="openRecipeDetail('香草曲奇饼干')">
+                            <div class="recipe-checkbox" onclick="event.stopPropagation(); toggleRecipeSelection(this)"><input type="checkbox" class="recipe-checkbox-input"></div>
+                            <div class="flex items-center space-x-3">
+                                <img src="https://images.unsplash.com/photo-1499636136210-6f4ee915583e?ixlib=rb-4.0.3&auto=format&fit=crop&w=120&q=80" class="w-14 h-14 rounded-lg object-cover bg-gray-100">
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="text-sm font-bold text-gray-900 truncate mb-1">香草曲奇饼干</h3>
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center text-xs text-gray-400"><i class="far fa-clock mr-1"></i> 3天前</div>
+                                        <span class="inline-block px-2 py-0.5 bg-blue-50 text-blue-600 text-xs rounded border border-blue-100">饼干</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recipe-card" data-category="dessert" data-recipe-id="4" data-recipe-name="草莓慕斯">
+                    <div class="swipe-container">
+                        <div class="swipe-actions">
+                            <button class="swipe-action-btn delete" onclick="deleteRecipe(4, '草莓慕斯')"><i class="fas fa-trash mb-1"></i>删除</button>
+                            <button class="swipe-action-btn edit" onclick="editRecipe(4, '草莓慕斯')"><i class="fas fa-edit mb-1"></i>编辑</button>
+                            <button class="swipe-action-btn duplicate" onclick="duplicateRecipe(4, '草莓慕斯')"><i class="fas fa-copy mb-1"></i>复制</button>
+                        </div>
+                        <div class="swipe-content" onclick="openRecipeDetail('草莓慕斯')">
+                            <div class="recipe-checkbox" onclick="event.stopPropagation(); toggleRecipeSelection(this)"><input type="checkbox" class="recipe-checkbox-input"></div>
+                            <div class="flex items-center space-x-3">
+                                <img src="https://images.unsplash.com/photo-1551024506-0bccd828d307?ixlib=rb-4.0.3&auto=format&fit=crop&w=120&q=80" class="w-14 h-14 rounded-lg object-cover bg-gray-100">
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="text-sm font-bold text-gray-900 truncate mb-1">草莓慕斯</h3>
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center text-xs text-gray-400"><i class="far fa-clock mr-1"></i> 5天前</div>
+                                        <span class="inline-block px-2 py-0.5 bg-green-50 text-green-600 text-xs rounded border border-green-100">甜点</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 悬浮按钮组 - 已移除 -->
+
+    <!-- 弹窗 (保持原有HTML结构，仅微调样式) -->
+    <!-- 配方分类管理弹窗 -->
+    <div id="recipeCategoryModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-2xl mx-4 w-full max-w-md h-[80vh] flex flex-col shadow-2xl">
+            <div class="flex items-center justify-between p-4 border-b border-gray-100">
+                <h3 class="text-lg font-bold text-gray-800">分类管理</h3>
+                <button onclick="closeRecipeCategoryModal()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4" id="recipeCategoryList">
+                <!-- JS生成 -->
+            </div>
+            <div class="p-4 border-t border-gray-100">
+                <button onclick="addNewRecipeCategory()" class="w-full btn-primary py-3">添加新分类</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 编辑配方分类弹窗 -->
+    <div id="editRecipeCategoryModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-2xl p-6 mx-4 w-full max-w-sm shadow-2xl">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">编辑分类</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">名称</label>
+                    <input type="text" id="recipeCategoryName" class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:border-orange-400">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">图标</label>
+                    <select id="recipeCategoryIcon" class="w-full px-4 py-2 rounded-lg border border-gray-200">
+                        <option value="fa-bread-slice">面包</option>
+                        <option value="fa-birthday-cake">蛋糕</option>
+                        <option value="fa-cookie-bite">饼干</option>
+                        <option value="fa-ice-cream">甜点</option>
+                        <option value="fa-coffee">饮品</option>
+                        <option value="fa-utensils">通用</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">颜色</label>
+                    <select id="recipeCategoryColor" class="w-full px-4 py-2 rounded-lg border border-gray-200">
+                        <option value="orange">橙色</option>
+                        <option value="blue">蓝色</option>
+                        <option value="green">绿色</option>
+                        <option value="pink">粉色</option>
+                        <option value="purple">紫色</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-3 mt-6">
+                <button onclick="closeEditRecipeCategoryModal()" class="px-5 py-2 rounded-lg bg-gray-100 text-gray-600 font-medium">取消</button>
+                <button onclick="saveRecipeCategory()" class="px-5 py-2 rounded-lg bg-orange-500 text-white font-medium shadow-md">保存</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 删除确认弹窗 -->
+    <div id="deleteRecipeCategoryModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-2xl p-6 mx-4 w-full max-w-sm shadow-2xl">
+            <h3 class="text-lg font-bold text-gray-800 mb-2">确认删除</h3>
+            <p class="text-gray-600 mb-6">确定要删除分类 "<span id="deleteRecipeCategoryName" class="font-bold"></span>" 吗？</p>
+            <div class="flex justify-end space-x-3">
+                <button onclick="closeDeleteRecipeCategoryModal()" class="px-5 py-2 rounded-lg bg-gray-100 text-gray-600 font-medium">取消</button>
+                <button onclick="confirmDeleteRecipeCategory()" class="px-5 py-2 rounded-lg bg-red-500 text-white font-medium shadow-md">删除</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 备份相关弹窗 (保持逻辑) -->
+    <div id="backupSelectionModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center backdrop-blur-sm">
+        <!-- 内容保持原有逻辑，仅更新样式为 rounded-2xl, shadow-2xl -->
+        <div class="backup-modal bg-white rounded-2xl mx-4 w-full max-w-md flex flex-col shadow-2xl">
+             <div class="flex items-center justify-between p-4 border-b border-gray-100">
+                <h3 class="text-lg font-bold text-gray-800">选择备份内容</h3>
+                <button onclick="closeBackupSelectionModal()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-4 space-y-3">
+                <div class="flex items-center justify-between p-3 border border-gray-100 rounded-lg hover:bg-gray-50 cursor-pointer" onclick="toggleBackupOption('recipes')">
+                    <div class="flex items-center"><input type="checkbox" id="backup-recipes" class="mr-3 text-orange-500 focus:ring-orange-500" checked><span>配方数据</span></div>
+                    <span class="text-xs text-gray-400">2.5MB</span>
+                </div>
+                 <div class="flex items-center justify-between p-3 border border-gray-100 rounded-lg hover:bg-gray-50 cursor-pointer" onclick="toggleBackupOption('images')">
+                    <div class="flex items-center"><input type="checkbox" id="backup-images" class="mr-3 text-orange-500 focus:ring-orange-500"><span>图片资源</span></div>
+                    <span class="text-xs text-gray-400">15.2MB</span>
+                </div>
+                <!-- 更多选项... -->
+            </div>
+            <div class="p-4 border-t border-gray-100 flex space-x-3">
+                <button onclick="closeBackupSelectionModal()" class="flex-1 py-3 rounded-xl bg-gray-100 text-gray-600 font-bold">取消</button>
+                <button onclick="startBackupProcess()" class="flex-1 py-3 rounded-xl bg-orange-500 text-white font-bold shadow-lg">开始备份</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="backupProgressModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-2xl p-8 mx-4 w-full max-w-sm text-center shadow-2xl">
+            <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-spinner fa-spin text-blue-500 text-2xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-800 mb-2">正在备份...</h3>
+            <div class="w-full bg-gray-100 rounded-full h-2 mb-2">
+                <div id="backupProgressBar" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+            <p id="backupProgressText" class="text-sm text-gray-500">准备中...</p>
+        </div>
+    </div>
+    
+    <div id="backupCompleteModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-2xl p-8 mx-4 w-full max-w-sm text-center shadow-2xl">
+            <div class="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-check text-green-500 text-2xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-800 mb-2">备份完成</h3>
+            <p class="text-gray-500 mb-6 text-sm">您的配方数据已安全备份。</p>
+            <div class="bg-gray-50 rounded-lg p-3 mb-6 text-sm text-left">
+                <div class="flex justify-between mb-1"><span class="text-gray-500">文件:</span> <span class="font-medium" id="backupFileName">backup.zip</span></div>
+                <div class="flex justify-between"><span class="text-gray-500">大小:</span> <span class="font-medium" id="backupFileSize">0MB</span></div>
+            </div>
+            <button onclick="downloadBackupFile()" class="w-full btn-primary py-3">下载文件</button>
+        </div>
+    </div>
+
+    <!-- 选中项目统计栏 -->
+    <div class="selection-counter" id="selectionCounter">
+        <i class="fas fa-check-circle mr-2"></i>
+        <span id="selectedCount">0</span> 项已选中
+    </div>
+    
+    <!-- 新手引导覆盖层 - 已移除 -->
+
+    <!-- JS Logic -->
+    <script>
+        // 核心数据
+        const recipeCategories = [
+            { id: 'all', name: '全部', count: 24, icon: 'fa-th', color: 'gray' },
+            { id: 'bread', name: '面包', count: 8, icon: 'fa-bread-slice', color: 'orange' },
+            { id: 'cake', name: '蛋糕', count: 6, icon: 'fa-birthday-cake', color: 'pink' },
+            { id: 'western', name: '西点', count: 4, icon: 'fa-cookie-bite', color: 'blue' },
+            { id: 'chinese', name: '中点', count: 3, icon: 'fa-utensils', color: 'red' },
+            { id: 'fermented', name: '发酵面制品', count: 2, icon: 'fa-layer-group', color: 'green' }
+        ];
+
+        // 备份配置
+        const backupStatusConfig = {
+            totalCapacity: 50,
+            currentUsed: 24,
+            warningThreshold: 0.8,
+            dangerThreshold: 0.95
+        };
+
+        const backupOptions = {
+            recipes: { size: 2.5, checked: true },
+            categories: { size: 0.1, checked: true },
+            preferences: { size: 0.05, checked: false },
+            images: { size: 15.2, checked: false },
+            history: { size: 0.3, checked: false }
+        };
+
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSidebarCategories();
+            initBackupStatusDisplay();
+            initSwipeFeature();
+            initLongPressFeature();
+            
+            // 搜索功能
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    const clearBtn = document.getElementById('clearSearch');
+                    if (this.value) clearBtn.classList.remove('hidden');
+                    else clearBtn.classList.add('hidden');
+                    searchRecipes(this.value);
+                });
+            }
+        });
+
+        // 基础导航
+        function goBack() { window.location.href = 'wodezhuye.html'; }
+        function goToBackup() { window.location.href = 'baoxianxiang-beifenye.html'; }
+        function openRecipeDetail(name) { 
+            // 跳转到详情页，并传递配方名称参数
+            window.location.href = `baoxiangxiang-xiangqing.html?name=${encodeURIComponent(name)}`; 
+        }
+        
+        // 搜索逻辑
+        function searchRecipes(query) {
+            const cards = document.querySelectorAll('.recipe-card');
+            cards.forEach(card => {
+                const name = card.dataset.recipeName.toLowerCase();
+                if (name.includes(query.toLowerCase())) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+        function clearSearchInput() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('clearSearch').classList.add('hidden');
+            searchRecipes('');
+        }
+
+        // 分类管理
+        function updateSidebarCategories() {
+            const sidebar = document.getElementById('categorySidebar');
+            // 保留最后一个设置按钮
+            const settingBtn = sidebar.lastElementChild;
+            sidebar.innerHTML = '';
+            
+            recipeCategories.forEach(cat => {
+                const div = document.createElement('div');
+                div.className = `category-item px-2 py-3 text-center cursor-pointer ${cat.id === 'all' ? 'active' : ''}`;
+                div.dataset.category = cat.id;
+                div.onclick = function() { selectCategory(cat.id, this); };
+                div.innerHTML = `
+                    <div class="mb-1"><i class="fas ${cat.icon} text-${cat.color}-500"></i></div>
+                    <div class="text-xs ${cat.id === 'all' ? 'text-gray-800 font-bold' : 'text-gray-500'}">${cat.name}</div>
+                `;
+                sidebar.appendChild(div);
+            });
+            sidebar.appendChild(settingBtn);
+        }
+
+        function selectCategory(id, el) {
+            document.querySelectorAll('.category-item').forEach(i => i.classList.remove('active'));
+            el.classList.add('active');
+            
+            const cards = document.querySelectorAll('.recipe-card');
+            cards.forEach(card => {
+                if (id === 'all' || card.dataset.category === id) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        // 弹窗控制
+        function showCategorySettings() { document.getElementById('recipeCategoryModal').classList.remove('hidden'); }
+        function closeRecipeCategoryModal() { document.getElementById('recipeCategoryModal').classList.add('hidden'); }
+        
+        function addNewRecipeCategory() { document.getElementById('editRecipeCategoryModal').classList.remove('hidden'); }
+        function closeEditRecipeCategoryModal() { document.getElementById('editRecipeCategoryModal').classList.add('hidden'); }
+        
+        function showBatchImportSheet() { alert('批量导入功能即将上线'); }
+        
+        // 备份状态
+        function initBackupStatusDisplay() {
+            const pct = (backupStatusConfig.currentUsed / backupStatusConfig.totalCapacity) * 100;
+            // 更新嵌入式状态
+            document.getElementById('usedCountText').textContent = `${backupStatusConfig.currentUsed}/${backupStatusConfig.totalCapacity}`;
+            document.getElementById('backupProgressFill').style.width = `${pct}%`;
+        }
+
+        // 左滑功能 (简化版，保留核心逻辑)
+        function initSwipeFeature() {
+            document.querySelectorAll('.swipe-content').forEach(content => {
+                let startX, currentX;
+                content.addEventListener('touchstart', e => {
+                    startX = e.touches[0].clientX;
+                    content.closest('.recipe-card').classList.add('swiping');
+                }, {passive: true});
+                
+                content.addEventListener('touchmove', e => {
+                    currentX = e.touches[0].clientX;
+                    if (currentX - startX < 0) { // 左滑
+                        const val = Math.max(currentX - startX, -210);
+                        content.style.transform = `translateX(${val}px)`;
+                    }
+                }, {passive: true});
+                
+                content.addEventListener('touchend', e => {
+                    const card = content.closest('.recipe-card');
+                    card.classList.remove('swiping');
+                    if (currentX - startX < -80) {
+                        card.classList.add('swiped');
+                        content.style.transform = `translateX(-210px)`;
+                    } else {
+                        card.classList.remove('swiped');
+                        content.style.transform = `translateX(0)`;
+                    }
+                }, {passive: true});
+            });
+        }
+
+        // 卡片操作
+        function deleteRecipe(id, name) {
+            if(confirm(`确定删除 ${name}?`)) {
+                const card = document.querySelector(`.recipe-card[data-recipe-id="${id}"]`);
+                if(card) card.remove();
+                backupStatusConfig.currentUsed--;
+                initBackupStatusDisplay();
+            }
+        }
+        function duplicateRecipe(id, name) {
+            alert(`已复制 ${name}`);
+            // 实际逻辑应克隆DOM并插入
+        }
+        function editRecipe(id, name) {
+            alert(`编辑 ${name}`);
+        }
+
+        // 多选与长按
+        let isMultiSelect = false;
+        function initLongPressFeature() {
+            let timer;
+            document.querySelectorAll('.swipe-content').forEach(content => {
+                content.addEventListener('touchstart', () => {
+                    timer = setTimeout(() => {
+                        if(!isMultiSelect) enterMultiSelectMode();
+                    }, 600);
+                }, {passive: true});
+                content.addEventListener('touchend', () => clearTimeout(timer));
+                content.addEventListener('touchmove', () => clearTimeout(timer));
+            });
+        }
+
+        function enterMultiSelectMode() {
+            isMultiSelect = true;
+            document.body.classList.add('multi-select-active');
+            document.getElementById('multiSelectToolbar').classList.add('active');
+            document.getElementById('selectionCounter').classList.add('active');
+            // 关闭所有侧滑
+            document.querySelectorAll('.recipe-card.swiped').forEach(c => {
+                c.classList.remove('swiped');
+                c.querySelector('.swipe-content').style.transform = 'translateX(0)';
+            });
+        }
+
+        function exitMultiSelectMode() {
+            isMultiSelect = false;
+            document.body.classList.remove('multi-select-active');
+            document.getElementById('multiSelectToolbar').classList.remove('active');
+            document.getElementById('selectionCounter').classList.remove('active');
+            document.querySelectorAll('.recipe-checkbox-input').forEach(cb => cb.checked = false);
+            document.querySelectorAll('.recipe-card').forEach(c => c.classList.remove('selected'));
+            updateSelectedCount();
+        }
+
+        function toggleRecipeSelection(el) {
+            if(!isMultiSelect) return;
+            const checkbox = el.querySelector('input');
+            const card = el.closest('.recipe-card');
+            
+            // 点击的是div，需要手动切换checkbox
+            if(el !== event.target && event.target.type !== 'checkbox') {
+                 checkbox.checked = !checkbox.checked;
+            }
+            
+            if(checkbox.checked) card.classList.add('selected');
+            else card.classList.remove('selected');
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() {
+            const count = document.querySelectorAll('.recipe-checkbox-input:checked').length;
+            document.getElementById('selectedCount').textContent = count;
+        }
+
+        function toggleSelectAll() {
+            const all = document.getElementById('selectAllCheckbox').checked;
+            document.querySelectorAll('.recipe-checkbox-input').forEach(cb => {
+                cb.checked = all;
+                const card = cb.closest('.recipe-card');
+                if(all) card.classList.add('selected');
+                else card.classList.remove('selected');
+            });
+            updateSelectedCount();
+        }
+        
+        function batchDelete() {
+            const count = document.querySelectorAll('.recipe-checkbox-input:checked').length;
+            if(count && confirm(`删除选中的 ${count} 项?`)) {
+                document.querySelectorAll('.recipe-checkbox-input:checked').forEach(cb => {
+                    cb.closest('.recipe-card').remove();
+                });
+                exitMultiSelectMode();
+            }
+        }
+        function batchCopy() {
+             const count = document.querySelectorAll('.recipe-checkbox-input:checked').length;
+             if(count) {
+                 alert(`已复制 ${count} 项`);
+                 exitMultiSelectMode();
+             }
+        }
+
+        // 备份流程
+        function showBackupSelectionModal() { document.getElementById('backupSelectionModal').classList.remove('hidden'); }
+        function closeBackupSelectionModal() { document.getElementById('backupSelectionModal').classList.add('hidden'); }
+        
+        function toggleBackupOption(key) {
+             const cb = document.getElementById(`backup-${key}`);
+             if(cb) cb.checked = !cb.checked;
+        }
+        
+        function startBackupProcess() {
+            closeBackupSelectionModal();
+            document.getElementById('backupProgressModal').classList.remove('hidden');
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 10;
+                document.getElementById('backupProgressBar').style.width = `${progress}%`;
+                if(progress >= 100) {
+                    clearInterval(interval);
+                    document.getElementById('backupProgressModal').classList.add('hidden');
+                    document.getElementById('backupCompleteModal').classList.remove('hidden');
+                }
+            }, 200);
+        }
+        
+        function downloadBackupFile() {
+            alert('开始下载...');
+            document.getElementById('backupCompleteModal').classList.add('hidden');
+        }
+
+        // 新手引导 (已移除)
+    </script>
+</body>
+</html>

@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>通用设置 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Cookpad 风格统一配置 */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f7f7f5; /* var(--bg-light) */
+            color: #333333; /* var(--text-main) */
+            -webkit-tap-highlight-color: transparent;
+            padding-bottom: 40px;
+        }
+        
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+            --text-main: #333333;
+            --text-sub: #8b8b8b;
+            --bg-light: #f7f7f5;
+        }
+
+        /* 账号切换列表样式 */
+        .account-section { margin: 12px 0 8px; display:flex; align-items:center; justify-content:space-between; }
+        .account-section .title { font-weight:600; font-size:13px; color:var(--text-main); }
+        .account-section .tools { display:flex; gap:8px; }
+        .account-section .tool-btn { font-size:12px; color:var(--text-sub); border:1px solid #eee; padding:4px 8px; border-radius:6px; background:#fff; cursor:pointer;}
+        
+        .account-list { display:flex; flex-direction:column; gap:8px; max-height:200px; overflow-y:auto; padding-right:4px; }
+        .account-item { display:flex; align-items:center; justify-content:space-between; background:#f9f9f9; border:1px solid transparent; border-radius:12px; padding:8px 12px; }
+        .account-item .info { display:flex; align-items:center; gap:10px; color:var(--text-main); }
+        .account-item .info .avatar { width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,#ff9f43,#ff8c00); display:flex; align-items:center; justify-content:center; color:#fff; font-size:14px; }
+        .account-item .sub { font-size:12px; color:var(--text-sub); }
+        .account-item .actions { display:flex; align-items:center; gap:8px; }
+        .account-item .actions .delete { border:none; background:transparent; color:#9CA3AF; font-size:16px; cursor:pointer;}
+        .account-item .actions .delete:hover { color:#ef4444; }
+        .empty-state { background:#f9f9f9; border:1px dashed #CBD5E1; border-radius:12px; padding:12px; text-align:center; color:var(--text-sub); font-size:12px; }
+
+        /* 字体层级工具类 */
+        .text-h1 { font-size: 22px; font-weight: 700; color: var(--text-main); letter-spacing: -0.5px; }
+        .text-h2 { font-size: 18px; font-weight: 600; color: var(--text-main); }
+        .text-body-main { font-size: 15px; font-weight: 500; color: var(--text-main); }
+        .text-body-sub { font-size: 13px; color: var(--text-sub); font-weight: 400; }
+        .text-caption { font-size: 12px; color: var(--text-sub); font-weight: 600; letter-spacing: 0.5px; }
+
+        /* 顶部导航 */
+        header {
+            background-color: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        /* 列表容器 */
+        .list-group {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+            border: 1px solid #eeeeee;
+            overflow: hidden;
+        }
+
+        /* 列表项 */
+        .list-item {
+            display: flex !important;
+            flex-direction: row !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            padding: 16px;
+            background: white;
+            transition: background-color 0.2s;
+            border-bottom: 1px solid #f9f9f9;
+            width: 100%;
+        }
+        .list-item:last-child { border-bottom: none; }
+        .list-item:active { background-color: #f9f9f9; }
+
+        .list-icon-box {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 14px;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        /* 状态标签 */
+        .status-badge {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .status-badge.success { background-color: #f0fdf4; color: #16a34a; border: 1px solid #dcfce7; }
+        .status-badge.warning { background-color: #fff7ed; color: #c2410c; border: 1px solid #ffedd5; }
+        .status-badge.inactive { background-color: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; }
+
+        /* 按钮样式 */
+        .btn-action {
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .btn-primary { background: #fff7ed; color: #ea580c; border: 1px solid #fed7aa; }
+        .btn-primary:active { background: #fed7aa; }
+        .btn-danger { background: #fef2f2; color: #dc2626; border: 1px solid #fee2e2; }
+        .btn-danger:active { background: #fee2e2; }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(4px);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s, transform 0.2s;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+        /* Modal */
+        .modal { position: fixed; inset: 0; z-index: 3000; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .modal.show { display: flex; }
+        .modal-mask { position: absolute; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(2px); }
+        .modal-card { 
+            position: relative; 
+            background: white; 
+            border-radius: 16px; 
+            width: 100%; 
+            max-width: 320px; 
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            overflow: hidden;
+            animation: modalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes modalPop {
+            0% { transform: scale(0.95); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Pattern Lock */
+        .pattern-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; justify-content: center; justify-items: center; padding: 20px; margin: 0 auto; width: fit-content; }
+        .pattern-dot { width: 48px; height: 48px; border-radius: 50%; background: #f3f4f6; position: relative; transition: all 0.2s; }
+        .pattern-dot::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 12px; height: 12px; background: #d1d5db; border-radius: 50%; transition: all 0.2s; }
+        .pattern-dot.active { background: #fff7ed; }
+        .pattern-dot.active::after { background: var(--primary-dark); transform: translate(-50%, -50%) scale(1.2); }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <header class="sticky top-0 z-30 px-4 py-3 flex items-center justify-between">
+        <button onclick="window.location.href='wodezhuye.html'" class="text-gray-500 hover:text-gray-800 transition-colors w-9 h-9 flex items-center justify-center rounded-full active:bg-gray-100">
+            <i class="fas fa-arrow-left text-lg"></i>
+        </button>
+        <h1 class="text-h2">通用设置</h1>
+        <div class="w-9"></div> <!-- Spacer -->
+    </header>
+
+    <main class="max-w-3xl mx-auto px-4 py-6 space-y-6">
+
+        <!-- Section: 常规设置 (New) -->
+        <section>
+            <h3 class="text-caption mb-2.5 px-1 text-gray-400 font-bold uppercase tracking-wider">常规设置</h3>
+            <div class="list-group">
+                <!-- 外观设置 -->
+                <a href="shezhi-waiguanshezhi.html" class="list-item w-full text-left group hover:bg-gray-50 transition-colors flex flex-row justify-between items-center">
+                    <div class="flex flex-row items-center">
+                        <div class="list-icon-box bg-blue-50 text-blue-500">
+                            <i class="fas fa-adjust"></i>
+                        </div>
+                        <div class="text-body-main text-gray-900">外观设置</div>
+                    </div>
+                    <div class="flex flex-row items-center gap-2">
+                        <span class="text-sm text-gray-400">深色模式、字号</span>
+                        <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                    </div>
+                </a>
+
+                <!-- 通知与提醒 -->
+                <a href="shezhi-tongzhi-tishi.html" class="list-item w-full text-left group hover:bg-gray-50 transition-colors flex flex-row justify-between items-center">
+                    <div class="flex flex-row items-center">
+                        <div class="list-icon-box bg-green-50 text-green-500">
+                            <i class="fas fa-bell"></i>
+                        </div>
+                        <div class="text-body-main text-gray-900">通知与提醒</div>
+                    </div>
+                    <div class="flex flex-row items-center gap-2">
+                        <span class="text-sm text-gray-400">消息、声音</span>
+                        <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                    </div>
+                </a>
+            </div>
+        </section>
+        
+        <!-- Section: 绑定与登录 -->
+        <section>
+            <h3 class="text-caption mb-2.5 px-1 text-gray-400 font-bold uppercase tracking-wider">绑定与登录方式</h3>
+            <div class="list-group">
+                <!-- 手机号 -->
+                <button onclick="openChangePhoneModal()" class="list-item w-full text-left group hover:bg-gray-50 transition-colors flex flex-row justify-between items-center">
+                    <div class="flex flex-row items-center">
+                        <div class="list-icon-box bg-green-50 text-green-600">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <div class="text-body-main text-gray-900">手机号</div>
+                    </div>
+                    <div class="flex flex-row items-center gap-2">
+                        <span id="phoneDisplay" class="text-sm text-gray-400">未绑定</span>
+                        <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                    </div>
+                </button>
+
+                <!-- 微信 -->
+                <button onclick="handleWechatAction()" class="list-item w-full text-left group hover:bg-gray-50 transition-colors flex flex-row justify-between items-center">
+                    <div class="flex flex-row items-center">
+                        <div class="list-icon-box bg-green-50 text-green-600">
+                            <i class="fab fa-weixin"></i>
+                        </div>
+                        <div class="text-body-main text-gray-900">微信</div>
+                    </div>
+                    <div class="flex flex-row items-center gap-2">
+                        <span id="wechatStatusText" class="text-sm text-gray-400">未绑定</span>
+                        <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                    </div>
+                </button>
+
+                <!-- 邮箱 -->
+                <button onclick="handleEmailAction()" class="list-item w-full text-left group hover:bg-gray-50 transition-colors flex flex-row justify-between items-center">
+                    <div class="flex flex-row items-center">
+                        <div class="list-icon-box bg-blue-50 text-blue-500">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="text-body-main text-gray-900">邮箱</div>
+                    </div>
+                    <div class="flex flex-row items-center gap-2">
+                        <span id="emailStatusText" class="text-sm text-gray-400">未绑定</span>
+                        <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                    </div>
+                </button>
+
+                <!-- Google -->
+                <button onclick="handleGoogleAction()" class="list-item w-full text-left group hover:bg-gray-50 transition-colors flex flex-row justify-between items-center">
+                    <div class="flex flex-row items-center">
+                        <div class="list-icon-box bg-red-50 text-red-500">
+                            <i class="fab fa-google"></i>
+                        </div>
+                        <div class="text-body-main text-gray-900">Google</div>
+                    </div>
+                    <div class="flex flex-row items-center gap-2">
+                        <span id="googleStatusText" class="text-sm text-gray-400">未绑定</span>
+                        <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                    </div>
+                </button>
+            </div>
+        </section>
+
+        <!-- Section: 密码与安全 -->
+        <section>
+            <h3 class="text-caption mb-2.5 px-1 text-gray-400 font-bold uppercase tracking-wider">密码与安全</h3>
+            <div class="list-group">
+                <!-- 登录密码 -->
+                <button onclick="openChangePasswordModal()" class="list-item w-full text-left group hover:bg-gray-50 transition-colors flex flex-row justify-between items-center">
+                    <div class="flex flex-row items-center">
+                        <div class="list-icon-box bg-purple-50 text-purple-500">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <div class="text-body-main text-gray-900">登录密码</div>
+                    </div>
+                    <div class="flex flex-row items-center gap-2">
+                        <span class="text-sm text-gray-400">修改</span>
+                        <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                    </div>
+                </button>
+
+                <!-- 图形锁 -->
+                <div class="list-item flex flex-row justify-between items-center">
+                    <div class="flex flex-row items-center">
+                        <div class="list-icon-box bg-orange-50 text-orange-500">
+                            <i class="fas fa-draw-polygon"></i>
+                        </div>
+                        <div class="text-body-main text-gray-900">图形锁</div>
+                    </div>
+                    <div class="flex flex-row items-center gap-2">
+                        <span id="patternStatus" class="text-sm text-gray-400">未开启</span>
+                        <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                            <input type="checkbox" id="patternToggle" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer transition-transform duration-200 ease-in-out" style="top:2px; left:2px;" onclick="handlePatternToggle(event)">
+                            <label for="patternToggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-200 cursor-pointer transition-colors duration-200"></label>
+                        </div>
+                        <button onclick="openPatternModal()" class="text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center rounded-full active:bg-gray-100"><i class="fas fa-cog"></i></button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex justify-end px-2 mt-2">
+                <button onclick="openForgotPassword()" class="text-xs text-orange-500 font-medium px-2 py-1">忘记密码?</button>
+            </div>
+        </section>
+
+        <!-- Section: 关于与反馈 (New) -->
+        <section>
+            <h3 class="text-caption mb-2.5 px-1 text-gray-400 font-bold uppercase tracking-wider">其他</h3>
+            <div class="list-group">
+                <a href="shezhi-guanyu-fankui.html" class="list-item w-full text-left group hover:bg-gray-50 transition-colors flex flex-row justify-between items-center">
+                    <div class="flex flex-row items-center">
+                        <div class="list-icon-box bg-purple-50 text-purple-500">
+                            <i class="fas fa-info-circle"></i>
+                        </div>
+                        <div class="text-body-main text-gray-900">关于与反馈</div>
+                    </div>
+                    <div class="flex flex-row items-center gap-2">
+                        <span class="text-sm text-gray-400">版本、反馈</span>
+                        <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                    </div>
+                </a>
+            </div>
+        </section>
+
+        <!-- Section: 账号操作 (New) -->
+        <section>
+            <h3 class="text-caption mb-2.5 px-1 text-gray-400 font-bold uppercase tracking-wider">账号操作</h3>
+            <div class="list-group">
+                <!-- 切换账号 -->
+                <button onclick="openSwitchAccountModal()" class="list-item w-full text-left group hover:bg-gray-50 transition-colors flex flex-row justify-between items-center">
+                    <div class="flex flex-row items-center">
+                        <div class="list-icon-box bg-orange-50 text-orange-500">
+                            <i class="fas fa-exchange-alt"></i>
+                        </div>
+                        <div class="text-body-main text-gray-900">切换账号</div>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                </button>
+
+                <!-- 退出登录 -->
+                <button onclick="openLogoutModal()" class="list-item w-full text-left group hover:bg-red-50 transition-colors flex flex-row justify-between items-center">
+                    <div class="flex flex-row items-center">
+                        <div class="list-icon-box bg-red-50 text-red-500">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </div>
+                        <div class="text-body-main text-red-600">退出登录</div>
+                    </div>
+                    <i class="fas fa-chevron-right text-red-300 text-xs"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- Section: 危险区域 -->
+        <section>
+            <h3 class="text-caption mb-2.5 px-1 text-gray-400 font-bold uppercase tracking-wider">危险区域</h3>
+            <div class="list-group border-red-100">
+                <!-- 注销账号 -->
+                <button onclick="openDeleteAccountModal()" class="list-item w-full text-left group hover:bg-red-50 transition-colors flex flex-row justify-between items-center">
+                    <div class="flex flex-row items-center">
+                        <div class="list-icon-box bg-red-50 text-red-500 group-hover:bg-red-100">
+                            <i class="fas fa-user-times"></i>
+                        </div>
+                        <div class="text-body-main text-red-600">注销账号</div>
+                    </div>
+                    <div class="flex flex-row items-center gap-2">
+                        <span class="text-sm text-red-400">不可恢复</span>
+                        <i class="fas fa-chevron-right text-red-300 text-xs"></i>
+                    </div>
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modals -->
+    
+    <!-- 手机号修改 Modal -->
+    <div class="modal" id="changePhoneModal">
+        <div class="modal-mask" onclick="closeChangePhoneModal()"></div>
+        <div class="modal-card p-5">
+            <h3 class="text-lg font-bold text-gray-900 mb-4 text-center">更换手机号</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs text-gray-500 mb-1 block">当前手机号</label>
+                    <div class="text-sm font-bold text-gray-800 mb-3" id="currentPhoneDisplay">--</div>
+                </div>
+                <input id="newPhoneInput" type="tel" placeholder="请输入新手机号" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-orange-400 transition-colors">
+                <div class="flex gap-2">
+                    <input id="changePhoneSmsCode" type="text" placeholder="验证码" class="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-orange-400">
+                    <button onclick="sendChangePhoneSms(this)" class="px-4 rounded-xl bg-orange-50 text-orange-600 text-xs font-bold border border-orange-100 whitespace-nowrap">获取验证码</button>
+                </div>
+                <div class="grid grid-cols-2 gap-3 pt-2">
+                    <button onclick="closeChangePhoneModal()" class="py-2.5 rounded-xl bg-gray-100 text-gray-600 font-bold text-sm">取消</button>
+                    <button onclick="confirmChangePhone()" class="py-2.5 rounded-xl bg-orange-500 text-white font-bold text-sm shadow-sm hover:bg-orange-600">确认更换</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 密码修改 Modal -->
+    <div class="modal" id="changePasswordModal">
+        <div class="modal-mask" onclick="closeChangePasswordModal()"></div>
+        <div class="modal-card p-5">
+            <h3 class="text-lg font-bold text-gray-900 mb-4 text-center">修改登录密码</h3>
+            <div class="space-y-4">
+                <input id="oldPassword" type="password" placeholder="原密码" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-orange-400 transition-colors">
+                <input id="newPasswordInput" type="password" placeholder="新密码 (至少6位)" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-orange-400 transition-colors">
+                <input id="confirmPasswordInput" type="password" placeholder="确认新密码" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-orange-400 transition-colors">
+                
+                <div class="grid grid-cols-2 gap-3 pt-2">
+                    <button onclick="closeChangePasswordModal()" class="py-2.5 rounded-xl bg-gray-100 text-gray-600 font-bold text-sm">取消</button>
+                    <button onclick="confirmChangePassword()" class="py-2.5 rounded-xl bg-orange-500 text-white font-bold text-sm shadow-sm hover:bg-orange-600">确认修改</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 邮箱绑定 Modal -->
+    <div class="modal" id="emailBindModal">
+        <div class="modal-mask" onclick="closeEmailBindModal()"></div>
+        <div class="modal-card p-5">
+            <h3 class="text-lg font-bold text-gray-900 mb-4 text-center">绑定邮箱</h3>
+            <div class="space-y-4 text-center">
+                <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-2 text-2xl">
+                    <i class="fas fa-envelope-open-text"></i>
+                </div>
+                <p class="text-sm text-gray-500">将拉起系统邮箱应用进行授权绑定</p>
+                <div class="grid grid-cols-1 gap-3 pt-2">
+                    <button onclick="confirmEmailBind()" class="py-3 rounded-xl bg-blue-500 text-white font-bold text-sm shadow-sm hover:bg-blue-600 flex items-center justify-center gap-2">
+                        <i class="fas fa-paper-plane"></i> 一键授权绑定
+                    </button>
+                    <button onclick="closeEmailBindModal()" class="py-2.5 rounded-xl bg-gray-100 text-gray-600 font-bold text-sm">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 图形锁 Modal -->
+    <div class="modal" id="patternModal">
+        <div class="modal-mask" onclick="closePatternModal()"></div>
+        <div class="modal-card p-5">
+            <h3 class="text-lg font-bold text-gray-900 mb-2 text-center">设置图形锁</h3>
+            <p class="text-xs text-gray-400 text-center mb-4">请至少连接4个点</p>
+            
+            <div class="pattern-grid">
+                <div class="pattern-dot" onclick="selectDot(1)" data-idx="1"></div>
+                <div class="pattern-dot" onclick="selectDot(2)" data-idx="2"></div>
+                <div class="pattern-dot" onclick="selectDot(3)" data-idx="3"></div>
+                <div class="pattern-dot" onclick="selectDot(4)" data-idx="4"></div>
+                <div class="pattern-dot" onclick="selectDot(5)" data-idx="5"></div>
+                <div class="pattern-dot" onclick="selectDot(6)" data-idx="6"></div>
+                <div class="pattern-dot" onclick="selectDot(7)" data-idx="7"></div>
+                <div class="pattern-dot" onclick="selectDot(8)" data-idx="8"></div>
+                <div class="pattern-dot" onclick="selectDot(9)" data-idx="9"></div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 pt-2">
+                <button onclick="resetPattern()" class="py-2.5 rounded-xl bg-gray-100 text-gray-600 font-bold text-sm">重置</button>
+                <button onclick="savePattern()" class="py-2.5 rounded-xl bg-orange-500 text-white font-bold text-sm shadow-sm hover:bg-orange-600">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 忘记密码 Modal -->
+    <div class="modal" id="forgotPasswordModal">
+        <div class="modal-mask" onclick="closeForgotPasswordModal()"></div>
+        <div class="modal-card p-5">
+            <h3 class="text-lg font-bold text-gray-900 mb-4 text-center">找回密码</h3>
+            <div class="space-y-3">
+                <input id="fpPhoneInput" type="tel" placeholder="绑定手机号" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-orange-400">
+                <div class="flex gap-2">
+                    <input id="fpSmsCode" type="text" placeholder="验证码" class="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-orange-400">
+                    <button onclick="sendPwdSmsCode(this)" class="px-4 rounded-xl bg-orange-50 text-orange-600 text-xs font-bold border border-orange-100 whitespace-nowrap">获取验证码</button>
+                </div>
+                <input id="fpNewPassword" type="password" placeholder="新密码 (至少6位)" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-orange-400">
+                
+                <div class="grid grid-cols-2 gap-3 pt-2">
+                    <button onclick="closeForgotPasswordModal()" class="py-2.5 rounded-xl bg-gray-100 text-gray-600 font-bold text-sm">取消</button>
+                    <button onclick="confirmResetPassword()" class="py-2.5 rounded-xl bg-orange-500 text-white font-bold text-sm shadow-sm hover:bg-orange-600">确认重置</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 注销账号 Modal -->
+    <div class="modal" id="deleteAccountModal">
+        <div class="modal-mask" onclick="closeDeleteAccountModal()"></div>
+        <div class="modal-card p-5 border-t-4 border-red-500">
+            <h3 class="text-lg font-bold text-gray-900 mb-2 text-center text-red-600">注销账号</h3>
+            <p class="text-xs text-gray-500 text-center mb-4 px-4">此操作不可逆！所有数据（配方、库存、会员权益）将被永久删除。</p>
+            
+            <div class="space-y-3">
+                <input id="deletePhone" type="tel" placeholder="请输入手机号确认" class="w-full bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-sm outline-none focus:border-red-400 text-red-900 placeholder-red-300">
+                <div class="flex gap-2">
+                    <input id="deleteSmsCode" type="text" placeholder="短信验证码" class="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-orange-400">
+                    <button onclick="sendDeleteSmsCode(this)" class="px-4 rounded-xl bg-gray-100 text-gray-600 text-xs font-bold border border-gray-200 whitespace-nowrap">获取验证码</button>
+                </div>
+                
+                <label class="flex items-center gap-2 text-xs text-gray-600 justify-center py-2">
+                    <input type="checkbox" id="deleteConfirm" class="rounded text-red-500 focus:ring-red-500">
+                    我已确认知晓注销后果
+                </label>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="closeDeleteAccountModal()" class="py-2.5 rounded-xl bg-gray-100 text-gray-600 font-bold text-sm">再想想</button>
+                    <button onclick="confirmDeleteAccount()" class="py-2.5 rounded-xl bg-red-500 text-white font-bold text-sm shadow-sm hover:bg-red-600">确认注销</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 切换账号模态框 -->
+    <div class="modal" id="switchAccountModal">
+        <div class="modal-mask" onclick="closeSwitchAccountModal()"></div>
+        <div class="modal-card p-5">
+            <h3 class="text-lg font-bold text-gray-900 mb-2 text-center">切换账号</h3>
+            <div style="font-size:12px;color:#8b8b8b;margin-bottom:8px;text-center">当前账号：<span id="currentAccountInfo"></span></div>
+            
+            <div class="account-section">
+                <div class="title">已登录过的账号</div>
+                <div class="tools">
+                    <button class="tool-btn" id="recentToolsManage" onclick="toggleRecentAccountsManage()"><i class="fas fa-edit"></i> 管理</button>
+                    <button class="tool-btn" id="recentToolsClear" onclick="clearRecentAccounts()"><i class="fas fa-trash-alt"></i> 清空</button>
+                </div>
+            </div>
+            <div id="recentAccountsContainer" class="account-list mb-4"></div>
+            
+            <div class="space-y-3 pt-2 border-t border-gray-100">
+                <label class="text-xs text-gray-500 block">登录新账号</label>
+                <input id="switchPhone" type="tel" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-orange-400" placeholder="请输入手机号">
+                
+                <div class="grid grid-cols-2 gap-3 pt-2">
+                    <button onclick="closeSwitchAccountModal()" class="py-2.5 rounded-xl bg-gray-100 text-gray-600 font-bold text-sm">取消</button>
+                    <button onclick="confirmSwitchAccount()" class="py-2.5 rounded-xl bg-orange-500 text-white font-bold text-sm shadow-sm hover:bg-orange-600">确认切换</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 退出登录模态框 -->
+    <div class="modal" id="logoutModal">
+        <div class="modal-mask" onclick="closeLogoutModal()"></div>
+        <div class="modal-card p-5">
+            <h3 class="text-lg font-bold text-gray-900 mb-4 text-center">退出登录</h3>
+            <p class="text-sm text-gray-500 text-center mb-6">退出后不删除业务数据，仅清除登录凭据与账号信息。</p>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="closeLogoutModal()" class="py-2.5 rounded-xl bg-gray-100 text-gray-600 font-bold text-sm">取消</button>
+                <button onclick="confirmLogout()" class="py-2.5 rounded-xl bg-red-500 text-white font-bold text-sm shadow-sm hover:bg-red-600">确认退出</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast" class="toast"></div>
+
+    <script>
+        // --- 核心逻辑 (保留原有功能) ---
+        function maskPhone(p){ return p ? p.replace(/^(\d{3})\d{4}(\d{4})$/, '$1****$2') : '未绑定'; }
+
+        // 1. 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            initAccount();
+            setupToggleSwitch();
+        });
+
+        function initAccount() {
+            // 手机号
+            const phone = localStorage.getItem('phoneNumber') || '';
+            updatePhoneStatus(phone);
+
+            // 微信
+            applyWechatBindUI();
+
+            // 邮箱
+            applyEmailBindUI();
+
+            // Google
+            applyGoogleBindUI();
+
+            // 图形锁
+            const patternEnabled = localStorage.getItem('patternLockEnabled') === 'true';
+            const toggle = document.getElementById('patternToggle');
+            if (toggle) toggle.checked = patternEnabled;
+            updatePatternStatus(patternEnabled);
+        }
+
+        // 2. Toast 工具
+        function showToast(msg, type = 'success') {
+            const el = document.getElementById('toast');
+            el.innerHTML = `
+                <i class="${type === 'success' ? 'fas fa-check-circle text-green-400' : (type === 'error' ? 'fas fa-times-circle text-red-400' : 'fas fa-info-circle text-blue-400')}"></i>
+                <span>${msg}</span>
+            `;
+            el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), 2000);
+        }
+
+        // 3. 手机号逻辑
+        function updatePhoneStatus(phone) {
+            // const chip = document.getElementById('phoneStatusChip'); // Removed
+            const display = document.getElementById('phoneDisplay');
+            if (phone) {
+                display.textContent = phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2');
+                display.classList.add('text-gray-900', 'font-medium');
+                display.classList.remove('text-gray-400');
+            } else {
+                display.textContent = '未绑定';
+                display.classList.remove('text-gray-900', 'font-medium');
+                display.classList.add('text-gray-400');
+            }
+        }
+
+        function openChangePhoneModal() {
+            const phone = localStorage.getItem('phoneNumber') || '未绑定';
+            document.getElementById('currentPhoneDisplay').textContent = phone;
+            document.getElementById('newPhoneInput').value = '';
+            document.getElementById('changePhoneSmsCode').value = '';
+            document.getElementById('changePhoneModal').classList.add('show');
+        }
+        function closeChangePhoneModal() { document.getElementById('changePhoneModal').classList.remove('show'); }
+
+        function sendChangePhoneSms(btn) {
+            const phone = document.getElementById('newPhoneInput').value.trim();
+            if (!/^1[3-9]\d{9}$/.test(phone)) { showToast('请输入有效新手机号', 'error'); return; }
+            
+            window.__changePhoneCode = '666666';
+            showToast(`验证码: ${window.__changePhoneCode}`, 'info');
+            btn.disabled = true;
+            setTimeout(() => btn.disabled = false, 3000);
+        }
+
+        function confirmChangePhone() {
+            const phone = document.getElementById('newPhoneInput').value.trim();
+            const code = document.getElementById('changePhoneSmsCode').value.trim();
+            
+            if (!/^1[3-9]\d{9}$/.test(phone)) { showToast('请输入有效新手机号', 'error'); return; }
+            if (code !== window.__changePhoneCode && code !== '666666') { showToast('验证码错误', 'error'); return; }
+            
+            showToast('正在更换...', 'info');
+            setTimeout(() => {
+                localStorage.setItem('phoneNumber', phone);
+                updatePhoneStatus(phone);
+                closeChangePhoneModal();
+                showToast('手机号更换成功');
+            }, 1000);
+        }
+
+        // 4. 微信绑定逻辑
+        function handleWechatAction() {
+            const bound = localStorage.getItem('wechatBound') === 'true';
+            if (bound) {
+                // Show action sheet or confirm to unbind
+                // For simplicity, just confirm unbind or re-bind
+                // Let's use a simple confirm for now, or open modal to change
+                if(confirm('当前已绑定微信，是否要解除绑定？')) {
+                    unbindWechat();
+                }
+            } else {
+                openWechatBind();
+            }
+        }
+
+        function openWechatBind() { document.getElementById('wechatBindModal').classList.add('show'); }
+        function closeWechatBindModal() { document.getElementById('wechatBindModal').classList.remove('show'); }
+        
+        function confirmWechatBind() {
+            const v = document.getElementById('wechatInput').value.trim();
+            if (v.length < 1) { showToast('请输入微信号', 'error'); return; }
+            
+            showToast('绑定中...', 'info');
+            setTimeout(() => {
+                localStorage.setItem('wechatBound', 'true');
+                localStorage.setItem('wechatName', v);
+                applyWechatBindUI();
+                closeWechatBindModal();
+                showToast('微信绑定成功');
+            }, 1000);
+        }
+
+        function unbindWechat() {
+            // if (!confirm('确定解绑微信吗？')) return; // Already confirmed in handle
+            localStorage.setItem('wechatBound', 'false');
+            localStorage.removeItem('wechatName');
+            applyWechatBindUI();
+            showToast('已解绑微信');
+        }
+
+        function applyWechatBindUI() {
+            const bound = localStorage.getItem('wechatBound') === 'true';
+            const name = localStorage.getItem('wechatName') || '未绑定';
+            const statusText = document.getElementById('wechatStatusText');
+            
+            if (bound) {
+                statusText.textContent = '已绑定';
+                statusText.classList.remove('text-gray-400');
+                statusText.classList.add('text-green-600', 'font-medium');
+            } else {
+                statusText.textContent = '未绑定';
+                statusText.classList.add('text-gray-400');
+                statusText.classList.remove('text-green-600', 'font-medium');
+            }
+        }
+
+        // 5. 邮箱绑定逻辑
+        function handleEmailAction() {
+            const bound = localStorage.getItem('emailBound') === 'true';
+            if (bound) {
+                if(confirm('当前已绑定邮箱，是否要解除绑定？')) {
+                    unbindEmail();
+                }
+            } else {
+                openEmailBind();
+            }
+        }
+
+        function openEmailBind() { document.getElementById('emailBindModal').classList.add('show'); }
+        function closeEmailBindModal() { document.getElementById('emailBindModal').classList.remove('show'); }
+
+        function confirmEmailBind() {
+            // const v = document.getElementById('emailInput').value.trim(); // Removed input
+            // if (!v.includes('@')) { showToast('邮箱格式错误', 'error'); return; }
+            
+            showToast('正在拉起邮箱应用...', 'info');
+            setTimeout(() => {
+                const mockEmail = 'user_auth@gmail.com';
+                localStorage.setItem('emailBound', 'true');
+                localStorage.setItem('emailAddr', mockEmail);
+                applyEmailBindUI();
+                closeEmailBindModal();
+                showToast('邮箱授权绑定成功');
+            }, 2000);
+        }
+
+        function unbindEmail() {
+            localStorage.setItem('emailBound', 'false');
+            localStorage.removeItem('emailAddr');
+            applyEmailBindUI();
+            showToast('已解绑邮箱');
+        }
+
+        function applyEmailBindUI() {
+            const bound = localStorage.getItem('emailBound') === 'true';
+            const addr = localStorage.getItem('emailAddr') || '未绑定';
+            const statusText = document.getElementById('emailStatusText');
+            
+            if (bound) {
+                statusText.textContent = addr; // Show email address if bound
+                statusText.classList.remove('text-gray-400');
+                statusText.classList.add('text-blue-600', 'font-medium');
+            } else {
+                statusText.textContent = '未绑定';
+                statusText.classList.add('text-gray-400');
+                statusText.classList.remove('text-blue-600', 'font-medium');
+            }
+        }
+
+        // 5.1 Google 绑定逻辑 (New)
+        function handleGoogleAction() {
+            const bound = localStorage.getItem('googleBound') === 'true';
+            if (bound) {
+                if(confirm('当前已绑定 Google 账号，是否要解除绑定？')) {
+                    unbindGoogle();
+                }
+            } else {
+                bindGoogle();
+            }
+        }
+
+        function bindGoogle() {
+            showToast('正在连接 Google 服务...', 'info');
+            // Simulate OAuth
+            setTimeout(() => {
+                localStorage.setItem('googleBound', 'true');
+                localStorage.setItem('googleName', 'Tobias (Google)');
+                applyGoogleBindUI();
+                showToast('Google 账号绑定成功');
+            }, 1500);
+        }
+
+        function unbindGoogle() {
+            localStorage.setItem('googleBound', 'false');
+            localStorage.removeItem('googleName');
+            applyGoogleBindUI();
+            showToast('已解绑 Google 账号');
+        }
+
+        function applyGoogleBindUI() {
+            const bound = localStorage.getItem('googleBound') === 'true';
+            const name = localStorage.getItem('googleName') || '未绑定';
+            const statusText = document.getElementById('googleStatusText');
+            
+            if (bound) {
+                statusText.textContent = '已绑定'; // Or show name
+                statusText.classList.remove('text-gray-400');
+                statusText.classList.add('text-red-600', 'font-medium');
+            } else {
+                statusText.textContent = '未绑定';
+                statusText.classList.add('text-gray-400');
+                statusText.classList.remove('text-red-600', 'font-medium');
+            }
+        }
+
+        // 6. 密码逻辑
+        function openChangePasswordModal() {
+            document.getElementById('oldPassword').value = '';
+            document.getElementById('newPasswordInput').value = '';
+            document.getElementById('confirmPasswordInput').value = '';
+            document.getElementById('changePasswordModal').classList.add('show');
+        }
+        function closeChangePasswordModal() { document.getElementById('changePasswordModal').classList.remove('show'); }
+
+        function confirmChangePassword() {
+            const old = document.getElementById('oldPassword').value;
+            const newP = document.getElementById('newPasswordInput').value;
+            const confirmP = document.getElementById('confirmPasswordInput').value;
+            
+            if (!old) { showToast('请输入原密码', 'error'); return; }
+            if (newP.length < 6) { showToast('新密码至少6位', 'error'); return; }
+            if (newP !== confirmP) { showToast('两次密码不一致', 'error'); return; }
+            
+            showToast('正在修改...', 'info');
+            setTimeout(() => {
+                localStorage.setItem('accountPassword', newP);
+                closeChangePasswordModal();
+                showToast('密码修改成功');
+            }, 1000);
+        }
+
+        function openForgotPassword() { 
+            const phone = localStorage.getItem('phoneNumber') || '';
+            document.getElementById('fpPhoneInput').value = phone;
+            document.getElementById('forgotPasswordModal').classList.add('show'); 
+        }
+        function closeForgotPasswordModal() { document.getElementById('forgotPasswordModal').classList.remove('show'); }
+        
+        function sendPwdSmsCode(btn) {
+            const phone = document.getElementById('fpPhoneInput').value.trim();
+            if (!phone) { showToast('请输入手机号', 'error'); return; }
+            
+            window.__pwdCode = '123456'; // Mock code
+            showToast(`验证码已发送: ${window.__pwdCode}`);
+            btn.disabled = true;
+            setTimeout(() => btn.disabled = false, 3000);
+        }
+
+        function confirmResetPassword() {
+            const code = document.getElementById('fpSmsCode').value.trim();
+            const pass = document.getElementById('fpNewPassword').value.trim();
+            
+            if (code !== window.__pwdCode && code !== '123456') { showToast('验证码错误', 'error'); return; }
+            if (pass.length < 6) { showToast('新密码至少6位', 'error'); return; }
+            
+            localStorage.setItem('accountPassword', pass);
+            closeForgotPasswordModal();
+            showToast('密码重置成功');
+        }
+
+        // 7. 图形锁逻辑
+        function setupToggleSwitch() {
+            // CSS Toggle style logic for checkbox
+            const toggle = document.getElementById('patternToggle');
+            const label = document.querySelector('.toggle-label');
+            
+            if (toggle.checked) {
+                label.classList.remove('bg-gray-200');
+                label.classList.add('bg-orange-500');
+                toggle.style.transform = 'translateX(100%)';
+            } else {
+                label.classList.add('bg-gray-200');
+                label.classList.remove('bg-orange-500');
+                toggle.style.transform = 'translateX(0)';
+            }
+        }
+
+        function handlePatternToggle(e) {
+            e.preventDefault(); // Stop immediate change, handle logic first
+            const toggle = e.target;
+            const current = toggle.checked; // This is the state BEFORE click because of preventDefault? No, checked toggles on click.
+            // Actually with preventDefault, checked state doesn't change visually.
+            
+            // Let's check manual state
+            const enabled = localStorage.getItem('patternLockEnabled') === 'true';
+            
+            if (enabled) {
+                // Try to disable
+                if (confirm('确定关闭图形锁吗？')) {
+                    localStorage.setItem('patternLockEnabled', 'false');
+                    updatePatternStatus(false);
+                    showToast('图形锁已关闭');
+                }
+            } else {
+                // Try to enable -> Open modal
+                openPatternModal();
+            }
+        }
+
+        function updatePatternStatus(enabled) {
+            const toggle = document.getElementById('patternToggle');
+            const label = document.querySelector('.toggle-label');
+            const statusText = document.getElementById('patternStatus');
+            
+            toggle.checked = enabled;
+            if (enabled) {
+                label.classList.remove('bg-gray-200');
+                label.classList.add('bg-orange-500');
+                toggle.style.transform = 'translateX(100%)';
+                statusText.textContent = '已开启';
+                statusText.classList.add('text-orange-500');
+                statusText.classList.remove('text-gray-400');
+            } else {
+                label.classList.add('bg-gray-200');
+                label.classList.remove('bg-orange-500');
+                toggle.style.transform = 'translateX(0)';
+                statusText.textContent = '未开启';
+                statusText.classList.remove('text-orange-500');
+                statusText.classList.add('text-gray-400');
+            }
+        }
+
+        // Pattern Drawing Logic
+        let patternPoints = [];
+        
+        function openPatternModal() {
+            patternPoints = [];
+            document.querySelectorAll('.pattern-dot').forEach(d => d.classList.remove('active'));
+            document.getElementById('patternModal').classList.add('show');
+        }
+        function closePatternModal() { document.getElementById('patternModal').classList.remove('show'); }
+        
+        function selectDot(idx) {
+            if (patternPoints.includes(idx)) return;
+            patternPoints.push(idx);
+            document.querySelector(`.pattern-dot[data-idx="${idx}"]`).classList.add('active');
+        }
+
+        function resetPattern() {
+            patternPoints = [];
+            document.querySelectorAll('.pattern-dot').forEach(d => d.classList.remove('active'));
+        }
+
+        function savePattern() {
+            if (patternPoints.length < 4) { showToast('至少连接4个点', 'error'); return; }
+            localStorage.setItem('patternLockPattern', patternPoints.join('-'));
+            localStorage.setItem('patternLockEnabled', 'true');
+            updatePatternStatus(true);
+            closePatternModal();
+            showToast('图形锁设置成功');
+        }
+
+        // 8. 注销账号
+        function openDeleteAccountModal() { document.getElementById('deleteAccountModal').classList.add('show'); }
+        function closeDeleteAccountModal() { document.getElementById('deleteAccountModal').classList.remove('show'); }
+        
+        function sendDeleteSmsCode(btn) {
+            window.__delCode = '888888';
+            showToast(`验证码: ${window.__delCode}`, 'warning');
+            btn.disabled = true;
+            setTimeout(() => btn.disabled = false, 3000);
+        }
+
+        function confirmDeleteAccount() {
+            const phone = document.getElementById('deletePhone').value;
+            const code = document.getElementById('deleteSmsCode').value;
+            const confirmBox = document.getElementById('deleteConfirm');
+            
+            if (!phone) { showToast('请输入手机号', 'error'); return; }
+            if (!/^1[3-9]\d{9}$/.test(phone)) { showToast('请输入有效手机号', 'error'); return; }
+            if (code !== window.__delCode && code !== '888888') { showToast('验证码错误', 'error'); return; }
+            if (!confirmBox.checked) { showToast('请勾选确认', 'error'); return; }
+            
+            showToast('正在注销...', 'error');
+            setTimeout(() => {
+                localStorage.clear();
+                window.location.href = '../../denglu/denglu/denglu.html';
+            }, 1500);
+        }
+
+        // --- 9. 切换账号与退出登录 (Migrated) ---
+        function openSwitchAccountModal(){
+            const m=document.getElementById('switchAccountModal');
+            const el=document.getElementById('currentAccountInfo');
+            const phone = localStorage.getItem('phoneNumber')||'';
+            el.textContent = maskPhone(phone);
+            document.getElementById('switchPhone').value='';
+            recentAccountsEdit = false;
+            renderRecentAccounts();
+            m.classList.add('show');
+            document.body.style.overflow='hidden';
+        }
+        function closeSwitchAccountModal() { document.getElementById('switchAccountModal').classList.remove('show'); document.body.style.overflow=''; }
+
+        // 最近账号列表逻辑
+        let recentAccountsEdit = false;
+        function getRecentAccounts(){
+            try {
+                const arr = JSON.parse(localStorage.getItem('recentAccounts')||'[]');
+                return Array.isArray(arr) ? arr.filter(Boolean) : [];
+            } catch(e){ return []; }
+        }
+        function renderRecentAccounts(){
+            const container = document.getElementById('recentAccountsContainer');
+            const clearBtn = document.getElementById('recentToolsClear');
+            const manageBtn = document.getElementById('recentToolsManage');
+            const arr = getRecentAccounts();
+            if(clearBtn) clearBtn.style.display = arr.length ? '' : 'none';
+            if(manageBtn) manageBtn.textContent = recentAccountsEdit ? '完成' : '管理';
+            if(!container) return;
+            if(arr.length === 0){
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-user-circle"></i> 暂无其他账号</div>';
+                return;
+            }
+            const current = localStorage.getItem('phoneNumber')||'';
+            container.innerHTML = arr.map(p=>{
+                const masked = maskPhone(p);
+                const isCurrent = current === p;
+                const switchBtn = isCurrent ? '<button class="text-xs text-gray-400 border border-gray-200 px-2 py-1 rounded" disabled>当前</button>' : `<button class="text-xs bg-orange-50 text-orange-600 border border-orange-100 px-2 py-1 rounded font-bold" onclick="quickSwitchAccount('${p}')">切换</button>`;
+                const delBtn = recentAccountsEdit ? `<button class="text-gray-400 hover:text-red-500" onclick="removeRecentAccount('${p}')"><i class="fas fa-times-circle"></i></button>` : '';
+                return `<div class="account-item">
+                  <div class="info">
+                    <div class="avatar"><i class="fas fa-user"></i></div>
+                    <div>
+                      <div class="text-sm font-medium text-gray-900">${masked}</div>
+                      <div class="text-xs text-gray-400">${isCurrent ? '当前账号' : '历史登录'}</div>
+                    </div>
+                  </div>
+                  <div class="actions">${switchBtn}${delBtn}</div>
+                </div>`;
+            }).join('');
+        }
+        function toggleRecentAccountsManage(){
+            recentAccountsEdit = !recentAccountsEdit;
+            renderRecentAccounts();
+        }
+        function quickSwitchAccount(phone){
+            if(!/^1\d{10}$/.test(phone)) { showToast('账号格式异常', 'error'); return; }
+            localStorage.setItem('phoneNumber', phone);
+            let arr = getRecentAccounts().filter(p=>p!==phone);
+            arr.unshift(phone);
+            localStorage.setItem('recentAccounts', JSON.stringify(arr.slice(0,5)));
+            showToast('已切换到该账号');
+            closeSwitchAccountModal();
+            window.location.reload(); // Reload to reflect changes
+        }
+        function removeRecentAccount(phone){
+            let arr = getRecentAccounts().filter(p=>p!==phone);
+            localStorage.setItem('recentAccounts', JSON.stringify(arr));
+            renderRecentAccounts();
+        }
+        function clearRecentAccounts(){
+            localStorage.setItem('recentAccounts', JSON.stringify([]));
+            renderRecentAccounts();
+        }
+
+        function confirmSwitchAccount(){
+            var input = document.getElementById('switchPhone');
+            var v = (input && input.value || '').trim();
+            if(!/^1\d{10}$/.test(v)){ showToast('请输入正确的11位手机号', 'error'); return; }
+            const prev = localStorage.getItem('phoneNumber') || '';
+            localStorage.setItem('phoneNumber', v);
+            let arr = getRecentAccounts();
+            const set = new Set(arr);
+            if(prev && prev !== v) set.add(prev);
+            set.add(v);
+            arr = Array.from(set);
+            arr = arr.filter(p=>p!==v);
+            arr.unshift(v);
+            localStorage.setItem('recentAccounts', JSON.stringify(arr.slice(0,5)));
+            showToast('已切换到新账号');
+            closeSwitchAccountModal();
+            window.location.reload();
+        }
+
+        // 退出登录
+        function openLogoutModal(){ document.getElementById('logoutModal').classList.add('show'); document.body.style.overflow='hidden'; }
+        function closeLogoutModal(){ document.getElementById('logoutModal').classList.remove('show'); document.body.style.overflow=''; }
+        
+        function clearAuthButKeepPreferences(){ 
+            const keepKeys=['darkMode','fontScale','recentAccounts']; 
+            const keep={}; 
+            keepKeys.forEach(k=> keep[k]=localStorage.getItem(k)); 
+            try{ localStorage.clear(); }catch(e){} 
+            keepKeys.forEach(k=> { if(keep[k]!==null) localStorage.setItem(k, keep[k]); }); 
+        }
+        
+        function confirmLogout(){ 
+            clearAuthButKeepPreferences(); 
+            closeLogoutModal(); 
+            showToast('已退出登录'); 
+            setTimeout(()=>{ window.location.href='../../denglu/denglu/denglu.html'; }, 800); 
+        }
+
+    </script>
+</body>
+</html>

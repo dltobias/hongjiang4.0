@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>关于与反馈 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Cookpad 风格统一配置 */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f7f7f5; /* var(--bg-light) */
+            color: #333333; /* var(--text-main) */
+            -webkit-tap-highlight-color: transparent;
+            padding-bottom: 40px;
+        }
+        
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+            --text-main: #333333;
+            --text-sub: #8b8b8b;
+            --bg-light: #f7f7f5;
+        }
+
+        /* 字体层级工具类 */
+        .text-h1 { font-size: 22px; font-weight: 700; color: var(--text-main); letter-spacing: -0.5px; }
+        .text-h2 { font-size: 18px; font-weight: 600; color: var(--text-main); }
+        .text-body-main { font-size: 15px; font-weight: 500; color: var(--text-main); }
+        .text-body-sub { font-size: 13px; color: var(--text-sub); font-weight: 400; }
+        .text-caption { font-size: 12px; color: var(--text-sub); font-weight: 600; letter-spacing: 0.5px; }
+
+        /* 顶部导航 */
+        header {
+            background-color: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        /* 列表容器 */
+        .list-group {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+            border: 1px solid #eeeeee;
+            overflow: hidden;
+        }
+
+        /* 列表项 */
+        .list-item {
+            display: flex !important;
+            flex-direction: row !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            padding: 16px;
+            background: white;
+            transition: background-color 0.2s;
+            border-bottom: 1px solid #f9f9f9;
+            width: 100%;
+        }
+        .list-item:last-child { border-bottom: none; }
+        .list-item:active { background-color: #f9f9f9; }
+
+        .list-icon-box {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 14px;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        /* 反馈文本域 */
+        .feedback-textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 14px;
+            resize: none;
+            background-color: #f9fafb;
+            transition: all 0.2s;
+        }
+        .feedback-textarea:focus {
+            outline: none;
+            border-color: var(--primary-orange);
+            background-color: #fff;
+            box-shadow: 0 0 0 3px rgba(255, 159, 67, 0.1);
+        }
+
+        /* 按钮 */
+        .btn-primary {
+            background: linear-gradient(135deg, #ff9f43 0%, #ff8c00 100%);
+            color: white;
+            font-weight: 600;
+            padding: 10px 20px;
+            border-radius: 8px;
+            transition: opacity 0.2s;
+            text-align: center;
+            display: inline-block;
+        }
+        .btn-primary:active { opacity: 0.9; }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+            padding: 20px;
+        }
+        .modal.show { display: flex; }
+        .modal-card {
+            background: white;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            animation: modalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes modalPop {
+            0% { transform: scale(0.95); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(4px);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s, transform 0.2s;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+        /* 暗色模式适配 */
+        body.dark {
+            background-color: #1e293b;
+            color: #f1f5f9;
+        }
+        body.dark .list-group, body.dark .modal-card {
+            background: #334155;
+            border-color: #475569;
+        }
+        body.dark .list-item {
+            background: #334155;
+            border-color: #475569;
+        }
+        body.dark .list-item:active {
+            background: #475569;
+        }
+        body.dark header {
+            background-color: rgba(30, 41, 59, 0.98);
+            border-bottom-color: #475569;
+        }
+        body.dark .text-h1, body.dark .text-h2, body.dark .text-body-main, body.dark .modal-title {
+            color: #f1f5f9;
+        }
+        body.dark .text-body-sub, body.dark .text-caption, body.dark .modal-body {
+            color: #94a3b8;
+        }
+        body.dark .feedback-textarea {
+            background-color: #1e293b;
+            border-color: #475569;
+            color: #f1f5f9;
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <header class="sticky top-0 z-30 px-4 py-3 flex items-center justify-between">
+        <button onclick="window.location.href='shezhi-zhanghaoyuanquan.html'" class="text-gray-500 hover:text-gray-800 transition-colors w-9 h-9 flex items-center justify-center rounded-full active:bg-gray-100">
+            <i class="fas fa-arrow-left text-lg"></i>
+        </button>
+        <h1 class="text-h2">关于与反馈</h1>
+        <div class="w-9"></div> <!-- Spacer -->
+    </header>
+
+    <main class="max-w-3xl mx-auto px-4 py-6 space-y-6">
+        
+        <!-- App Info -->
+        <div class="flex flex-col items-center py-4">
+            <div class="w-20 h-20 bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl flex items-center justify-center text-white text-3xl shadow-lg mb-3">
+                <i class="fas fa-cookie-bite"></i>
+            </div>
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white">烘匠 BakeManager</h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Version 1.0.0 (Build 20250101)</p>
+        </div>
+
+        <!-- Section: 检查更新 -->
+        <section>
+            <div class="list-group">
+                <button onclick="checkUpdate()" class="list-item w-full text-left flex flex-row justify-between items-center group">
+                    <div class="flex flex-row items-center">
+                        <div class="list-icon-box bg-blue-50 text-blue-500">
+                            <i class="fas fa-sync-alt"></i>
+                        </div>
+                        <div class="text-body-main text-gray-900">检查更新</div>
+                    </div>
+                    <div class="flex flex-row items-center gap-2">
+                        <span class="text-xs text-gray-400">已是最新版本</span>
+                        <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                    </div>
+                </button>
+                <button onclick="rateApp()" class="list-item w-full text-left flex flex-row justify-between items-center group">
+                    <div class="flex flex-row items-center">
+                        <div class="list-icon-box bg-yellow-50 text-yellow-500">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div class="text-body-main text-gray-900">去评分</div>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- Section: 反馈 -->
+        <section>
+            <h3 class="text-caption mb-2.5 px-1 text-gray-400 font-bold uppercase tracking-wider">意见反馈</h3>
+            <div class="bg-white dark:bg-slate-700 rounded-xl p-4 border border-gray-100 dark:border-slate-600 shadow-sm">
+                <textarea id="feedbackText" class="feedback-textarea mb-3" placeholder="请填写您的建议或问题..."></textarea>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-gray-400" id="charCount">0/500</span>
+                    <button onclick="submitFeedback()" class="btn-primary text-sm px-4 py-2">
+                        提交反馈
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: 法律信息 -->
+        <section>
+            <h3 class="text-caption mb-2.5 px-1 text-gray-400 font-bold uppercase tracking-wider">法律信息</h3>
+            <div class="list-group">
+                <button onclick="openModal('userAgreementModal')" class="list-item w-full text-left flex flex-row justify-between items-center group">
+                    <div class="flex flex-row items-center">
+                        <div class="list-icon-box bg-gray-50 text-gray-500">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <div class="text-body-main text-gray-900">用户协议</div>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                </button>
+                <button onclick="openModal('privacyPolicyModal')" class="list-item w-full text-left flex flex-row justify-between items-center group">
+                    <div class="flex flex-row items-center">
+                        <div class="list-icon-box bg-gray-50 text-gray-500">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div class="text-body-main text-gray-900">隐私政策</div>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                </button>
+            </div>
+            <div class="text-center mt-6 mb-4">
+                 <p class="text-xs text-gray-400">Copyright © 2025 BakeManager Inc.</p>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modals -->
+    <div class="modal" id="userAgreementModal">
+        <div class="modal-card flex flex-col h-[80vh]">
+            <div class="flex justify-between items-center p-4 border-b border-gray-100 dark:border-slate-600">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">用户协议</h3>
+                <button onclick="closeModal('userAgreementModal')" class="text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center rounded-full active:bg-gray-100">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                <p class="mb-3 font-bold">1. 服务条款</p>
+                <p class="mb-4">欢迎使用烘匠 BakeManager。使用本服务即表示您同意遵守以下条款...</p>
+                <p class="mb-3 font-bold">2. 账号安全</p>
+                <p class="mb-4">您有责任维护您的账号安全，不得将账号分享给他人...</p>
+                <p class="mb-3 font-bold">3. 内容规范</p>
+                <p class="mb-4">用户不得发布违法违规内容...</p>
+                <!-- More content -->
+            </div>
+            <div class="p-4 border-t border-gray-100 dark:border-slate-600">
+                <button onclick="closeModal('userAgreementModal')" class="w-full btn-primary py-2 rounded-lg">我已阅读并同意</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="privacyPolicyModal">
+        <div class="modal-card flex flex-col h-[80vh]">
+            <div class="flex justify-between items-center p-4 border-b border-gray-100 dark:border-slate-600">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">隐私政策</h3>
+                <button onclick="closeModal('privacyPolicyModal')" class="text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center rounded-full active:bg-gray-100">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                <p class="mb-3 font-bold">1. 信息收集</p>
+                <p class="mb-4">我们仅收集为您提供服务所必需的信息...</p>
+                <p class="mb-3 font-bold">2. 信息使用</p>
+                <p class="mb-4">您的信息仅用于改善我们的服务体验...</p>
+                <!-- More content -->
+            </div>
+            <div class="p-4 border-t border-gray-100 dark:border-slate-600">
+                <button onclick="closeModal('privacyPolicyModal')" class="w-full btn-primary py-2 rounded-lg">我已阅读并同意</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle text-green-400"></i>
+        <span id="toastMessage">操作成功</span>
+    </div>
+
+    <script>
+    function showToast(msg){ 
+        const toast = document.getElementById('toast');
+        const messageSpan = document.getElementById('toastMessage');
+        messageSpan.textContent = msg;
+        toast.classList.add('show'); 
+        setTimeout(() => toast.classList.remove('show'), 2000); 
+    }
+
+    function initPage(){
+        // 深色模式检查
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark');
+        } else {
+            document.body.classList.remove('dark');
+        }
+        
+        // 字数统计
+        const textarea = document.getElementById('feedbackText');
+        const charCount = document.getElementById('charCount');
+        textarea.addEventListener('input', function() {
+            const current = this.value.length;
+            charCount.textContent = current + '/500';
+            if(current > 500) {
+                charCount.classList.add('text-red-500');
+            } else {
+                charCount.classList.remove('text-red-500');
+            }
+        });
+    }
+
+    function checkUpdate() {
+        showToast('正在检查更新...');
+        setTimeout(() => {
+            showToast('当前已是最新版本');
+        }, 1500);
+    }
+
+    function rateApp() {
+        showToast('感谢您的支持！正在跳转应用商店...');
+    }
+
+    function submitFeedback() {
+        const text = document.getElementById('feedbackText').value;
+        if(!text.trim()) {
+            showToast('请输入反馈内容');
+            return;
+        }
+        showToast('反馈提交成功，感谢您的建议！');
+        document.getElementById('feedbackText').value = '';
+        document.getElementById('charCount').textContent = '0/500';
+    }
+
+    function openModal(id) {
+        document.getElementById(id).classList.add('show');
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('show');
+    }
+
+    document.addEventListener('DOMContentLoaded', initPage);
+    </script>
+</body>
+</html>

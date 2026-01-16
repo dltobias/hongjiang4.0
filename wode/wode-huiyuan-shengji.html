@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>升级会员 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            -webkit-tap-highlight-color: transparent;
+            padding-bottom: 100px;
+        }
+
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+        }
+
+        /* Custom Gradients */
+        .bg-gradient-pro { background: linear-gradient(135deg, #FFF8F0 0%, #FFF0E0 100%); }
+        .bg-gradient-team { background: linear-gradient(135deg, #F0F7FF 0%, #E0EEFF 100%); }
+        .bg-gradient-dark { background: linear-gradient(135deg, #2d3436 0%, #000000 100%); }
+        .bg-gradient-gold { background: linear-gradient(135deg, #f1c40f 0%, #f39c12 100%); }
+        
+        /* Card Styles */
+        .plan-card {
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .plan-card.active {
+            border-color: var(--primary-dark);
+            box-shadow: 0 10px 30px -10px rgba(255, 140, 0, 0.3);
+            transform: translateY(-2px);
+        }
+        .plan-card.active::after {
+            content: '推荐';
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: var(--primary-dark);
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            padding: 2px 8px;
+            border-bottom-left-radius: 8px;
+        }
+
+        /* Feature List */
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            font-size: 13px;
+            color: #555;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+        .feature-icon {
+            color: var(--primary-dark);
+            margin-right: 8px;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        /* Toggle Switch */
+        .toggle-container {
+            background: #e5e7eb;
+            border-radius: 99px;
+            padding: 4px;
+            display: inline-flex;
+            position: relative;
+        }
+        .toggle-btn {
+            padding: 6px 20px;
+            border-radius: 99px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #666;
+            position: relative;
+            z-index: 1;
+            transition: color 0.3s;
+        }
+        .toggle-btn.active { color: #333; }
+        .toggle-slider {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            bottom: 4px;
+            width: 50%; /* Adjust via JS */
+            background: white;
+            border-radius: 99px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+            pointer-events: none;
+        }
+
+        /* Sticky Footer */
+        .sticky-footer {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
+        }
+
+        /* Badge */
+        .badge-discount {
+            background: #ffecd1;
+            color: #e67e22;
+            font-size: 10px;
+            padding: 1px 6px;
+            border-radius: 4px;
+            margin-left: 6px;
+            font-weight: bold;
+            border: 1px solid #ffe0b2;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Navigation -->
+    <header class="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-gray-100 px-4 h-12 flex items-center justify-between">
+        <button onclick="history.back()" class="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-900">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <h1 class="font-bold text-base">会员方案</h1>
+        <div class="w-8"></div>
+    </header>
+
+    <main class="px-4 py-6 max-w-lg mx-auto">
+        
+        <!-- Header Section -->
+        <div class="text-center mb-8">
+            <h2 class="text-2xl font-extrabold text-gray-900 mb-2">解锁烘焙生产力</h2>
+            <p class="text-sm text-gray-500">从个人研发到企业管理，选择最适合你的方案</p>
+        </div>
+
+        <!-- Billing Toggle -->
+        <div class="flex justify-center mb-8">
+            <div class="toggle-container">
+                <div class="toggle-slider" id="billingSlider"></div>
+                <button class="toggle-btn active" id="btnMonthly" onclick="toggleBilling(false)">连续包月</button>
+                <button class="toggle-btn" id="btnYearly" onclick="toggleBilling(true)">
+                    连续包年 <span class="text-[10px] text-red-500 font-bold">-15%</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Plans Container -->
+        <div class="space-y-6">
+
+            <!-- 1. Free Plan -->
+            <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm opacity-90" onclick="selectPlan('free')">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h3 class="font-bold text-lg text-gray-800">免费版 Free</h3>
+                        <div class="text-xs text-gray-400 mt-1">入门体验 / 爱好者</div>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-xl font-bold text-gray-900">¥0</span>
+                        <span class="text-xs text-gray-400">/永久</span>
+                    </div>
+                </div>
+                
+                <div class="space-y-2 mb-4">
+                    <div class="feature-item">
+                        <i class="fas fa-check feature-icon text-gray-400"></i>
+                        <span>社区配方浏览 & 收藏</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-flask feature-icon text-gray-400"></i>
+                        <span><strong class="text-gray-700">1个</strong> 研发额度/月 (私有化1条配方)</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-book feature-icon text-gray-400"></i>
+                        <span>配方创建上限：<strong class="text-gray-700">30条</strong></span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-calculator feature-icon text-gray-400"></i>
+                        <span>基础成本计算 & 比例换算</span>
+                    </div>
+                </div>
+                <button id="btn-free" class="w-full py-2.5 rounded-xl border border-gray-200 text-gray-500 font-bold text-sm bg-gray-50">当前版本</button>
+            </div>
+
+            <!-- 2. Pro Plan (Highlighted) -->
+            <div class="bg-white rounded-2xl p-1 shadow-xl ring-1 ring-orange-100 relative transform scale-[1.02] z-10 transition-all duration-300 hover:shadow-2xl" onclick="openPlanBenefits('pro')">
+                <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-orange-500 to-red-500 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-md">
+                    超值首选 · 限时特惠
+                </div>
+                
+                <div class="bg-gradient-pro rounded-xl p-5 border border-orange-100">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="font-bold text-xl text-gray-900 flex items-center">
+                                个人 Pro 版
+                                <i class="fas fa-crown text-orange-500 ml-2 text-sm"></i>
+                            </h3>
+                            <div class="text-xs text-orange-800/60 mt-1 font-medium">独立烘焙师 / 个人研发</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="flex items-center justify-end gap-1.5">
+                                <span class="text-xs text-gray-400 line-through" id="price-pro-original">¥12.9</span>
+                                <span class="bg-red-100 text-red-600 text-[10px] font-bold px-1.5 rounded" id="discount-pro">3.5折</span>
+                            </div>
+                            <div>
+                                <span class="text-2xl font-black text-orange-600" id="price-pro">¥4.5</span>
+                                <span class="text-xs text-gray-500" id="unit-pro">/月</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3 mb-5">
+                        <div class="feature-item">
+                            <i class="fas fa-check-circle feature-icon text-orange-500"></i>
+                            <span>包含免费版全部功能 + <strong>ERP管理系统</strong></span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-database feature-icon text-orange-500"></i>
+                            <span>配方容量提升至 <strong class="text-gray-900">100条</strong></span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-archive feature-icon text-orange-500"></i>
+                            <span>配方保险箱文件数：<strong class="text-gray-900">5个</strong></span>
+                        </div>
+                        <div class="feature-item bg-white/60 p-2 rounded-lg border border-orange-100/50">
+                            <div class="flex items-start">
+                                <i class="fas fa-flask feature-icon text-orange-500 mt-1"></i>
+                                <div>
+                                    <div class="font-bold text-gray-800 text-xs mb-0.5">每月赠送 5 个研发额度</div>
+                                    <div class="text-[10px] text-gray-500 leading-tight">用于私有化Pro配方/保存到个人配方本 (不累计)</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="feature-item bg-white/60 p-2 rounded-lg border border-orange-100/50">
+                            <div class="flex items-start">
+                                <i class="fas fa-cloud-download-alt feature-icon text-orange-500 mt-1"></i>
+                                <div>
+                                    <div class="font-bold text-gray-800 text-xs mb-0.5">每月赠送 20 次社区一键保存</div>
+                                    <div class="text-[10px] text-gray-500 leading-tight">专门用于普通社区食谱，不占用研发额度</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button id="btn-pro" onclick="selectPlan('pro'); event.stopPropagation();" class="w-full py-3 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold text-sm shadow-lg shadow-orange-500/30 active:scale-[0.98] transition-transform flex items-center justify-center gap-2">
+                        立即升级 Pro
+                        <i class="fas fa-arrow-right text-xs"></i>
+                    </button>
+                    <p class="text-[10px] text-center text-gray-400 mt-3">支持随时取消订阅</p>
+                </div>
+            </div>
+
+            <!-- 3. Studio Plan (Redesigned) -->
+            <div class="bg-white rounded-2xl p-1 shadow-xl ring-1 ring-blue-100 relative transform scale-[1.01] transition-all duration-300 hover:shadow-2xl" onclick="openPlanBenefits('team')">
+                <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-md">
+                    高效协作 · 团队首选
+                </div>
+                
+                <div class="bg-gradient-team rounded-xl p-5 border border-blue-100">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="font-bold text-xl text-gray-900 flex items-center">
+                                团队版 Studio
+                                <i class="fas fa-users text-blue-500 ml-2 text-sm"></i>
+                            </h3>
+                            <div class="text-xs text-blue-800/60 mt-1 font-medium">小型团队 / 联合研发</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="flex items-center justify-end gap-1.5">
+                                <span class="text-xs text-gray-400 line-through" id="price-team-original">¥29</span>
+                                <span class="bg-blue-100 text-blue-600 text-[10px] font-bold px-1.5 rounded" id="discount-team">2折</span>
+                            </div>
+                            <div>
+                                <span class="text-2xl font-black text-blue-600" id="price-team">¥6</span>
+                                <span class="text-xs text-gray-500" id="unit-team">/月</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3 mb-5">
+                        <div class="feature-item">
+                            <i class="fas fa-check-circle feature-icon text-blue-500"></i>
+                            <span>包含 Pro 版全部功能 + <strong>团队协作</strong></span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-database feature-icon text-blue-500"></i>
+                            <span>配方容量提升至 <strong class="text-gray-900">300条</strong></span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-archive feature-icon text-blue-500"></i>
+                            <span>配方保险箱文件数：<strong class="text-gray-900">20个</strong></span>
+                        </div>
+                        <div class="feature-item bg-white/60 p-2 rounded-lg border border-blue-100/50">
+                            <div class="flex items-start">
+                                <i class="fas fa-flask feature-icon text-blue-500 mt-1"></i>
+                                <div>
+                                    <div class="font-bold text-gray-800 text-xs mb-0.5">每月赠送 20 个研发额度</div>
+                                    <div class="text-[10px] text-gray-500 leading-tight">团队共享额度，用于私有化/研发 (不累计)</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="feature-item bg-white/60 p-2 rounded-lg border border-blue-100/50">
+                            <div class="flex items-start">
+                                <i class="fas fa-share-alt feature-icon text-blue-500 mt-1"></i>
+                                <div>
+                                    <div class="font-bold text-gray-800 text-xs mb-0.5">支持 3 人团队协作</div>
+                                    <div class="text-[10px] text-gray-500 leading-tight">建立团队配方库，成员权限管理</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button id="btn-team" onclick="selectPlan('team'); event.stopPropagation();" class="w-full py-3 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-sm shadow-lg shadow-blue-500/30 active:scale-[0.98] transition-transform flex items-center justify-center gap-2">
+                        立即订阅 Studio
+                        <i class="fas fa-arrow-right text-xs"></i>
+                    </button>
+                    <p class="text-[10px] text-center text-gray-400 mt-3">支持随时取消订阅</p>
+                </div>
+            </div>
+
+            <!-- 4. Org Plan (Redesigned) -->
+            <div class="bg-white rounded-2xl p-1 shadow-xl ring-1 ring-slate-200 relative transform scale-[1.01] transition-all duration-300 hover:shadow-2xl" onclick="openPlanBenefits('org')">
+                <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-slate-800 to-black text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-md border border-slate-600 whitespace-nowrap z-20">
+                    全能旗舰 · 深度定制
+                </div>
+                
+                <div class="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-5 border border-slate-700 relative overflow-hidden">
+                    <!-- Decorative bg effects -->
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-yellow-500/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+                    
+                    <div class="flex justify-between items-start mb-4 relative z-10">
+                        <div>
+                            <h3 class="font-bold text-xl text-white flex items-center">
+                                企业版 Org
+                                <i class="fas fa-building text-yellow-500 ml-2 text-sm"></i>
+                            </h3>
+                            <div class="text-xs text-slate-400 mt-1 font-medium">工厂 / 连锁 / 中央厨房</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="flex items-center justify-end gap-1.5">
+                                <span class="text-xs text-slate-600 line-through" id="price-org-original">¥199</span>
+                                <span class="bg-yellow-900/40 text-yellow-400 border border-yellow-700/50 text-[10px] font-bold px-1.5 rounded" id="discount-org">3.7折</span>
+                            </div>
+                            <div>
+                                <span class="text-2xl font-black text-yellow-400" id="price-org">¥75</span>
+                                <span class="text-xs text-slate-500" id="unit-org">/月</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-3 mb-5 relative z-10">
+                        <div class="feature-item">
+                            <i class="fas fa-check-circle feature-icon text-yellow-500"></i>
+                            <span class="text-slate-200">包含 Studio 版全部功能 + <strong>企业管理</strong></span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-database feature-icon text-yellow-500"></i>
+                            <span class="text-slate-200">配方容量提升至 <strong class="text-white">2000条</strong></span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-archive feature-icon text-yellow-500"></i>
+                            <span class="text-slate-200">配方保险箱文件数：<strong class="text-white">100个</strong></span>
+                        </div>
+                        <div class="feature-item bg-slate-800/50 p-2 rounded-lg border border-slate-700/50">
+                            <div class="flex items-start">
+                                <i class="fas fa-infinity feature-icon text-yellow-500 mt-1"></i>
+                                <div>
+                                    <div class="font-bold text-slate-200 text-xs mb-0.5">每月赠送 100 个研发额度</div>
+                                    <div class="text-[10px] text-slate-500 leading-tight">库存充足，满足高频研发需求</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="feature-item bg-slate-800/50 p-2 rounded-lg border border-slate-700/50">
+                            <div class="flex items-start">
+                                <i class="fas fa-shield-alt feature-icon text-yellow-500 mt-1"></i>
+                                <div>
+                                    <div class="font-bold text-slate-200 text-xs mb-0.5">支持 10人+ 在线协作</div>
+                                    <div class="text-[10px] text-slate-500 leading-tight">企业级权限管理，多团队/多角色</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button id="btn-org" onclick="selectPlan('org'); event.stopPropagation();" class="w-full py-3 rounded-xl bg-gradient-to-r from-yellow-600 to-yellow-700 text-white font-bold text-sm shadow-lg shadow-yellow-900/20 border border-yellow-600/50 active:scale-[0.98] transition-transform flex items-center justify-center gap-2">
+                        立即订阅 Org
+                        <i class="fas fa-arrow-right text-xs"></i>
+                    </button>
+                    <p class="text-[10px] text-center text-slate-600 mt-3">支持随时取消订阅</p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- FAQ / Rules -->
+        <div class="mt-10 bg-gray-100 rounded-xl p-5">
+            <h4 class="font-bold text-gray-700 text-sm mb-4">订阅与额度说明</h4>
+            <div class="space-y-3 text-xs text-gray-500 leading-relaxed">
+                <p><strong>• 研发额度 (R&D Credits)：</strong>仅用于将社区配方“私有化”保存到您的配方本。私有化后支持离线查看、修改参数、计算成本，并永久保存。额度每月重置，不累计。</p>
+                <p><strong>• 社区收藏 vs 私有化：</strong>普通收藏（Bookmark）永久免费，但不具备生产计算功能。私有化则是将配方转化为您的生产资产。</p>
+                <p><strong>• 自动续费：</strong>订阅将自动续期。您可以在 Apple ID 或 Google Play 设置中随时取消。取消后权益将在当前周期结束后失效。</p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Sticky Bottom CTA (Only shows if scrolled past buttons? Or always visible for Pro) -->
+    <!-- For simplicity, let the inline buttons do the work, user said "Direct jump is fine" -->
+
+    <!-- Plan Benefits Modal -->
+    <div id="planModal" class="fixed inset-0 z-40 hidden">
+        <div class="absolute inset-0 bg-black/50" onclick="closePlanBenefits()"></div>
+        <div class="relative mx-auto mt-16 w-[90%] max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                <h3 id="planModalTitle" class="text-lg font-bold text-gray-900">方案权益</h3>
+                <button class="text-gray-400 hover:text-gray-600" onclick="closePlanBenefits()"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="planModalBody" class="p-5 space-y-3 max-h-[60vh] overflow-y-auto"></div>
+            <div class="p-5 grid grid-cols-2 gap-3 border-t border-gray-100">
+                <button class="py-2.5 rounded-xl bg-gray-100 text-gray-700 font-bold text-sm" onclick="closePlanBenefits()">返回</button>
+                <button id="planModalUpgradeBtn" class="py-2.5 rounded-xl bg-orange-500 text-white font-bold text-sm shadow-sm hover:bg-orange-600" onclick="confirmUpgradeFromModal()">立即升级</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Method Modal -->
+    <div id="paymentModal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closePaymentModal()"></div>
+        <div class="relative w-full h-full flex items-end sm:items-center justify-center p-4 sm:p-0">
+            <div class="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden transform transition-all animate-slide-up">
+                
+                <!-- Header -->
+                <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+                    <h3 class="text-lg font-bold text-gray-900">选择支付方式</h3>
+                    <button class="text-gray-400 hover:text-gray-600 p-1" onclick="closePaymentModal()">
+                        <i class="fas fa-times text-lg"></i>
+                    </button>
+                </div>
+
+                <!-- Content -->
+                <div class="p-5 space-y-4">
+                    <div class="text-sm text-gray-500 mb-2">订单金额: <span id="paymentAmount" class="text-xl font-bold text-orange-600 ml-1">--</span></div>
+                    
+                    <!-- Payment Options -->
+                    <div class="space-y-3">
+                        <label class="flex items-center justify-between p-4 border border-gray-200 rounded-xl cursor-pointer hover:border-orange-500 hover:bg-orange-50 transition-all group" onclick="selectPaymentMethod('alipay')">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-500">
+                                    <i class="fab fa-alipay text-xl"></i>
+                                </div>
+                                <span class="font-bold text-gray-700 group-hover:text-gray-900">支付宝 Alipay</span>
+                            </div>
+                            <div class="w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center method-radio" id="radio-alipay">
+                                <div class="w-2.5 h-2.5 rounded-full bg-orange-500 hidden"></div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-center justify-between p-4 border border-gray-200 rounded-xl cursor-pointer hover:border-green-500 hover:bg-green-50 transition-all group" onclick="selectPaymentMethod('wechat')">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-500">
+                                    <i class="fab fa-weixin text-xl"></i>
+                                </div>
+                                <span class="font-bold text-gray-700 group-hover:text-gray-900">微信支付 WeChat Pay</span>
+                            </div>
+                            <div class="w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center method-radio" id="radio-wechat">
+                                <div class="w-2.5 h-2.5 rounded-full bg-green-500 hidden"></div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-center justify-between p-4 border border-gray-200 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all group" onclick="selectPaymentMethod('paypal')">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+                                    <i class="fab fa-paypal text-xl"></i>
+                                </div>
+                                <span class="font-bold text-gray-700 group-hover:text-gray-900">PayPal</span>
+                            </div>
+                            <div class="w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center method-radio" id="radio-paypal">
+                                <div class="w-2.5 h-2.5 rounded-full bg-blue-500 hidden"></div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="p-5 border-t border-gray-100 bg-gray-50/50">
+                    <button id="btnPayNow" onclick="processPayment()" class="w-full py-3.5 rounded-xl bg-gray-300 text-white font-bold text-base shadow-sm cursor-not-allowed transition-all" disabled>
+                        立即支付
+                    </button>
+                    <p class="text-center text-[10px] text-gray-400 mt-3 flex items-center justify-center gap-1">
+                        <i class="fas fa-lock"></i> 安全支付保障
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+        <div class="relative w-full h-full flex items-center justify-center p-8">
+            <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 transform transition-all animate-bounce-in text-center relative overflow-hidden">
+                <!-- Success Icon -->
+                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 relative z-10">
+                    <i class="fas fa-check text-3xl text-green-500"></i>
+                </div>
+                
+                <!-- Confetti Background (Optional simplified CSS shapes) -->
+                <div class="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+                    <div class="absolute top-10 left-10 w-2 h-2 bg-yellow-400 rounded-full opacity-50"></div>
+                    <div class="absolute top-20 right-10 w-3 h-3 bg-red-400 rounded-full opacity-50"></div>
+                    <div class="absolute bottom-10 left-20 w-2 h-2 bg-blue-400 rounded-full opacity-50"></div>
+                </div>
+
+                <h3 class="text-xl font-extrabold text-gray-900 mb-2 relative z-10">支付成功</h3>
+                <p class="text-sm text-gray-500 mb-6 relative z-10" id="successMessage">
+                    您已成功订阅，会员权益已即时生效。
+                </p>
+
+                <div class="space-y-3 relative z-10">
+                    <button onclick="window.location.href='wodezhuye.html'" class="w-full py-3 rounded-xl bg-green-500 text-white font-bold text-sm shadow-lg shadow-green-500/30 active:scale-[0.98] transition-transform">
+                        立即体验
+                    </button>
+                    <button onclick="document.getElementById('successModal').classList.add('hidden')" class="w-full py-3 rounded-xl bg-gray-50 text-gray-500 font-bold text-sm hover:bg-gray-100">
+                        留在此页
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isYearly = false;
+        
+        // Base Monthly Prices (Activity Price / Original Price)
+        const prices = {
+            pro: { monthly: 4.5, original: 12.9 },
+            team: { monthly: 6, original: 29 },
+            org: { monthly: 75, original: 199 }
+        };
+
+        function toggleBilling(forceState) {
+            // Updated logic: Handle explicit clicks
+            if (typeof forceState === 'boolean') {
+                if (isYearly === forceState) return; // Prevent unnecessary updates
+                isYearly = forceState;
+            } else {
+                isYearly = !isYearly;
+            }
+
+            const slider = document.getElementById('billingSlider');
+            const btnMonthly = document.getElementById('btnMonthly');
+            const btnYearly = document.getElementById('btnYearly');
+            
+            if (isYearly) {
+                slider.style.transform = 'translateX(100%)';
+                btnMonthly.classList.remove('active');
+                btnYearly.classList.add('active');
+                updatePrices(true);
+            } else {
+                slider.style.transform = 'translateX(0)';
+                btnMonthly.classList.add('active');
+                btnYearly.classList.remove('active');
+                updatePrices(false);
+            }
+        }
+
+        function updatePrices(yearly) {
+            // Helper to format price (no decimals if integer)
+            const fmt = (n) => n % 1 === 0 ? n : n.toFixed(1);
+
+            // Pro
+            updateCard('pro', prices.pro, yearly);
+            // Team
+            updateCard('team', prices.team, yearly);
+            // Org
+            updateCard('org', prices.org, yearly);
+        }
+
+        function updateCard(type, priceObj, yearly) {
+            const priceEl = document.getElementById(`price-${type}`);
+            const originalEl = document.getElementById(`price-${type}-original`);
+            const unitEl = document.getElementById(`unit-${type}`);
+            const discountEl = document.getElementById(`discount-${type}`);
+
+            if (yearly) {
+                // Yearly Calculation: Monthly * 12 * 0.85
+                const yearlyPrice = priceObj.monthly * 12 * 0.85;
+                const yearlyOriginal = priceObj.original * 12;
+                
+                // Calculate new discount ratio: yearlyPrice / yearlyOriginal
+                // (M * 12 * 0.85) / (O * 12) = (M * 0.85) / O = (M/O) * 0.85
+                const discount = (yearlyPrice / yearlyOriginal * 10).toFixed(1);
+                
+                // Animate change? Just text update for now.
+                priceEl.textContent = `¥${fmt(yearlyPrice)}`;
+                originalEl.textContent = `¥${fmt(yearlyOriginal)}`;
+                unitEl.textContent = '/年';
+                
+                if(discountEl) {
+                    // Remove trailing .0 for integer discounts (e.g. 3.0折 -> 3折)
+                    const discountText = discount.endsWith('.0') ? discount.slice(0, -2) : discount;
+                    discountEl.textContent = `${discountText}折`;
+                }
+            } else {
+                // Monthly
+                const discount = (priceObj.monthly / priceObj.original * 10).toFixed(1);
+                
+                priceEl.textContent = `¥${priceObj.monthly}`;
+                originalEl.textContent = `¥${priceObj.original}`;
+                unitEl.textContent = '/月';
+                
+                if(discountEl) {
+                    const discountText = discount.endsWith('.0') ? discount.slice(0, -2) : discount;
+                    discountEl.textContent = `${discountText}折`;
+                }
+            }
+        }
+
+        function selectPlan(plan) {
+            // New logic: Direct to Payment Modal (Simulating "Other Android" flow as requested)
+            // If free plan, switch directly without payment
+            if (plan === 'free') {
+                localStorage.setItem('subscriptionPlan', 'free');
+                alert('已切换回免费版');
+                // Refresh buttons instead of redirecting immediately if you want to see the change
+                // But usually we redirect. Let's redirect to refresh profile, or stay here?
+                // User might want to see the "In Use" state. Let's reload page or checkCurrentPlan
+                checkCurrentPlan();
+                // window.location.href = 'wodezhuye.html'; // Optional: Stay to see the change
+                return;
+            }
+            openPaymentModal(plan);
+        }
+
+        function checkCurrentPlan() {
+            const currentPlan = localStorage.getItem('subscriptionPlan') || 'free';
+            
+            // 1. Reset all buttons to default "Upgrade" state
+            // Free
+            const btnFree = document.getElementById('btn-free');
+            btnFree.textContent = '切换至免费版';
+            btnFree.disabled = false;
+            btnFree.className = 'w-full py-2.5 rounded-xl border border-gray-200 text-gray-600 font-bold text-sm bg-white hover:bg-gray-50 hover:text-gray-900 transition-colors';
+            
+            // Pro
+            const btnPro = document.getElementById('btn-pro');
+            btnPro.innerHTML = '立即升级 Pro <i class="fas fa-arrow-right text-xs"></i>';
+            btnPro.disabled = false;
+            btnPro.className = 'w-full py-3 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold text-sm shadow-lg shadow-orange-500/30 active:scale-[0.98] transition-transform flex items-center justify-center gap-2';
+
+            // Team (Studio)
+            const btnTeam = document.getElementById('btn-team');
+            btnTeam.innerHTML = '立即订阅 Studio <i class="fas fa-arrow-right text-xs"></i>';
+            btnTeam.disabled = false;
+            btnTeam.className = 'w-full py-3 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-sm shadow-lg shadow-blue-500/30 active:scale-[0.98] transition-transform flex items-center justify-center gap-2';
+
+            // Org
+            const btnOrg = document.getElementById('btn-org');
+            btnOrg.innerHTML = '立即订阅 Org <i class="fas fa-arrow-right text-xs"></i>';
+            btnOrg.disabled = false;
+            // Optimized Org Button: Gold Gradient with Dark Text for Premium contrast
+            btnOrg.className = 'w-full py-3 rounded-xl bg-gradient-to-r from-yellow-400 to-yellow-500 text-slate-900 font-bold text-sm shadow-lg shadow-yellow-400/20 active:scale-[0.98] transition-transform flex items-center justify-center gap-2';
+
+            // 2. Set Active Plan Button
+            if (currentPlan === 'free') {
+                btnFree.innerHTML = '<i class="fas fa-check-circle mr-1.5"></i>使用中';
+                btnFree.disabled = true;
+                // Active Free: Gray/Light
+                btnFree.className = 'w-full py-2.5 rounded-xl border border-gray-200 text-gray-400 font-bold text-sm bg-gray-100 cursor-default';
+            } 
+            else if (currentPlan === 'pro') {
+                btnPro.innerHTML = '<i class="fas fa-check-circle mr-1.5"></i>使用中';
+                btnPro.disabled = true;
+                // Active Pro: Light Orange
+                btnPro.className = 'w-full py-3 rounded-xl bg-orange-50 text-orange-600 border border-orange-200 font-bold text-sm flex items-center justify-center gap-2 cursor-default';
+            }
+            else if (currentPlan === 'team' || currentPlan === 'studio') {
+                btnTeam.innerHTML = '<i class="fas fa-check-circle mr-1.5"></i>使用中';
+                btnTeam.disabled = true;
+                // Active Studio: Light Blue
+                btnTeam.className = 'w-full py-3 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 font-bold text-sm flex items-center justify-center gap-2 cursor-default';
+            }
+            else if (currentPlan === 'org') {
+                btnOrg.innerHTML = '<i class="fas fa-check-circle mr-1.5"></i>使用中';
+                btnOrg.disabled = true;
+                // Active Org: Dark/Gold
+                btnOrg.className = 'w-full py-3 rounded-xl bg-slate-800 text-yellow-500 border border-slate-700 font-bold text-sm flex items-center justify-center gap-2 cursor-default';
+            }
+        }
+
+        // --- Payment Modal Logic ---
+        let selectedPaymentMethod = null;
+        let currentPaymentPlan = null;
+
+        function openPaymentModal(plan) {
+            currentPaymentPlan = plan;
+            selectedPaymentMethod = null;
+            
+            // Get price text
+            const priceEl = document.getElementById(`price-${plan}`);
+            const unitEl = document.getElementById(`unit-${plan}`);
+            document.getElementById('paymentAmount').textContent = priceEl.textContent + unitEl.textContent;
+
+            // Reset selection
+            document.querySelectorAll('.method-radio div').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.method-radio').forEach(el => el.style.borderColor = '');
+            
+            const btn = document.getElementById('btnPayNow');
+            btn.disabled = true;
+            btn.classList.add('bg-gray-300', 'cursor-not-allowed');
+            btn.classList.remove('bg-orange-500', 'hover:bg-orange-600', 'shadow-lg', 'shadow-orange-500/30');
+            btn.textContent = '立即支付';
+
+            document.getElementById('paymentModal').classList.remove('hidden');
+        }
+
+        function closePaymentModal() {
+            document.getElementById('paymentModal').classList.add('hidden');
+        }
+
+        function selectPaymentMethod(method) {
+            selectedPaymentMethod = method;
+            
+            // Reset all
+            document.querySelectorAll('.method-radio div').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.method-radio').forEach(el => el.style.borderColor = ''); 
+            
+            // Highlight selected
+            const radio = document.getElementById(`radio-${method}`);
+            if(radio) {
+                const dot = radio.querySelector('div');
+                if(dot) dot.classList.remove('hidden');
+                
+                if(method === 'alipay') radio.style.borderColor = '#f97316'; 
+                if(method === 'wechat') radio.style.borderColor = '#22c55e'; 
+                if(method === 'paypal') radio.style.borderColor = '#3b82f6'; 
+            }
+
+            // Enable button
+            const btn = document.getElementById('btnPayNow');
+            btn.disabled = false;
+            btn.classList.remove('bg-gray-300', 'cursor-not-allowed');
+            btn.classList.add('bg-orange-500', 'hover:bg-orange-600', 'shadow-lg', 'shadow-orange-500/30');
+            
+            const amount = document.getElementById('paymentAmount').textContent;
+            btn.textContent = '立即支付 ' + amount;
+        }
+
+        function processPayment() {
+            if (!selectedPaymentMethod) return;
+            
+            const btn = document.getElementById('btnPayNow');
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> 处理中...';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                closePaymentModal();
+                
+                let planName = '';
+                if (currentPaymentPlan === 'pro') planName = '个人 Pro 版';
+                else if (currentPaymentPlan === 'team' || currentPaymentPlan === 'studio') planName = '团队版 Studio';
+                else if (currentPaymentPlan === 'org') planName = '企业版 Org';
+                
+                localStorage.setItem('subscriptionPlan', currentPaymentPlan);
+                localStorage.setItem('billingCycle', isYearly ? 'yearly' : 'monthly');
+                
+                // Show Custom Success Modal
+                const successMsg = document.getElementById('successMessage');
+                successMsg.innerHTML = `您已成功订阅 <strong>${planName.split(' ')[0]}</strong><br>支付方式：${selectedPaymentMethod === 'alipay' ? '支付宝' : (selectedPaymentMethod === 'wechat' ? '微信支付' : 'PayPal')}`;
+                
+                document.getElementById('successModal').classList.remove('hidden');
+                
+                // Update buttons immediately behind the modal
+                checkCurrentPlan();
+                
+                // alert(`支付成功！\n方式：${selectedPaymentMethod}\n欢迎加入 BakeManager ${planName.split(' ')[0]}。`);
+                // window.location.href = 'wodezhuye.html';
+            }, 1500);
+        }
+        const planBenefits = {
+            pro: [
+                '包含免费版全部功能 + ERP 管理系统',
+                '私密配方库与离线使用',
+                '配方容量提升至 100 条',
+                '配方保险箱文件数：5 个',
+                '每月 5 个研发额度（不累计）',
+                '每月 20 次社区一键保存（不占额度）'
+            ],
+            team: [
+                '最多 3 人团队协作共享',
+                '团队配方库与协作研发',
+                '配方容量提升至 300 条',
+                '配方保险箱文件数：20 个',
+                '每月 20 个研发额度（团队共享）',
+                '成员权限基础分级'
+            ],
+            org: [
+                '10 人在线协作起步（可扩容至大量席位）',
+                '企业级权限管理与多团队/多角色',
+                '配方容量提升至 2000 条',
+                '配方保险箱文件数：100 个',
+                '每月 100 个研发额度（库存充足）',
+                '可对接更深层 ERP 逻辑与审计日志'
+            ]
+        };
+
+        let currentPlanForModal = null;
+        function openPlanBenefits(plan) {
+            currentPlanForModal = plan;
+            const title = document.getElementById('planModalTitle');
+            const body = document.getElementById('planModalBody');
+            const btn = document.getElementById('planModalUpgradeBtn');
+            const names = { pro: '个人 Pro 版', team: '团队版 Studio', org: '企业版 Org' };
+            title.textContent = names[plan] + ' · 权益';
+            body.innerHTML = planBenefits[plan].map(item => `
+                <div class=\"flex items-start gap-2\">
+                    <i class=\"fas fa-check text-orange-500 mt-0.5\"></i>
+                    <span class=\"text-sm text-gray-700\">${item}</span>
+                </div>
+            `).join('');
+            btn.textContent = plan === 'org' ? '立即升级 Org' : (plan === 'team' ? '立即升级 Studio' : '立即升级 Pro');
+            document.getElementById('planModal').classList.remove('hidden');
+        }
+        function closePlanBenefits() { document.getElementById('planModal').classList.add('hidden'); }
+        function confirmUpgradeFromModal() {
+            if (!currentPlanForModal) return;
+            closePlanBenefits();
+            selectPlan(currentPlanForModal);
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            updatePrices(false);
+            checkCurrentPlan();
+        });
+    </script>
+</body>
+</html>

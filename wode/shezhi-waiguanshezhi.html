@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>外观设置 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Cookpad 风格统一配置 */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f7f7f5; /* var(--bg-light) */
+            color: #333333; /* var(--text-main) */
+            -webkit-tap-highlight-color: transparent;
+            padding-bottom: 40px;
+        }
+        
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+            --text-main: #333333;
+            --text-sub: #8b8b8b;
+            --bg-light: #f7f7f5;
+        }
+
+        /* 字体层级工具类 */
+        .text-h1 { font-size: 22px; font-weight: 700; color: var(--text-main); letter-spacing: -0.5px; }
+        .text-h2 { font-size: 18px; font-weight: 600; color: var(--text-main); }
+        .text-body-main { font-size: 15px; font-weight: 500; color: var(--text-main); }
+        .text-body-sub { font-size: 13px; color: var(--text-sub); font-weight: 400; }
+        .text-caption { font-size: 12px; color: var(--text-sub); font-weight: 600; letter-spacing: 0.5px; }
+
+        /* 顶部导航 */
+        header {
+            background-color: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        /* 列表容器 */
+        .list-group {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+            border: 1px solid #eeeeee;
+            overflow: hidden;
+        }
+
+        /* 列表项 */
+        .list-item {
+            display: flex !important;
+            flex-direction: row !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            padding: 16px;
+            background: white;
+            transition: background-color 0.2s;
+            border-bottom: 1px solid #f9f9f9;
+            width: 100%;
+        }
+        .list-item:last-child { border-bottom: none; }
+        .list-item:active { background-color: #f9f9f9; }
+
+        .list-icon-box {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 14px;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(4px);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s, transform 0.2s;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+        /* 暗色模式适配 */
+        body.dark {
+            background-color: #1e293b;
+            color: #f1f5f9;
+        }
+        body.dark .list-group {
+            background: #334155;
+            border-color: #475569;
+        }
+        body.dark .list-item {
+            background: #334155;
+            border-color: #475569;
+        }
+        body.dark .list-item:active {
+            background: #475569;
+        }
+        body.dark header {
+            background-color: rgba(30, 41, 59, 0.98);
+            border-bottom-color: #475569;
+        }
+        body.dark .text-h1, body.dark .text-h2, body.dark .text-body-main {
+            color: #f1f5f9;
+        }
+        body.dark .text-body-sub, body.dark .text-caption {
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <header class="sticky top-0 z-30 px-4 py-3 flex items-center justify-between">
+        <button onclick="window.location.href='shezhi-zhanghaoyuanquan.html'" class="text-gray-500 hover:text-gray-800 transition-colors w-9 h-9 flex items-center justify-center rounded-full active:bg-gray-100">
+            <i class="fas fa-arrow-left text-lg"></i>
+        </button>
+        <h1 class="text-h2">外观设置</h1>
+        <div class="w-9"></div> <!-- Spacer -->
+    </header>
+
+    <main class="max-w-3xl mx-auto px-4 py-6 space-y-6">
+        
+        <!-- Section: 主题 -->
+        <section>
+            <h3 class="text-caption mb-2.5 px-1 text-gray-400 font-bold uppercase tracking-wider">主题</h3>
+            <div class="list-group">
+                <div class="list-item w-full text-left flex flex-row justify-between items-center">
+                    <div class="flex flex-row items-center">
+                        <div class="list-icon-box bg-blue-50 text-blue-500">
+                            <i class="fas fa-moon"></i>
+                        </div>
+                        <div class="text-body-main text-gray-900">深色模式</div>
+                    </div>
+                    <!-- Toggle Switch -->
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="darkModeToggle" class="sr-only peer" onchange="toggleDarkMode()">
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+                    </label>
+                </div>
+            </div>
+            <p class="text-xs text-gray-400 mt-2 px-1">启用深色模式可减少低光环境下的眼部疲劳。</p>
+        </section>
+
+        <!-- Section: 字体 -->
+        <section>
+            <h3 class="text-caption mb-2.5 px-1 text-gray-400 font-bold uppercase tracking-wider">字体大小</h3>
+            <div class="list-group p-4">
+                <div class="flex justify-between items-end mb-4 px-1">
+                    <span class="text-xs text-gray-500">小</span>
+                    <span class="text-sm font-bold text-gray-900" id="scaleValue">1.0x</span>
+                    <span class="text-lg text-gray-900 font-bold">大</span>
+                </div>
+                <input type="range" min="0.9" max="1.2" step="0.05" id="fontScale" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-orange-500" oninput="onFontScaleChange(event)">
+                <div class="flex justify-end mt-4">
+                    <button onclick="resetFontScale()" class="text-xs text-orange-500 font-medium px-3 py-1.5 bg-orange-50 rounded-lg active:bg-orange-100 transition-colors">
+                        <i class="fas fa-undo mr-1"></i> 重置
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle text-green-400"></i>
+        <span id="toastMessage">设置已保存</span>
+    </div>
+
+    <script>
+    function showToast(msg){ 
+        const toast = document.getElementById('toast');
+        const messageSpan = document.getElementById('toastMessage');
+        messageSpan.textContent = msg;
+        toast.classList.add('show'); 
+        setTimeout(() => toast.classList.remove('show'), 2000); 
+    }
+
+    function initAppearance(){
+        // 深色模式初始化
+        const savedDarkMode = localStorage.getItem('darkMode');
+        let dark = false;
+        
+        if (savedDarkMode === null) {
+            localStorage.setItem('darkMode', 'false');
+            dark = false;
+        } else {
+            dark = savedDarkMode === 'true';
+        }
+        
+        document.body.classList.toggle('dark', dark);
+        document.getElementById('darkModeToggle').checked = dark;
+        
+        // 字体大小初始化
+        const scale = parseFloat(localStorage.getItem('fontScale') || '1');
+        const fontScaleSlider = document.getElementById('fontScale');
+        const scaleValue = document.getElementById('scaleValue');
+        
+        fontScaleSlider.value = isNaN(scale) ? 1 : scale;
+        scaleValue.textContent = (isNaN(scale) ? 1 : scale).toFixed(1) + 'x';
+        document.documentElement.style.setProperty('--fontScale', isNaN(scale) ? 1 : scale);
+    }
+
+    function toggleDarkMode(){
+        const toggle = document.getElementById('darkModeToggle');
+        const enabled = toggle.checked;
+        localStorage.setItem('darkMode', String(enabled));
+        document.body.classList.toggle('dark', enabled);
+        showToast(enabled ? '深色模式已开启' : '深色模式已停用');
+    }
+
+    function onFontScaleChange(e){
+        const value = parseFloat(e.target.value || '1');
+        const scaleValue = document.getElementById('scaleValue');
+        
+        localStorage.setItem('fontScale', String(value));
+        document.documentElement.style.setProperty('--fontScale', value);
+        scaleValue.textContent = value.toFixed(1) + 'x';
+    }
+
+    function resetFontScale(){
+        localStorage.setItem('fontScale','1');
+        const slider = document.getElementById('fontScale');
+        const scaleValue = document.getElementById('scaleValue');
+        
+        slider.value = 1;
+        scaleValue.textContent = '1.0x';
+        document.documentElement.style.setProperty('--fontScale', 1);
+        showToast('字体大小已重置');
+    }
+
+    document.addEventListener('DOMContentLoaded', initAppearance);
+    </script>
+</body>
+</html>

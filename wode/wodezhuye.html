@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>我的 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Cookpad 风格统一配置 */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f7f7f5; /* var(--bg-light) */
+            color: #333333; /* var(--text-main) */
+            -webkit-tap-highlight-color: transparent;
+            padding-bottom: 90px;
+        }
+        
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+            --text-main: #333333;
+            --text-sub: #8b8b8b;
+            --bg-light: #f7f7f5;
+        }
+
+        .text-cookpad { color: var(--primary-dark); }
+        .bg-cookpad { background-color: var(--primary-dark); }
+
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* 底部导航 - 与社区主页完全一致 */
+        .bottom-nav { 
+            background: rgba(255, 255, 255, 0.98); 
+            backdrop-filter: blur(10px); 
+            border-top: 1px solid #f0f0f0; 
+            padding-bottom: env(safe-area-inset-bottom); 
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 50;
+        }
+        .bottom-nav-item { 
+            padding: 8px 0 4px; 
+            color: #999; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .bottom-nav-item.active { color: var(--primary-dark); }
+        .bottom-nav-item i { font-size: 22px; margin-bottom: 2px; }
+        .bottom-nav-item span { font-size: 10px; font-weight: 500; }
+
+        /* --- 卡片分级系统 (适配 Cookpad 风格) --- */
+
+        /* Level 1: 核心状态卡 (Asset/Data) */
+        .card-asset {
+            background: #ffffff;
+            border: 1px solid #eeeeee; /* 更轻的边框 */
+            border-radius: 12px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+        .card-asset:active { transform: scale(0.995); }
+
+        /* Level 2: 订阅状态卡 */
+        .card-subscription-upgrade {
+            /* Removed dark gradient to match shequ-zhuye clean style */
+            background: #ffffff;
+            position: relative;
+            border-radius: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+            overflow: hidden;
+            border: 1px solid #f0f0f0;
+        }
+
+        .card-subscription-active {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-left: 4px solid var(--primary-dark);
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .sub-card-free {
+            border-left-color: #9ca3af;
+            border: 1px dashed #e5e7eb;
+            box-shadow: none;
+            background: #ffffff;
+        }
+        
+        /* Pro Plan - Light Orange Gradient */
+        .sub-card-pro { 
+            border-left-color: var(--primary-dark); 
+            border: 1px solid #fed7aa;
+            background: linear-gradient(135deg, #FFF8F0 0%, #FFF0E0 100%);
+        }
+        /* Pro specific text overrides */
+        .sub-card-pro .text-gray-900 { color: #c2410c !important; } /* Orange-800 for title */
+        .sub-card-pro .text-body-sub { color: #ea580c !important; opacity: 0.8; } /* Orange-600 for label */
+        .sub-card-pro .bg-gray-900 { background-color: #f97316 !important; } /* Orange-500 for progress */
+        .sub-card-pro .bg-green-50 { background-color: #fff7ed !important; border-color: #ffedd5 !important; color: #c2410c !important; } /* Orange badge */
+        .sub-card-pro .bg-green-500 { background-color: #f97316 !important; } /* Orange dot */
+
+        /* Studio Plan - Light Blue Gradient */
+        .sub-card-studio { 
+            border-left-color: #2563eb; 
+            border: 1px solid #bfdbfe;
+            background: linear-gradient(135deg, #F0F7FF 0%, #E0EEFF 100%);
+        }
+        /* Studio specific text overrides */
+        .sub-card-studio .text-gray-900 { color: #1e40af !important; } /* Blue-800 for title */
+        .sub-card-studio .text-body-sub { color: #2563eb !important; opacity: 0.8; } /* Blue-600 for label */
+        .sub-card-studio .bg-gray-900 { background-color: #3b82f6 !important; } /* Blue-500 for progress */
+        .sub-card-studio .bg-green-50 { background-color: #eff6ff !important; border-color: #dbeafe !important; color: #1d4ed8 !important; } /* Blue badge */
+        .sub-card-studio .bg-green-500 { background-color: #3b82f6 !important; } /* Blue dot */
+        
+        /* Org Plan - Dark Slate Gradient */
+        .sub-card-org { 
+            border-left: none; 
+            border: 1px solid #334155;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: white;
+        }
+        /* Org Dark Mode Overrides */
+        .sub-card-org .text-gray-900 { color: #f8fafc !important; } /* White text */
+        .sub-card-org .text-gray-500 { color: #94a3b8 !important; } /* Slate 400 */
+        .sub-card-org .text-body-sub { color: #cbd5e1 !important; } /* Slate 300 */
+        .sub-card-org .bg-gray-100 { background-color: #334155 !important; } /* Darker progress track */
+        .sub-card-org .bg-gray-900 { background-color: #facc15 !important; } /* Yellow progress bar */
+        .sub-card-org .text-gray-400 { color: #64748b !important; } /* Slate 500 */
+        
+        /* Badge Updates for Org */
+        .sub-card-org .bg-green-50 { background-color: rgba(250, 204, 21, 0.1) !important; border-color: rgba(250, 204, 21, 0.2) !important; color: #facc15 !important; }
+        .sub-card-org .bg-green-500 { background-color: #facc15 !important; } /* Yellow dot */
+
+        .upgrade-btn { 
+            padding: 6px 12px; 
+            border-radius: 10px; 
+            font-size: 12px; 
+            font-weight: 700; 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 6px; 
+            transition: all 0.2s; 
+        }
+        .upgrade-btn:active { transform: scale(0.98); }
+        .upgrade-btn-pro { background: #fffbeb; color: #c2410c; border: 1px solid #fed7aa; }
+        .upgrade-btn-studio { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+        .upgrade-btn-org { background: #facc15; color: #0f172a; border: 1px solid #eab308; } /* Gold Background, Dark Text */
+        .upgrade-btn-view { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
+
+        /* Level 3: 服务与支持 */
+        .group-support .list-item {
+            background: transparent;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding-left: 4px;
+            padding-right: 4px;
+        }
+        .group-support .list-item:last-child { border-bottom: none; }
+        .group-support .list-icon-box { background: transparent !important; color: #999 !important; }
+
+        /* 列表项通用优化 */
+        .list-item {
+            display: flex;
+            align-items: center;
+            padding: 16px 20px;
+            background: white;
+            transition: background-color 0.2s;
+        }
+        .list-item:active { background-color: #f9f9f9; }
+        .list-item:not(:last-child) { border-bottom: 1px solid #f7f7f7; }
+        
+        .list-icon-box {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 16px;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+
+        /* 字体层级工具类 */
+        .text-h1 { font-size: 22px; font-weight: 700; color: var(--text-main); letter-spacing: -0.5px; }
+        .text-h2 { font-size: 18px; font-weight: 600; color: var(--text-main); }
+        .text-body-main { font-size: 15px; font-weight: 500; color: var(--text-main); }
+        .text-body-sub { font-size: 13px; color: var(--text-sub); font-weight: 400; }
+        .text-caption { font-size: 12px; color: var(--text-sub); font-weight: 600; letter-spacing: 0.5px; margin-left: 4px; }
+
+        /* 用户头部背景 - 更加清爽 */
+        .user-header-bg {
+            background: #ffffff; /* 纯白背景 */
+            padding-top: env(safe-area-inset-top);
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        /* Toast & Modal styles */
+        .toast {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s, transform 0.2s;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+        }
+        .toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+        .share-modal { position: fixed; inset: 0; z-index: 3000; display: none; }
+        .share-modal.show { display: block; }
+        .share-mask { position: absolute; inset: 0; background: rgba(0,0,0,0.4); opacity: 0; transition: opacity 0.3s; }
+        .share-modal.show .share-mask { opacity: 1; }
+        .share-panel { position: absolute; bottom: 0; left: 0; right: 0; background: #f8f9fa; border-radius: 16px 16px 0 0; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1); padding-bottom: env(safe-area-inset-bottom); overflow: hidden; }
+        .share-modal.show .share-panel { transform: translateY(0); }
+
+        /* Share Scroll Rows */
+        .share-scroll-row {
+            display: flex;
+            overflow-x: auto;
+            padding: 16px 12px;
+            gap: 16px;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none;  /* IE 10+ */
+        }
+        .share-scroll-row::-webkit-scrollbar { display: none; } /* Chrome/Safari */
+
+        .share-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            min-width: 64px;
+            cursor: pointer;
+        }
+        .share-item:active { opacity: 0.7; }
+
+        .share-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+
+        .share-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+
+        .share-name {
+            font-size: 11px;
+            color: #666;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        /* Icon Colors */
+        .bg-wechat { background: #07c160; }
+        .bg-moments { background: linear-gradient(135deg, #555555 0%, #333333 100%); }
+        .bg-qq { background: #12b7f5; }
+        .bg-qzone { background: #fecb2e; }
+        .bg-weibo { background: #e6162d; }
+        .bg-copy { background: #f3f4f6; color: #666; }
+        .bg-qr { background: #f3f4f6; color: #666; }
+
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- 顶部用户信息区 (Visual Center) -->
+    <div class="user-header-bg px-6 pb-8 pt-4 mb-2">
+        <!-- Top Bar (Share Icon) -->
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-h2 opacity-0">我的</h1> <!-- 占位保持平衡，或隐藏 -->
+            <button class="w-10 h-10 flex items-center justify-center bg-white/60 backdrop-blur-sm rounded-full text-gray-600 shadow-sm hover:bg-white transition-all" onclick="openShareModal()">
+                <i class="fas fa-share-alt"></i>
+            </button>
+        </div>
+
+        <div class="flex items-center space-x-5">
+            <div class="relative group">
+                <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80" class="w-20 h-20 rounded-full object-cover border-4 border-white shadow-sm">
+                <div class="absolute bottom-0 right-0 bg-orange-500 text-white text-[10px] px-1.5 py-0.5 rounded border-2 border-white font-bold">
+                    Lv.5
+                </div>
+            </div>
+            <div class="flex-1">
+                <div class="flex items-center space-x-2 mb-1">
+                    <h2 class="text-h1 text-gray-900">烘焙小能手</h2>
+                </div>
+                
+                <!-- VIP Badge (Visual Anchor) -->
+                <div id="planBadge" class="inline-flex items-center bg-orange-100 text-orange-700 border border-orange-200 text-xs px-2.5 py-1 rounded-full shadow-sm mb-2 transition-colors">
+                    <i id="planBadgeIcon" class="fas fa-crown text-[10px] mr-1.5 text-orange-500"></i>
+                    <span id="planBadgeText" class="font-bold tracking-wide">PRO 会员</span>
+                </div>
+
+                <div class="flex items-center text-body-sub space-x-3">
+                    <span class="font-mono">ID: 9527</span>
+                    <span class="w-1 h-1 rounded-full bg-gray-300"></span>
+                    <span>店长</span>
+                </div>
+            </div>
+            
+            <!-- QR Code Button -->
+            <button class="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors" onclick="window.location.href='wode-my-qrcode.html'">
+                <i class="fas fa-qrcode text-xl"></i>
+            </button>
+        </div>
+    </div>
+
+    <main class="px-4 pb-6 space-y-8"> <!-- 增加垂直间距 -->
+        
+        <!-- 2. 订阅卡片 (区分状态) -->
+        <div>
+             <!-- 状态 A: 未订阅 (Upgrade CTA) -->
+            <!-- 状态 A: 未订阅 (Upgrade CTA) - 风格对齐 shequ-zhuye.html -->
+            <div id="upgradeCard" class="card-subscription-upgrade cursor-pointer active:scale-[0.99] transition-transform" onclick="window.location.href='wode-huiyuan-shengji.html'">
+                <div class="flex h-28">
+                    <!-- Image Section -->
+                    <div class="w-1/3 relative bg-gray-100">
+                        <img src="https://images.unsplash.com/photo-1556910103-1c02745a30bf?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80" class="w-full h-full object-cover absolute inset-0">
+                        <div class="absolute top-0 left-0 bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-br-lg shadow-sm">
+                            PRO
+                        </div>
+                    </div>
+                    
+                    <!-- Content Section -->
+                    <div class="flex-1 p-3 flex flex-col justify-center relative">
+                        <div class="flex items-start justify-between mb-1">
+                            <h3 class="font-bold text-gray-900 text-base">升级专业版</h3>
+                            <!-- 类似 Follow 按钮的设计 -->
+                            <span class="bg-orange-100 text-orange-600 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
+                                推荐
+                            </span>
+                        </div>
+                        
+                        <p class="text-xs text-gray-500 mb-3 leading-relaxed line-clamp-2">
+                            解锁无限云端配方存储、成本计算器与专属会员徽章。
+                        </p>
+                        
+                        <div class="flex items-center justify-between mt-auto">
+                            <div class="flex items-baseline">
+                                <span class="text-orange-600 font-bold text-sm">¥19.9</span>
+                                <span class="text-gray-400 text-[10px] ml-1">/月</span>
+                            </div>
+                            <span class="text-xs text-gray-400 flex items-center group-hover:text-orange-500 transition-colors">
+                                立即查看 <i class="fas fa-chevron-right text-[10px] ml-1"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 状态 B: 已订阅 (Account Status) -->
+            <div id="subscribedCard" class="card-subscription-active p-5 hidden cursor-pointer" onclick="window.location.href='wode-huiyuan-shengji.html'">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <div class="text-body-sub mb-1">当前方案</div>
+                        <div class="text-h2 text-gray-900" id="planName">专业个人版</div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="planStatusBadge" class="inline-flex items-center px-2.5 py-1 rounded text-[11px] font-bold bg-green-50 text-green-700 border border-green-100">
+                            <span class="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5"></span>
+                            使用中
+                        </span>
+                        <button id="upgradeSubBtn" class="upgrade-btn hidden" onclick="event.stopPropagation()">
+                            升级订阅 <i class="fas fa-arrow-up"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Progress Bar -->
+                <div class="space-y-2">
+                    <div class="flex justify-between text-xs font-medium text-gray-500">
+                        <span>云端配方存储</span>
+                        <span class="text-gray-900">24 / 100 个</span>
+                    </div>
+                    <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                        <div class="bg-gray-900 h-full rounded-full" style="width: 24%"></div>
+                    </div>
+                    <div class="text-[10px] text-gray-400 text-right pt-1">有效期至 2025-12-31</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. 功能分组 (Unified & Optimized Layout) -->
+        
+        <!-- Group: 数据与安全 -->
+        <section>
+            <h3 class="text-caption mb-2 px-1 text-gray-400 font-bold uppercase tracking-wider">我的数据与安全</h3>
+            <div class="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100">
+                <a href="wode-baoxianxiangzhuye.html" class="flex items-center px-4 py-4 hover:bg-gray-50 active:bg-gray-100 transition-colors group border-b border-gray-50 last:border-0">
+                    <div class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center mr-3 group-hover:bg-blue-100 transition-colors">
+                        <i class="fas fa-archive text-lg"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="text-body-main text-gray-800">配方保险箱</div>
+                        <div class="text-xs text-gray-400 mt-0.5">已备份 128 个配方</div>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                </a>
+                <a href="huishouzhan.html" class="flex items-center px-4 py-4 hover:bg-gray-50 active:bg-gray-100 transition-colors group border-b border-gray-50 last:border-0">
+                    <div class="w-9 h-9 rounded-lg bg-gray-100 text-gray-600 flex items-center justify-center mr-3 group-hover:bg-gray-200 transition-colors">
+                        <i class="fas fa-trash-alt text-lg"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="text-body-main text-gray-800">回收站</div>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                </a>
+            </div>
+        </section>
+
+        <!-- Group: 设置与偏好 -->
+        <section>
+            <h3 class="text-caption mb-2 px-1 text-gray-400 font-bold uppercase tracking-wider">设置与偏好</h3>
+            <div class="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100">
+                <a href="wode-bianjiziliao.html" class="flex items-center px-4 py-4 hover:bg-gray-50 active:bg-gray-100 transition-colors group border-b border-gray-50 last:border-0">
+                    <div class="w-9 h-9 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center mr-3 group-hover:bg-orange-100 transition-colors">
+                        <i class="fas fa-user-edit text-lg"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="text-body-main text-gray-800">编辑资料</div>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                </a>
+                <a href="shezhi-zhanghaoyuanquan.html" class="flex items-center px-4 py-4 hover:bg-gray-50 active:bg-gray-100 transition-colors group border-b border-gray-50 last:border-0">
+                    <div class="w-9 h-9 rounded-lg bg-gray-50 text-gray-500 flex items-center justify-center mr-3 group-hover:bg-gray-100 transition-colors">
+                        <i class="fas fa-cog text-lg"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="text-body-main text-gray-800">通用设置</div>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                </a>
+                <button onclick="openLanguageModal()" class="w-full text-left flex items-center px-4 py-4 hover:bg-gray-50 active:bg-gray-100 transition-colors group border-b border-gray-50 last:border-0">
+                    <div class="w-9 h-9 rounded-lg bg-gray-50 text-gray-500 flex items-center justify-center mr-3 group-hover:bg-gray-100 transition-colors">
+                        <i class="fas fa-globe text-lg"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="text-body-main text-gray-800">多语言切换</div>
+                        <div class="text-xs text-gray-400 mt-0.5">简体中文</div>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                </button>
+                <!-- <a href="shezhi-shezhi.html" class="list-item">
+                    <div class="list-icon-box bg-gray-50 text-gray-500">
+                        <i class="fas fa-sliders-h"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="text-sm font-medium text-gray-900">通用设置</div>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                </a> -->
+            </div>
+        </section>
+
+        <!-- Group: 服务与支持 -->
+        <section>
+            <h3 class="text-caption mb-2 px-1 text-gray-400 font-bold uppercase tracking-wider">服务与支持</h3>
+            <div class="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100">
+                <button onclick="contactSupport()" class="w-full text-left flex items-center px-4 py-4 hover:bg-gray-50 active:bg-gray-100 transition-colors group border-b border-gray-50 last:border-0">
+                    <div class="w-9 h-9 rounded-lg bg-pink-50 text-pink-500 flex items-center justify-center mr-3 group-hover:bg-pink-100 transition-colors">
+                        <i class="fas fa-headset text-lg"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="text-body-main text-gray-800">一级客服</div>
+                        <div class="text-xs text-gray-400 mt-0.5">工作日 9:00-18:00</div>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                </button>
+                <button onclick="rateInAppStore()" class="w-full text-left flex items-center px-4 py-4 hover:bg-gray-50 active:bg-gray-100 transition-colors group border-b border-gray-50 last:border-0">
+                    <div class="w-9 h-9 rounded-lg bg-yellow-50 text-yellow-500 flex items-center justify-center mr-3 group-hover:bg-yellow-100 transition-colors">
+                        <i class="fas fa-star text-lg"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="text-body-main text-gray-800">五星好评</div>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- Developer Tools -->
+        <div class="py-6 overflow-x-auto whitespace-nowrap opacity-30 hover:opacity-100 transition-opacity text-center">
+            <span class="text-[10px] text-gray-400 mr-2 uppercase tracking-wide">Preview Mode:</span>
+            <button onclick="switchPreview('free')" class="text-[10px] border border-gray-300 bg-white rounded px-2 py-1 mr-1">免费版</button>
+            <button onclick="switchPreview('pro')" class="text-[10px] border border-gray-300 bg-white rounded px-2 py-1 mr-1">个人 Pro</button>
+            <button onclick="switchPreview('studio')" class="text-[10px] border border-gray-300 bg-white rounded px-2 py-1 mr-1">团队 Studio</button>
+            <button onclick="switchPreview('org')" class="text-[10px] border border-gray-300 bg-white rounded px-2 py-1 mr-1">企业 Org</button>
+        </div>
+    </main>
+
+        <!-- 语言切换模态框 -->
+        <div id="languageModal" class="fixed inset-0 bg-black/50 z-[60] hidden flex items-center justify-center opacity-0 transition-opacity duration-300">
+            <div class="bg-white rounded-2xl w-[90%] max-w-sm p-5 transform scale-95 transition-transform duration-300" id="languageModalContent">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-gray-900">选择语言 / Select Language</h3>
+                    <button onclick="closeLanguageModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="space-y-3 max-h-[60vh] overflow-y-auto pr-1 scrollbar-hide">
+                    <button class="w-full flex items-center justify-between p-3 rounded-xl bg-orange-50 border border-orange-200 text-orange-700 font-medium flex-shrink-0">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xl">🇨🇳</span>
+                            <span>简体中文</span>
+                        </div>
+                        <i class="fas fa-check text-orange-600"></i>
+                    </button>
+                    
+                    <button class="w-full flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:bg-gray-50 text-gray-700 font-medium transition-colors flex-shrink-0">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xl">🇨🇳</span>
+                            <span>繁體中文</span>
+                        </div>
+                    </button>
+
+                    <button class="w-full flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:bg-gray-50 text-gray-700 font-medium transition-colors flex-shrink-0">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xl">🇺🇸</span>
+                            <span>English</span>
+                        </div>
+                    </button>
+
+                    <button class="w-full flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:bg-gray-50 text-gray-700 font-medium transition-colors flex-shrink-0">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xl">🇩🇪</span>
+                            <span>Deutsch (Deutschland)</span>
+                        </div>
+                    </button>
+
+                    <button class="w-full flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:bg-gray-50 text-gray-700 font-medium transition-colors flex-shrink-0">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xl">🇦🇹</span>
+                            <span>Deutsch (Österreich)</span>
+                        </div>
+                    </button>
+
+                    <button class="w-full flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:bg-gray-50 text-gray-700 font-medium transition-colors flex-shrink-0">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xl">🇨🇭</span>
+                            <span>Schweiz / Suisse</span>
+                        </div>
+                    </button>
+
+                    <button class="w-full flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:bg-gray-50 text-gray-700 font-medium transition-colors flex-shrink-0">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xl">🇫🇷</span>
+                            <span>Français (France)</span>
+                        </div>
+                    </button>
+
+                    <button class="w-full flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:bg-gray-50 text-gray-700 font-medium transition-colors flex-shrink-0">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xl">🇧🇪</span>
+                            <span>Français (Belgique)</span>
+                        </div>
+                    </button>
+
+                    <button class="w-full flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:bg-gray-50 text-gray-700 font-medium transition-colors flex-shrink-0">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xl">🇳🇱</span>
+                            <span>Nederlands</span>
+                        </div>
+                    </button>
+
+                    <button class="w-full flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:bg-gray-50 text-gray-700 font-medium transition-colors flex-shrink-0">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xl">🇧🇪</span>
+                            <span>Nederlands (België)</span>
+                        </div>
+                    </button>
+
+                    <button class="w-full flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:bg-gray-50 text-gray-700 font-medium transition-colors flex-shrink-0">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xl">🇪🇸</span>
+                            <span>Español (España)</span>
+                        </div>
+                    </button>
+
+                    <button class="w-full flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:bg-gray-50 text-gray-700 font-medium transition-colors flex-shrink-0">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xl">🇲🇽</span>
+                            <span>Español (México)</span>
+                        </div>
+                    </button>
+
+                    <button class="w-full flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:bg-gray-50 text-gray-700 font-medium transition-colors flex-shrink-0">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xl">🇨🇱</span>
+                            <span>Español (Chile)</span>
+                        </div>
+                    </button>
+
+                    <button class="w-full flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:bg-gray-50 text-gray-700 font-medium transition-colors flex-shrink-0">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xl">🇵🇹</span>
+                            <span>Português</span>
+                        </div>
+                    </button>
+                    
+                    <button class="w-full flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:bg-gray-50 text-gray-700 font-medium transition-colors flex-shrink-0">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xl">🇮🇹</span>
+                            <span>Italiano</span>
+                        </div>
+                    </button>
+
+                    <button class="w-full flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:bg-gray-50 text-gray-700 font-medium transition-colors flex-shrink-0">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xl">🇰🇷</span>
+                            <span>한국어</span>
+                        </div>
+                    </button>
+
+                    <button class="w-full flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:bg-gray-50 text-gray-700 font-medium transition-colors flex-shrink-0">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xl">🇯🇵</span>
+                            <span>日本語</span>
+                        </div>
+                    </button>
+
+                    <button class="w-full flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:bg-gray-50 text-gray-700 font-medium transition-colors flex-shrink-0">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xl">🇷🇺</span>
+                            <span>Русский</span>
+                        </div>
+                    </button>
+
+                    <button class="w-full flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:bg-gray-50 text-gray-700 font-medium transition-colors flex-shrink-0">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xl">🇸🇦</span>
+                            <span>العربية</span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            function openLanguageModal() {
+                const modal = document.getElementById('languageModal');
+                const content = document.getElementById('languageModalContent');
+                modal.classList.remove('hidden');
+                // Small delay to allow display:block to apply before opacity transition
+                setTimeout(() => {
+                    modal.classList.remove('opacity-0');
+                    content.classList.remove('scale-95');
+                    content.classList.add('scale-100');
+                }, 10);
+            }
+
+            function closeLanguageModal() {
+                const modal = document.getElementById('languageModal');
+                const content = document.getElementById('languageModalContent');
+                modal.classList.add('opacity-0');
+                content.classList.remove('scale-100');
+                content.classList.add('scale-95');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+            }
+
+            function showToast(msg) {
+                const t = document.getElementById('toast');
+                t.textContent = msg;
+                t.classList.add('show');
+                setTimeout(() => t.classList.remove('show'), 2000);
+            }
+
+            function contactSupport() {
+                // 检测是否为国内用户 (zh-CN, zh-HK, zh-TW, etc.)
+                const isDomestic = navigator.language.toLowerCase().startsWith('zh');
+                
+                if (isDomestic) {
+                    // 国内：复制微信号并尝试拉起微信
+                    const wechatId = "bakemanager_vip"; // 示例微信号
+                    
+                    // 尝试复制到剪贴板
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(wechatId).then(() => {
+                            showToast('客服微信已复制，正在打开微信...');
+                            setTimeout(() => {
+                                window.location.href = "weixin://";
+                            }, 1000);
+                        }).catch(() => {
+                            // 复制失败降级处理
+                            showToast('正在打开微信...');
+                            setTimeout(() => {
+                                window.location.href = "weixin://";
+                            }, 500);
+                        });
+                    } else {
+                        // 浏览器不支持 Clipboard API
+                         // 创建临时输入框复制
+                        const textArea = document.createElement("textarea");
+                        textArea.value = wechatId;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        try {
+                            document.execCommand('copy');
+                            showToast('客服微信已复制，正在打开微信...');
+                        } catch (err) {
+                            showToast('正在打开微信...');
+                        }
+                        document.body.removeChild(textArea);
+                        
+                        setTimeout(() => {
+                            window.location.href = "weixin://";
+                        }, 1000);
+                    }
+                } else {
+                    // 国外：拉起邮箱
+                    const email = "support@bakemanager.com";
+                    const subject = encodeURIComponent("Level 1 Support Request / 一级客服咨询");
+                    const body = encodeURIComponent("Hi Support Team,\n\nI need help with...");
+                    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+                }
+            }
+
+            function rateInAppStore() {
+                // 替换为实际的 App Store ID
+                const appId = "123456789"; // 示例 ID
+                
+                // iOS 设备使用 itms-apps 协议直接跳转 App Store 评价页
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                const url = isIOS 
+                    ? `itms-apps://itunes.apple.com/app/id${appId}?action=write-review`
+                    : `https://apps.apple.com/cn/app/id${appId}`; // 非 iOS 设备跳转网页版
+
+                // 尝试跳转
+                window.location.href = url;
+            }
+            
+            // 点击模态框背景关闭
+            document.getElementById('languageModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeLanguageModal();
+                }
+            });
+
+            // 订阅逻辑
+            function toggleSubscription(period) {
+                const btns = document.querySelectorAll('.sub-toggle-btn');
+                const amount = document.getElementById('priceAmount');
+                const periodText = document.getElementById('pricePeriod');
+                const saveBadge = document.getElementById('priceSave');
+
+                if (period === 'monthly') {
+                    btns[0].classList.add('active');
+                    btns[1].classList.remove('active');
+                    amount.innerText = '18';
+                    periodText.innerText = '月';
+                    saveBadge.classList.add('hidden');
+                } else {
+                    btns[0].classList.remove('active');
+                    btns[1].classList.add('active');
+                    amount.innerText = '178';
+                    periodText.innerText = '年';
+                    saveBadge.classList.remove('hidden');
+                }
+            }
+
+            function applySubscriptionUI(plan) {
+                const up = document.getElementById('upgradeCard');
+                const sub = document.getElementById('subscribedCard');
+                const nameEl = document.getElementById('planName');
+                const upgradeBtn = document.getElementById('upgradeSubBtn');
+                
+                // Badge Elements
+                const badge = document.getElementById('planBadge');
+                const badgeText = document.getElementById('planBadgeText');
+                const badgeIcon = document.getElementById('planBadgeIcon');
+                
+                // Progress Bar Elements
+                const limitText = sub.querySelector('.space-y-2 .flex .text-gray-900');
+                const progressBar = sub.querySelector('.bg-gray-900');
+                
+                // Reset Badge Base
+                badge.className = 'inline-flex items-center text-xs px-2.5 py-1 rounded-full shadow-sm mb-2 transition-colors border';
+                
+                // Date element
+                const dateEl = sub.querySelector('.text-right.pt-1');
+                
+                if (!plan || plan === 'free') {
+                    // OLD Logic:
+                    // up.classList.remove('hidden');
+                    // sub.classList.add('hidden');
+                    // NEW Logic: Show subscribed card for Free plan too, styled as Free
+                    up.classList.add('hidden');
+                    sub.classList.remove('hidden');
+                    sub.className = 'card-subscription-active p-5 sub-card-free';
+
+                    nameEl.textContent = '免费版 Free';
+                    if(limitText) limitText.innerText = '5 / 30 个';
+                    if(progressBar) progressBar.style.width = '16%';
+                    
+                    if(dateEl) dateEl.innerText = '永久有效';
+
+                    upgradeBtn.className = 'upgrade-btn upgrade-btn-pro';
+                    upgradeBtn.classList.remove('hidden');
+                    upgradeBtn.innerHTML = '升级订阅 <i class="fas fa-arrow-up"></i>';
+                    upgradeBtn.onclick = () => { 
+                        window.location.href = 'wode-huiyuan-shengji.html';
+                    };
+                    
+                    // Update Badge for Free
+                    badge.classList.add('bg-gray-100', 'text-gray-600', 'border-gray-200');
+                    badgeText.textContent = '免费版 Free';
+                    badgeIcon.className = 'fas fa-user text-[10px] mr-1.5 text-gray-400';
+                    return;
+                }
+                
+                // For paid plans, reset date text if needed
+                if(dateEl) dateEl.innerText = '有效期至 2025-12-31';
+                
+                up.classList.add('hidden');
+                sub.classList.remove('hidden');
+                sub.className = 'card-subscription-active p-5'; // Base class
+                
+                if (plan === 'pro') {
+                    sub.classList.add('sub-card-pro');
+                    nameEl.innerHTML = '个人 Pro 版 <i class="fas fa-crown text-sm ml-1"></i>';
+                    if(limitText) limitText.innerText = '24 / 100 个';
+                    if(progressBar) progressBar.style.width = '24%';
+
+                    upgradeBtn.className = 'upgrade-btn upgrade-btn-studio';
+                    upgradeBtn.classList.remove('hidden');
+                    upgradeBtn.innerHTML = '升级订阅 <i class="fas fa-arrow-up"></i>';
+                    upgradeBtn.onclick = () => { 
+                        localStorage.setItem('subscriptionPlan', 'studio');
+                        window.location.href = 'wode-huiyuan-shengji.html?upgrade=studio';
+                    };
+                    
+                    // Update Badge for Pro
+                    badge.classList.add('bg-orange-50', 'text-orange-700', 'border-orange-200');
+                    badgeText.textContent = '个人 Pro 版';
+                    badgeIcon.className = 'fas fa-crown text-[10px] mr-1.5 text-orange-500';
+                    
+                } else if (plan === 'studio' || plan === 'team') {
+                    sub.classList.add('sub-card-studio');
+                    nameEl.innerHTML = '团队版 Studio <i class="fas fa-users text-sm ml-1"></i>';
+                    if(limitText) limitText.innerText = '86 / 300 个';
+                    if(progressBar) progressBar.style.width = '28%';
+
+                    upgradeBtn.className = 'upgrade-btn upgrade-btn-org';
+                    upgradeBtn.classList.remove('hidden');
+                    upgradeBtn.innerHTML = '升级订阅 <i class="fas fa-arrow-up"></i>';
+                    upgradeBtn.onclick = () => { 
+                        localStorage.setItem('subscriptionPlan', 'org');
+                        window.location.href = 'wode-huiyuan-shengji.html?upgrade=org';
+                    };
+                    
+                    // Update Badge for Studio
+                    badge.classList.add('bg-blue-50', 'text-blue-700', 'border-blue-200');
+                    badgeText.textContent = '团队版 Studio';
+                    badgeIcon.className = 'fas fa-users text-[10px] mr-1.5 text-blue-500';
+                    
+                } else if (plan === 'org') {
+                    sub.classList.add('sub-card-org');
+                    nameEl.innerHTML = '企业版 Org <i class="fas fa-building text-sm ml-1"></i>';
+                    if(limitText) limitText.innerText = '452 / 2000 个';
+                    if(progressBar) progressBar.style.width = '22%';
+
+                    upgradeBtn.className = 'upgrade-btn upgrade-btn-org';
+                    upgradeBtn.classList.remove('hidden');
+                    upgradeBtn.innerHTML = '查看订阅 <i class="fas fa-eye"></i>';
+                    upgradeBtn.onclick = () => { 
+                        window.location.href = 'wode-huiyuan-shengji.html?view=org';
+                    };
+                    
+                    // Update Badge for Org
+                    badge.classList.add('bg-slate-900', 'text-yellow-400', 'border-slate-700');
+                    badgeText.textContent = '企业版 Org';
+                    badgeIcon.className = 'fas fa-building text-[10px] mr-1.5 text-yellow-500';
+                }
+            }
+
+            function switchPreview(plan) {
+                localStorage.setItem('subscriptionPlan', plan);
+                applySubscriptionUI(plan);
+            }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                const plan = (localStorage.getItem('subscriptionPlan') || 'free').trim();
+                applySubscriptionUI(plan);
+            });
+        </script>
+    </main>
+
+    <!-- 底部导航栏 -->
+    <nav class="bottom-nav" id="mainBottomNav">
+        <div class="grid grid-cols-4">
+            <a href="../shouye/shouye-mobile.html" class="bottom-nav-item">
+                <i class="fas fa-home"></i>
+                <span>首页</span>
+            </a>
+            <a href="../cangku-gongneng/erp-zhuye-canku.html" class="bottom-nav-item">
+                <i class="fas fa-chart-pie"></i>
+                <span>ERP</span>
+            </a>
+            <a href="../shequ/shequ-zhuye.html" class="bottom-nav-item">
+                <i class="fas fa-users"></i>
+                <span>社区</span>
+            </a>
+            <a href="#" class="bottom-nav-item active">
+                <i class="fas fa-user"></i>
+                <span>我的</span>
+            </a>
+        </div>
+    </nav>
+
+    <div class="toast" id="toast"></div>
+
+    <!-- Share Modal -->
+    <div class="share-modal" id="shareModal">
+        <div class="share-mask" onclick="closeShareModal()"></div>
+        <div class="share-panel">
+            <div class="relative text-center py-4 border-b border-gray-100 bg-white rounded-t-2xl">
+                <span class="text-sm font-bold text-gray-700">分享至</span>
+                <button class="absolute right-4 top-4 text-gray-400" onclick="closeShareModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <!-- Row 1: Friends (Mock) -->
+            <div class="bg-white pb-2">
+                <div class="share-scroll-row border-b border-gray-50" style="padding-bottom: 20px;">
+                    <div class="share-item">
+                        <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop" class="share-avatar">
+                        <span class="share-name">荣荣</span>
+                    </div>
+                    <div class="share-item">
+                        <img src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=100&h=100&fit=crop" class="share-avatar">
+                        <span class="share-name">王雷</span>
+                    </div>
+                    <div class="share-item">
+                        <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop" class="share-avatar">
+                        <span class="share-name">暖玉生辉</span>
+                    </div>
+                    <div class="share-item">
+                        <div class="share-avatar bg-gray-100 flex items-center justify-center text-gray-400">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <span class="share-name">烘匠群聊</span>
+                    </div>
+                    <div class="share-item">
+                        <img src="https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=100&h=100&fit=crop" class="share-avatar">
+                        <span class="share-name">康俊</span>
+                    </div>
+                    <div class="share-item">
+                        <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop" class="share-avatar">
+                        <span class="share-name">紫菱</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2: Apps -->
+            <div class="bg-white pb-6 pt-2">
+                <div class="share-scroll-row">
+                    <div class="share-item" onclick="mockShare('wechat')">
+                        <div class="share-icon bg-wechat"><i class="fab fa-weixin"></i></div>
+                        <span class="share-name">微信好友</span>
+                    </div>
+                    <div class="share-item" onclick="mockShare('moments')">
+                        <div class="share-icon bg-moments"><i class="fas fa-camera-retro"></i></div>
+                        <span class="share-name">朋友圈</span>
+                    </div>
+                    <div class="share-item" onclick="mockShare('qq')">
+                        <div class="share-icon bg-qq"><i class="fab fa-qq"></i></div>
+                        <span class="share-name">QQ好友</span>
+                    </div>
+                    <div class="share-item" onclick="mockShare('qzone')">
+                        <div class="share-icon bg-qzone"><i class="fas fa-star"></i></div>
+                        <span class="share-name">QQ空间</span>
+                    </div>
+                    <div class="share-item" onclick="mockShare('weibo')">
+                        <div class="share-icon bg-weibo"><i class="fab fa-weibo"></i></div>
+                        <span class="share-name">微博</span>
+                    </div>
+                </div>
+                
+                <!-- Row 3: Actions -->
+                <div class="share-scroll-row pt-0">
+                    <div class="share-item" onclick="copyLink()">
+                        <div class="share-icon bg-copy"><i class="fas fa-link"></i></div>
+                        <span class="share-name">复制链接</span>
+                    </div>
+                    <div class="share-item" onclick="generateQRCode()">
+                        <div class="share-icon bg-qr"><i class="fas fa-qrcode"></i></div>
+                        <span class="share-name">二维码</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-4 bg-white border-t border-gray-100">
+                <button class="w-full py-3 bg-gray-50 text-gray-600 rounded-xl text-sm font-medium active:bg-gray-100" onclick="closeShareModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 简单的交互逻辑
+        document.addEventListener('DOMContentLoaded', () => {
+            // 这里可以添加数据加载逻辑
+            console.log('Profile page loaded');
+        });
+
+        // Share Modal Logic
+        function openShareModal() {
+            document.getElementById('shareModal').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeShareModal() {
+            document.getElementById('shareModal').classList.remove('show');
+            document.body.style.overflow = '';
+        }
+
+        function copyLink() {
+            const dummy = document.createElement('input');
+            document.body.appendChild(dummy);
+            dummy.value = window.location.href;
+            dummy.select();
+            document.execCommand('copy');
+            document.body.removeChild(dummy);
+            showToast('链接已复制');
+            closeShareModal();
+        }
+
+        function generateQRCode() {
+            showToast('我的二维码生成中...');
+            setTimeout(() => {
+                closeShareModal();
+            }, 1000);
+        }
+
+        function mockShare(platform) {
+            const names = {
+                'wechat': '微信',
+                'moments': '朋友圈',
+                'qq': 'QQ',
+                'qzone': 'QQ空间',
+                'weibo': '微博'
+            };
+            showToast(`正在调起${names[platform]}...`);
+            setTimeout(() => {
+                closeShareModal();
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

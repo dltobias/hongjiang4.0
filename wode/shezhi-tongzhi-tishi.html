@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>通知与提醒 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Cookpad 风格统一配置 */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f7f7f5; /* var(--bg-light) */
+            color: #333333; /* var(--text-main) */
+            -webkit-tap-highlight-color: transparent;
+            padding-bottom: 40px;
+        }
+        
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+            --text-main: #333333;
+            --text-sub: #8b8b8b;
+            --bg-light: #f7f7f5;
+        }
+
+        /* 字体层级工具类 */
+        .text-h1 { font-size: 22px; font-weight: 700; color: var(--text-main); letter-spacing: -0.5px; }
+        .text-h2 { font-size: 18px; font-weight: 600; color: var(--text-main); }
+        .text-body-main { font-size: 15px; font-weight: 500; color: var(--text-main); }
+        .text-body-sub { font-size: 13px; color: var(--text-sub); font-weight: 400; }
+        .text-caption { font-size: 12px; color: var(--text-sub); font-weight: 600; letter-spacing: 0.5px; }
+
+        /* 顶部导航 */
+        header {
+            background-color: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        /* 列表容器 */
+        .list-group {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+            border: 1px solid #eeeeee;
+            overflow: hidden;
+        }
+
+        /* 列表项 */
+        .list-item {
+            display: flex !important;
+            flex-direction: row !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            padding: 16px;
+            background: white;
+            transition: background-color 0.2s;
+            border-bottom: 1px solid #f9f9f9;
+            width: 100%;
+        }
+        .list-item:last-child { border-bottom: none; }
+        .list-item:active { background-color: #f9f9f9; }
+
+        .list-icon-box {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 14px;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(4px);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s, transform 0.2s;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        
+        /* 暗色模式适配 */
+        body.dark {
+            background-color: #1e293b;
+            color: #f1f5f9;
+        }
+        body.dark .list-group {
+            background: #334155;
+            border-color: #475569;
+        }
+        body.dark .list-item {
+            background: #334155;
+            border-color: #475569;
+        }
+        body.dark .list-item:active {
+            background: #475569;
+        }
+        body.dark header {
+            background-color: rgba(30, 41, 59, 0.98);
+            border-bottom-color: #475569;
+        }
+        body.dark .text-h1, body.dark .text-h2, body.dark .text-body-main {
+            color: #f1f5f9;
+        }
+        body.dark .text-body-sub, body.dark .text-caption {
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <header class="sticky top-0 z-30 px-4 py-3 flex items-center justify-between">
+        <button onclick="window.location.href='shezhi-zhanghaoyuanquan.html'" class="text-gray-500 hover:text-gray-800 transition-colors w-9 h-9 flex items-center justify-center rounded-full active:bg-gray-100">
+            <i class="fas fa-arrow-left text-lg"></i>
+        </button>
+        <h1 class="text-h2">通知与提醒</h1>
+        <div class="w-9"></div> <!-- Spacer -->
+    </header>
+
+    <main class="max-w-3xl mx-auto px-4 py-6 space-y-6">
+        
+        <!-- Section: 消息通知 -->
+        <section>
+            <h3 class="text-caption mb-2.5 px-1 text-gray-400 font-bold uppercase tracking-wider">消息通知</h3>
+            <div class="list-group">
+                <!-- 消息通知 -->
+                <div class="list-item w-full text-left flex flex-row justify-between items-center">
+                    <div class="flex flex-row items-center">
+                        <div class="list-icon-box bg-green-50 text-green-500">
+                            <i class="fas fa-bell"></i>
+                        </div>
+                        <div class="text-body-main text-gray-900">接收新消息通知</div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="notifyEnabled" class="sr-only peer" onchange="toggleNotifyEnabled()">
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+                    </label>
+                </div>
+
+                <!-- 声音提醒 -->
+                <div class="list-item w-full text-left flex flex-row justify-between items-center">
+                    <div class="flex flex-row items-center">
+                        <div class="list-icon-box bg-blue-50 text-blue-500">
+                            <i class="fas fa-volume-up"></i>
+                        </div>
+                        <div class="text-body-main text-gray-900">声音提醒</div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="notifySound" class="sr-only peer" onchange="toggleSound()">
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+                    </label>
+                </div>
+
+                <!-- 震动提醒 -->
+                <div class="list-item w-full text-left flex flex-row justify-between items-center">
+                    <div class="flex flex-row items-center">
+                        <div class="list-icon-box bg-purple-50 text-purple-500">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <div class="text-body-main text-gray-900">震动提醒</div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="notifyVibrate" class="sr-only peer" onchange="toggleVibrate()">
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+                    </label>
+                </div>
+            </div>
+            <p class="text-xs text-gray-400 mt-2 px-1">请在系统设置中允许应用发送通知，以确保您能及时收到重要消息。</p>
+        </section>
+
+    </main>
+
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle text-green-400"></i>
+        <span id="toastMessage">设置已保存</span>
+    </div>
+
+    <script>
+    function showToast(msg){ 
+        const toast = document.getElementById('toast');
+        const messageSpan = document.getElementById('toastMessage');
+        messageSpan.textContent = msg;
+        toast.classList.add('show'); 
+        setTimeout(() => toast.classList.remove('show'), 2000); 
+    }
+
+    function initNotify(){
+        // 深色模式检查
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark');
+        } else {
+            document.body.classList.remove('dark');
+        }
+
+        // 初始化开关状态
+        document.getElementById('notifyEnabled').checked = localStorage.getItem('notifyEnabled') === 'true';
+        document.getElementById('notifySound').checked = localStorage.getItem('notifySound') === 'true';
+        document.getElementById('notifyVibrate').checked = localStorage.getItem('notifyVibrate') === 'true';
+    }
+
+    function toggleNotifyEnabled(){
+        const enabled = document.getElementById('notifyEnabled').checked;
+        localStorage.setItem('notifyEnabled', String(enabled));
+        showToast(enabled ? '消息通知已开启' : '消息通知已停用');
+    }
+
+    function toggleSound(){
+        const enabled = document.getElementById('notifySound').checked;
+        localStorage.setItem('notifySound', String(enabled));
+        showToast(enabled ? '声音提醒已开启' : '声音提醒已停用');
+    }
+
+    function toggleVibrate(){
+        const enabled = document.getElementById('notifyVibrate').checked;
+        localStorage.setItem('notifyVibrate', String(enabled));
+        showToast(enabled ? '震动提醒已开启' : '震动提醒已停用');
+    }
+
+    document.addEventListener('DOMContentLoaded', initNotify);
+    </script>
+</body>
+</html>

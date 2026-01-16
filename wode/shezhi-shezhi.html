@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>设置</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+            --text-main: #333333;
+            --text-sub: #8b8b8b;
+            --bg-light: #f7f7f5;
+            --bg-white: #ffffff;
+            --danger-red: #ff4757;
+            --border-color: #eeeeee;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-main);
+            margin: 0;
+            padding-bottom: 80px;
+        }
+
+        main {
+            max-width: 768px;
+            margin: 0 auto;
+        }
+
+        /* 顶部导航 */
+        .page-header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.05);
+        }
+
+        .header-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .back-btn {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: #f5f5f5;
+            color: var(--text-main);
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .back-btn:active {
+            background: #e0e0e0;
+        }
+
+        /* 列表组 */
+        .settings-group {
+            background: var(--bg-white);
+            margin: 16px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .settings-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            text-decoration: none;
+            color: inherit;
+            border-bottom: 1px solid var(--border-color);
+            transition: background-color 0.2s;
+        }
+
+        .settings-item:last-child {
+            border-bottom: none;
+        }
+
+        .settings-item:active {
+            background-color: #f9f9f9;
+        }
+
+        .item-left {
+            display: flex;
+            align-items: center;
+        }
+
+        .item-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-size: 16px;
+        }
+
+        .icon-appearance { background: #e3f2fd; color: #2196f3; }
+        .icon-notify { background: #e8f5e9; color: #4caf50; }
+        .icon-account { background: #fff3e0; color: #ff9800; }
+        .icon-about { background: #f3e5f5; color: #9c27b0; }
+
+        .item-content h3 {
+            margin: 0 0 4px 0;
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        .item-content p {
+            margin: 0;
+            font-size: 12px;
+            color: var(--text-sub);
+        }
+
+        .item-right {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-sub);
+        }
+
+        /* 按钮区域 */
+        .action-area {
+            padding: 0 16px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            flex: 1;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ff9f43 0%, #ff8c00 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(255, 159, 67, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .btn-danger {
+            background: #ffebee;
+            color: var(--danger-red);
+        }
+
+        .btn-danger:active {
+            background: #ffcdd2;
+        }
+        
+        .btn.secondary {
+            background: #f5f5f5;
+            color: var(--text-main);
+        }
+
+        .btn.small {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 6px;
+        }
+
+        /* 底部导航 */
+        .bottom-nav {
+            display: none; /* 默认隐藏，与原页面逻辑一致 */
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(0,0,0,0.05);
+            padding-bottom: env(safe-area-inset-bottom);
+            z-index: 100;
+        }
+
+        .bottom-nav-inner {
+            display: flex;
+            justify-content: space-around;
+            height: 60px;
+            position: relative;
+        }
+
+        .bottom-nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            text-decoration: none;
+            font-size: 10px;
+            gap: 4px;
+            z-index: 1;
+        }
+
+        .bottom-nav-item i {
+            font-size: 20px;
+            margin-bottom: 2px;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .bottom-nav-item.active {
+            color: var(--primary-dark);
+        }
+
+        .bottom-nav-item.active i {
+            transform: translateY(-2px);
+        }
+
+        .nav-indicator {
+            position: absolute;
+            top: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #ff9f43, #ff8c00);
+            border-radius: 2px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            left: 0;
+        }
+
+        /* 模态框 */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+            padding: 20px;
+        }
+
+        .modal.show {
+            display: flex;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .modal-card {
+            background: white;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 320px;
+            padding: 20px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            transform: scale(0.95);
+            transition: transform 0.2s;
+        }
+
+        .modal.show .modal-card {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        
+        .modal-title {
+            font-size: 17px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .modal-body {
+            font-size: 14px;
+            color: var(--text-sub);
+            line-height: 1.5;
+        }
+
+        .modal-footer {
+            margin-top: 20px;
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        /* 输入框 */
+        .input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            margin-top: 8px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input:focus {
+            border-color: var(--primary-orange);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
+        /* 账号列表样式 */
+        .account-section { margin: 12px 0 8px; display:flex; align-items:center; justify-content:space-between; }
+        .account-section .title { font-weight:600; font-size:13px; color:var(--text-main); }
+        .account-section .tools { display:flex; gap:8px; }
+        .account-section .tool-btn { font-size:12px; color:var(--text-sub); border:1px solid var(--border-color); padding:4px 8px; border-radius:6px; background:#fff; cursor:pointer;}
+        
+        .account-list { display:flex; flex-direction:column; gap:8px; max-height:200px; overflow-y:auto; padding-right:4px; }
+        .account-item { display:flex; align-items:center; justify-content:space-between; background:var(--bg-light); border:1px solid transparent; border-radius:12px; padding:8px 12px; }
+        .account-item .info { display:flex; align-items:center; gap:10px; color:var(--text-main); }
+        .account-item .info .avatar { width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,#ff9f43,#ff8c00); display:flex; align-items:center; justify-content:center; color:#fff; font-size:14px; }
+        .account-item .sub { font-size:12px; color:var(--text-sub); }
+        .account-item .actions { display:flex; align-items:center; gap:8px; }
+        .account-item .actions .delete { border:none; background:transparent; color:#9CA3AF; font-size:16px; cursor:pointer;}
+        .account-item .actions .delete:hover { color:var(--danger-red); }
+        .empty-state { background:var(--bg-light); border:1px dashed #CBD5E1; border-radius:12px; padding:12px; text-align:center; color:var(--text-sub); font-size:12px; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <header class="page-header">
+        <button onclick="goBack()" class="back-btn">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <div class="header-title">设置</div>
+        <div style="width: 36px;"></div> <!-- Spacer -->
+    </header>
+
+    <main>
+        <div class="settings-group">
+            <a href="shezhi-shengchan.html" class="settings-item">
+                <div class="item-left">
+                    <div class="item-icon" style="background: #e0f2f1; color: #009688;"><i class="fas fa-industry"></i></div>
+                    <div class="item-content">
+                        <h3>生产设置</h3>
+                        <p>执行流程、验证规则</p>
+                    </div>
+                </div>
+                <div class="item-right">
+                    <span>设置</span>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </a>
+            <a href="shezhi-waiguanshezhi.html" class="settings-item">
+                <div class="item-left">
+                    <div class="item-icon icon-appearance"><i class="fas fa-adjust"></i></div>
+                    <div class="item-content">
+                        <h3>外观设置</h3>
+                        <p>深色模式、字号</p>
+                    </div>
+                </div>
+                <div class="item-right">
+                    <span>进入</span>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </a>
+            <a href="shezhi-tongzhi-tishi.html" class="settings-item">
+                <div class="item-left">
+                    <div class="item-icon icon-notify"><i class="fas fa-bell"></i></div>
+                    <div class="item-content">
+                        <h3>通知与提醒</h3>
+                        <p>消息通知、声音与震动</p>
+                    </div>
+                </div>
+                <div class="item-right">
+                    <span>管理</span>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </a>
+            <a href="shezhi-zhanghaoyuanquan.html" class="settings-item">
+                <div class="item-left">
+                    <div class="item-icon icon-account"><i class="fas fa-user-shield"></i></div>
+                    <div class="item-content">
+                        <h3>账号与安全</h3>
+                        <p>登录设备、密码与隐私</p>
+                    </div>
+                </div>
+                <div class="item-right">
+                    <span>查看</span>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </a>
+            <a href="shezhi-guanyu-fankui.html" class="settings-item">
+                <div class="item-left">
+                    <div class="item-icon icon-about"><i class="fas fa-user-circle"></i></div>
+                    <div class="item-content">
+                        <h3>关于与反馈</h3>
+                        <p>版本信息、问题反馈</p>
+                    </div>
+                </div>
+                <div class="item-right">
+                    <span>进入</span>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </a>
+        </div>
+
+        <div class="action-area">
+            <button class="btn btn-primary" onclick="openSwitchAccountModal()">
+                <i class="fas fa-exchange-alt"></i> 切换账号
+            </button>
+            <button class="btn btn-danger" onclick="openLogoutModal()">
+                <i class="fas fa-sign-out-alt"></i> 退出登录
+            </button>
+        </div>
+    </main>
+
+    <!-- 底部导航栏 -->
+    <nav class="bottom-nav" id="mainBottomNav">
+        <div class="bottom-nav-inner">
+            <span class="nav-indicator" id="navIndicator"></span>
+            <a href="../shouye/shouye-mobile.html" class="bottom-nav-item">
+                <i class="fas fa-home"></i>
+                <span>首页</span>
+            </a>
+            <a href="../cangku-gongneng/erp-zhuye-canku.html" class="bottom-nav-item">
+                <i class="fas fa-chart-line"></i>
+                <span>ERP</span>
+            </a>
+            <a href="../shequ-mobile.html" class="bottom-nav-item">
+                <i class="fas fa-users"></i>
+                <span>社区</span>
+            </a>
+            <a href="wodezhuye.html" class="bottom-nav-item active">
+                <i class="fas fa-user"></i>
+                <span>我的</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- 切换账号模态框 -->
+    <div class="modal" id="switchAccountModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">切换账号</div>
+                <button class="btn small secondary" style="width:auto; padding:4px 8px;" onclick="closeSwitchAccountModal()">关闭</button>
+            </div>
+            <div style="font-size:12px;color:var(--text-sub);margin-bottom:8px">当前账号：<span id="currentAccountInfo"></span></div>
+            <div class="modal-body">
+                <div class="account-section">
+                    <div class="title">已登录过的账号</div>
+                    <div class="tools">
+                        <button class="tool-btn" id="recentToolsManage" onclick="toggleRecentAccountsManage()"><i class="fas fa-edit"></i> 管理</button>
+                        <button class="tool-btn" id="recentToolsClear" onclick="clearRecentAccounts()"><i class="fas fa-trash-alt"></i> 清空</button>
+                    </div>
+                </div>
+                <div id="recentAccountsContainer" class="account-list"></div>
+                <div style="margin-top:12px;">
+                    <label for="switchPhone" style="font-size:12px;color:var(--text-sub);">新手机号</label>
+                    <input id="switchPhone" type="tel" class="input" placeholder="请输入新手机号">
+                </div>
+                <div style="font-size:12px;color:var(--text-sub);margin-top:8px;">切换账号不会删除业务数据，仅更改登录身份。</div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn secondary small" onclick="closeSwitchAccountModal()">取消</button>
+                <button class="btn primary small" onclick="confirmSwitchAccount()">确认切换</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 退出登录模态框 -->
+    <div class="modal" id="logoutModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">退出登录</div>
+                <button class="btn small secondary" style="width:auto; padding:4px 8px;" onclick="closeLogoutModal()">关闭</button>
+            </div>
+            <div class="modal-body">
+                退出后不删除业务数据，仅清除登录凭据与账号信息。
+            </div>
+            <div class="modal-footer">
+                <button class="btn secondary small" onclick="closeLogoutModal()">取消</button>
+                <button class="btn danger small" onclick="confirmLogout()">确认退出</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        function goBack() {
+            window.location.href = 'wodezhuye.html';
+        }
+
+        // 读取主题设置以保持主页面外观一致
+        document.addEventListener('DOMContentLoaded', () => {
+            const dark = localStorage.getItem('darkMode') === 'true';
+            document.body.classList.toggle('dark', dark);
+            const scale = parseFloat(localStorage.getItem('fontScale')||'1');
+            document.documentElement.style.setProperty('--fontScale', scale);
+            const nav = document.getElementById('mainBottomNav'); if(nav) nav.style.display='none';
+        });
+
+        // 底部导航指示器动效
+        (function() {
+            const nav = document.getElementById('mainBottomNav');
+            const items = nav.querySelectorAll('.bottom-nav-item');
+            const indicator = document.getElementById('navIndicator');
+            function moveIndicator(target) {
+                const rect = target.getBoundingClientRect();
+                const parentRect = target.parentElement.getBoundingClientRect();
+                const width = rect.width - 8;
+                const offset = rect.left - parentRect.left + 4;
+                indicator.style.width = width + 'px';
+                indicator.style.transform = `translateX(${offset}px)`;
+            }
+            const activeItem = nav.querySelector('.bottom-nav-item.active') || items[0];
+            moveIndicator(activeItem);
+            items.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    if (this.getAttribute('href') === '#') e.preventDefault();
+                    items.forEach(n => n.classList.remove('active'));
+                    this.classList.add('active');
+                    moveIndicator(this);
+                });
+            });
+            window.addEventListener('resize', () => moveIndicator(nav.querySelector('.bottom-nav-item.active')));
+        })();
+
+        // Toast 与模态交互
+        function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1600); }
+        function maskPhone(p){ return p ? p.replace(/^(\d{3})\d{4}(\d{4})$/, '$1****$2') : '未绑定'; }
+
+        // 切换账号
+        function openSwitchAccountModal(){
+            const m=document.getElementById('switchAccountModal');
+            const el=document.getElementById('currentAccountInfo');
+            const phone = localStorage.getItem('phoneNumber')||'';
+            el.textContent = maskPhone(phone);
+            document.getElementById('switchPhone').value='';
+            recentAccountsEdit = false;
+            renderRecentAccounts();
+            m.classList.add('show');
+            document.body.style.overflow='hidden';
+        }
+
+        // 最近账号列表逻辑
+        let recentAccountsEdit = false;
+        function getRecentAccounts(){
+            try {
+                const arr = JSON.parse(localStorage.getItem('recentAccounts')||'[]');
+                return Array.isArray(arr) ? arr.filter(Boolean) : [];
+            } catch(e){ return []; }
+        }
+        function renderRecentAccounts(){
+            const container = document.getElementById('recentAccountsContainer');
+            const clearBtn = document.getElementById('recentToolsClear');
+            const manageBtn = document.getElementById('recentToolsManage');
+            const arr = getRecentAccounts();
+            if(clearBtn) clearBtn.style.display = arr.length ? '' : 'none';
+            if(manageBtn) manageBtn.textContent = recentAccountsEdit ? '完成' : '管理';
+            if(!container) return;
+            if(arr.length === 0){
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-user-circle"></i> 暂无其他账号，可在下方输入新手机号</div>';
+                return;
+            }
+            const current = localStorage.getItem('phoneNumber')||'';
+            container.innerHTML = arr.map(p=>{
+                const masked = maskPhone(p);
+                const isCurrent = current === p;
+                const switchBtn = isCurrent ? '<button class="btn small secondary" disabled>当前使用</button>' : `<button class="btn small primary" onclick="quickSwitchAccount('${p}')">一键切换</button>`;
+                const delBtn = recentAccountsEdit ? `<button class="delete" title="移除" onclick="removeRecentAccount('${p}')"><i class="fas fa-times-circle"></i></button>` : '';
+                return `<div class="account-item">
+                  <div class="info">
+                    <div class="avatar"><i class="fas fa-user"></i></div>
+                    <div>
+                      <div>${masked}</div>
+                      <div class="sub">${isCurrent ? '当前账号' : '历史登录'}</div>
+                    </div>
+                  </div>
+                  <div class="actions">${switchBtn}${delBtn}</div>
+                </div>`;
+            }).join('');
+        }
+        function toggleRecentAccountsManage(){
+            recentAccountsEdit = !recentAccountsEdit;
+            renderRecentAccounts();
+        }
+        function quickSwitchAccount(phone){
+            if(!/^1\d{10}$/.test(phone)) { showToast('账号格式异常'); return; }
+            localStorage.setItem('phoneNumber', phone);
+            let arr = getRecentAccounts().filter(p=>p!==phone);
+            arr.unshift(phone);
+            localStorage.setItem('recentAccounts', JSON.stringify(arr.slice(0,5)));
+            showToast('已切换到该账号');
+            closeSwitchAccountModal();
+        }
+        function removeRecentAccount(phone){
+            let arr = getRecentAccounts().filter(p=>p!==phone);
+            localStorage.setItem('recentAccounts', JSON.stringify(arr));
+            renderRecentAccounts();
+        }
+        function clearRecentAccounts(){
+            localStorage.setItem('recentAccounts', JSON.stringify([]));
+            renderRecentAccounts();
+        }
+
+        // 预览参数：支持两种界面状态 recent/empty
+        (function(){
+            try{
+                const p = new URLSearchParams(location.search);
+                if(p.get('preview') === 'recent'){
+                    localStorage.setItem('recentAccounts', JSON.stringify(['13800001234','13900005678','13700004321']));
+                    localStorage.setItem('phoneNumber','13700004321');
+                } else if(p.get('preview') === 'empty'){
+                    localStorage.setItem('recentAccounts', JSON.stringify([]));
+                    if(!localStorage.getItem('phoneNumber')) localStorage.setItem('phoneNumber','13600001111');
+                }
+            }catch(e){}
+        })();
+
+        function confirmSwitchAccount(){
+            var input = document.getElementById('switchPhone');
+            var v = (input && input.value || '').trim();
+            if(!/^1\d{10}$/.test(v)){ showToast('请输入正确的11位手机号'); return; }
+            const prev = localStorage.getItem('phoneNumber') || '';
+            localStorage.setItem('phoneNumber', v);
+            let arr = getRecentAccounts();
+            const set = new Set(arr);
+            if(prev && prev !== v) set.add(prev);
+            set.add(v);
+            arr = Array.from(set);
+            arr = arr.filter(p=>p!==v);
+            arr.unshift(v);
+            localStorage.setItem('recentAccounts', JSON.stringify(arr.slice(0,5)));
+            showToast('已切换到新账号');
+            closeSwitchAccountModal();
+        }
+        // 退出登录
+        function openLogoutModal(){ const m=document.getElementById('logoutModal'); m.classList.add('show'); document.body.style.overflow='hidden'; }
+        function closeLogoutModal(){ const m=document.getElementById('logoutModal'); m.classList.remove('show'); document.body.style.overflow=''; }
+        function clearAuthButKeepPreferences(){ const keepKeys=['darkMode','fontScale','recentAccounts']; const keep={}; keepKeys.forEach(k=> keep[k]=localStorage.getItem(k)); try{ localStorage.clear(); }catch(e){} keepKeys.forEach(k=> { if(keep[k]!==null) localStorage.setItem(k, keep[k]); }); }
+        function confirmLogout(){ clearAuthButKeepPreferences(); closeLogoutModal(); showToast('已退出登录'); setTimeout(()=>{ window.location.href='wodezhuye.html'; }, 800); }
+
+        // 点击背景关闭
+        document.addEventListener('click', function(e){ if(e.target.classList && e.target.classList.contains('modal')){ e.target.classList.remove('show'); document.body.style.overflow=''; } });
+    </script>
+</body>
+</html>
