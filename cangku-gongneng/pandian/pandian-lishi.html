@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>盘点历史 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Cookpad Design System */
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+            --text-main: #333333;
+            --text-sub: #8b8b8b;
+            --bg-light: #f7f7f5;
+            --bg-white: #ffffff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-main);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* 滚动条美化 */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 3px;
+        }
+
+        /* 历史记录卡片样式 */
+        .history-card {
+            background: var(--bg-white);
+            border-radius: 12px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            border: 1px solid #f0f0f0;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .history-card:active {
+            transform: scale(0.99);
+        }
+        
+        .history-card.cancelled {
+            opacity: 0.8;
+            background-color: #fef2f2;
+        }
+        
+        /* 筛选按钮样式 */
+        .filter-btn {
+            transition: all 0.2s ease;
+            border: 1px solid #e5e7eb;
+            background: white;
+            color: #6b7280;
+        }
+        
+        .filter-btn:hover {
+            border-color: var(--primary-orange);
+            color: var(--primary-dark);
+            background-color: #fff7ed;
+        }
+        
+        .filter-btn.active {
+            background: linear-gradient(135deg, #ff9f43 0%, #ff8c00 100%);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 2px 4px rgba(255, 140, 0, 0.2);
+        }
+        
+        /* 状态标签样式 */
+        .status-badge {
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        .status-completed {
+            background-color: #f0fdf4;
+            color: #166534;
+            border: 1px solid #dcfce7;
+        }
+        
+        .status-cancelled {
+            background-color: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fee2e2;
+        }
+        
+        /* 差异标签样式 */
+        .diff-positive {
+            background-color: #fff7ed;
+            color: #9a3412;
+            border: 1px solid #ffedd5;
+        }
+        
+        .diff-negative {
+            background-color: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fee2e2;
+        }
+        
+        .diff-zero {
+            background-color: #f0fdf4;
+            color: #166534;
+            border: 1px solid #dcfce7;
+        }
+        
+        /* 统计卡片样式 */
+        .stats-card {
+            background: white;
+            border: 1px solid #f0f0f0;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .stats-card:active {
+            transform: scale(0.98);
+        }
+
+        
+        /* 导出打印按钮样式 */
+        .action-btn {
+            background: white;
+            color: #4b5563;
+            border: 1px solid #e5e7eb;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .action-btn:hover {
+            background: #f9fafb;
+            border-color: #d1d5db;
+            color: #374151;
+        }
+        
+        .action-btn.primary {
+            background: linear-gradient(135deg, #ff9f43 0%, #ff8c00 100%);
+            color: white;
+            border: none;
+            box-shadow: 0 2px 4px rgba(255, 140, 0, 0.2);
+        }
+        
+        .action-btn.primary:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        /* 动画 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen pb-20">
+    <!-- 顶部导航栏 - Cookpad 风格 -->
+    <div class="bg-white px-4 py-3 shadow-sm border-b border-gray-100 sticky top-0 z-30">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <button onclick="window.location.href='pandianzhuye.html'" class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div>
+                    <div class="text-lg font-bold text-gray-800 tracking-wide">盘点历史</div>
+                    <div class="text-xs text-gray-500 font-medium mt-0.5">查看和管理盘点记录</div>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="exportHistory()" class="action-btn">
+                    <i class="fas fa-download text-xs mr-1"></i>
+                    <span>导出</span>
+                </button>
+                <button onclick="printHistory()" class="action-btn">
+                    <i class="fas fa-print text-xs mr-1"></i>
+                    <span>打印</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 统计概览 -->
+    <div class="px-4 mt-4">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div class="stats-card">
+                <div class="text-2xl font-bold text-gray-800" id="totalRecords">0</div>
+                <div class="text-xs text-gray-500 mt-1">总记录</div>
+            </div>
+            <div class="stats-card">
+                <div class="text-2xl font-bold text-green-600" id="completedRecords">0</div>
+                <div class="text-xs text-gray-500 mt-1">已完成</div>
+            </div>
+            <div class="stats-card">
+                <div class="text-2xl font-bold text-orange-500" id="differenceItems">0</div>
+                <div class="text-xs text-gray-500 mt-1">有差异</div>
+            </div>
+            <div class="stats-card">
+                <div class="text-2xl font-bold text-gray-800" id="totalValue">¥0</div>
+                <div class="text-xs text-gray-500 mt-1">总货值</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 筛选器 -->
+    <div class="px-4 mt-4">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="p-4 cursor-pointer hover:bg-gray-50 transition-colors" onclick="toggleFilters()">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center">
+                            <i class="fas fa-filter text-orange-500 text-sm"></i>
+                        </div>
+                        <div>
+                            <div class="text-sm font-bold text-gray-800">筛选条件</div>
+                            <div class="text-xs text-gray-500 mt-0.5" id="filterSummary">今天</div>
+                        </div>
+                    </div>
+                    <i id="filterIcon" class="fas fa-chevron-down text-gray-400 transition-transform duration-300 text-xs"></i>
+                </div>
+            </div>
+            <div id="filterContent" class="hidden px-4 pb-4 border-t border-gray-100">
+                <div class="flex items-center justify-end py-3">
+                    <button onclick="clearFilters()" class="text-xs text-orange-500 hover:text-orange-600 font-medium flex items-center">
+                        <i class="fas fa-undo text-[10px] mr-1"></i>
+                        重置筛选
+                    </button>
+                </div>
+            
+            <!-- 状态筛选 -->
+            <div class="mb-4">
+                <div class="text-xs font-bold text-gray-800 mb-2">状态</div>
+                <div class="flex flex-wrap gap-2">
+                    <button class="filter-btn active px-3 py-1.5 rounded-lg text-xs font-medium" data-filter="all" onclick="filterByStatus('all')">
+                        全部
+                    </button>
+                    <button class="filter-btn px-3 py-1.5 rounded-lg text-xs font-medium" data-filter="completed" onclick="filterByStatus('completed')">
+                        已完成
+                    </button>
+                    <button class="filter-btn px-3 py-1.5 rounded-lg text-xs font-medium" data-filter="cancelled" onclick="filterByStatus('cancelled')">
+                        已取消
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 差异筛选 -->
+            <div class="mb-4">
+                <div class="text-xs font-bold text-gray-800 mb-2">盘点结果</div>
+                <div class="flex flex-wrap gap-2">
+                    <button class="filter-btn px-3 py-1.5 rounded-lg text-xs font-medium" data-diff="all" onclick="filterByDifference('all')">
+                        全部
+                    </button>
+                    <button class="filter-btn px-3 py-1.5 rounded-lg text-xs font-medium" data-diff="match" onclick="filterByDifference('match')">
+                        账实相符
+                    </button>
+                    <button class="filter-btn px-3 py-1.5 rounded-lg text-xs font-medium" data-diff="surplus" onclick="filterByDifference('surplus')">
+                        盘盈
+                    </button>
+                    <button class="filter-btn px-3 py-1.5 rounded-lg text-xs font-medium" data-diff="deficit" onclick="filterByDifference('deficit')">
+                        盘亏
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 时间筛选 -->
+            <div class="mb-4">
+                <div class="text-xs font-bold text-gray-800 mb-2">时间范围</div>
+                <div class="flex flex-wrap gap-2 mb-3">
+                    <button class="filter-btn px-3 py-1.5 rounded-lg text-xs font-medium" data-time="all" onclick="filterByTime('all')">
+                        全部
+                    </button>
+                    <button class="filter-btn active px-3 py-1.5 rounded-lg text-xs font-medium" data-time="today" onclick="filterByTime('today')">
+                        今天
+                    </button>
+                    <button class="filter-btn px-3 py-1.5 rounded-lg text-xs font-medium" data-time="week" onclick="filterByTime('week')">
+                        本周
+                    </button>
+                    <button class="filter-btn px-3 py-1.5 rounded-lg text-xs font-medium" data-time="month" onclick="filterByTime('month')">
+                        本月
+                    </button>
+                    <button class="filter-btn px-3 py-1.5 rounded-lg text-xs font-medium" data-time="custom" onclick="showCustomDatePicker()">
+                        <i class="fas fa-calendar-alt text-[10px] mr-1"></i>
+                        自定义
+                    </button>
+                </div>
+                <!-- 自定义时间选择器 -->
+                <div id="customDatePicker" class="hidden bg-gray-50 p-3 rounded-xl border border-gray-100">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-[10px] text-gray-500 mb-1 block font-medium">开始日期</label>
+                            <input type="date" id="startDate" class="w-full p-2 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-gray-500 mb-1 block font-medium">结束日期</label>
+                            <input type="date" id="endDate" class="w-full p-2 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500">
+                        </div>
+                    </div>
+                    <div class="flex justify-end space-x-2 mt-3">
+                        <button onclick="cancelCustomDate()" class="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700 font-medium">
+                            取消
+                        </button>
+                        <button onclick="applyCustomDate()" class="px-3 py-1.5 text-xs bg-orange-500 text-white rounded-lg hover:bg-orange-600 font-medium shadow-sm shadow-orange-200">
+                            应用
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 仓库筛选 -->
+            <div>
+                <div class="text-xs font-bold text-gray-800 mb-2">仓库</div>
+                <div class="relative">
+                    <select class="w-full p-2.5 border border-gray-200 rounded-xl text-xs text-gray-700 bg-gray-50 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 appearance-none" id="warehouseFilter" onchange="filterByWarehouse()">
+                        <option value="all">全部仓库</option>
+                        <option value="warehouse1">主仓库 (A区)</option>
+                        <option value="warehouse2">二号仓库 (B区)</option>
+                        <option value="warehouse3">三号仓库 (C区)</option>
+                        <option value="warehouse4">四号仓库 (D区)</option>
+                        <option value="warehouse5">五号仓库 (E区)</option>
+                    </select>
+                    <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
+                        <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- 历史记录列表 -->
+    <div class="px-4 mt-5 pb-20">
+        <div class="space-y-4" id="historyList">
+            <!-- 历史记录将通过JS动态生成 -->
+        </div>
+    </div>
+
+    <!-- 加载中提示 -->
+    <div id="loadingIndicator" class="fixed inset-0 bg-white bg-opacity-80 flex items-center justify-center z-50 hidden">
+        <div class="text-center">
+            <div class="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p class="text-gray-600">加载中...</p>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let historyRecords = [];
+        let currentFilters = {
+            status: 'all',
+            difference: 'all',
+            time: 'today',
+            warehouse: 'all'
+        };
+        let isFilterExpanded = false;
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadHistoryRecords();
+            renderStatistics();
+            renderHistoryList();
+            updateFilterSummary();
+        });
+
+        // 从localStorage加载历史记录
+        function loadHistoryRecords() {
+            const savedRecords = JSON.parse(localStorage.getItem('inventoryHistory') || '[]');
+            
+            // 如果没有保存的记录，使用模拟数据
+            if (savedRecords.length === 0) {
+                historyRecords = generateMockData();
+                saveHistoryRecords();
+            } else {
+                // 转换日期字符串为Date对象
+                historyRecords = savedRecords.map(record => ({
+                    ...record,
+                    timestamp: new Date(record.timestamp),
+                    cancelledAt: record.cancelledAt ? new Date(record.cancelledAt) : null
+                }));
+            }
+        }
+
+        // 生成模拟数据
+        function generateMockData() {
+            const now = new Date();
+            const mockData = [
+                {
+                    id: 'PD20241230001',
+                    timestamp: new Date(now.getTime() - 2 * 60 * 60 * 1000), // 2小时前
+                    warehouseName: '主仓库 (A区)',
+                    warehouseId: 'warehouse1',
+                    operator: '张三',
+                    status: 'completed',
+                    totalItems: 15,
+                    totalValue: 12580.50,
+                    surplusItems: 3,
+                    deficitItems: 2,
+                    matchItems: 10,
+                    items: [
+                        {
+                            id: 'item1',
+                            name: '高筋面粉',
+                            image: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=100&h=100&fit=crop',
+                            systemQuantity: 50,
+                            actualQuantity: 52,
+                            difference: 2,
+                            unit: 'kg',
+                            unitPrice: 8.5,
+                            totalValue: 442.0,
+                            type: 'surplus'
+                        },
+                        {
+                            id: 'item2',
+                            name: '黄油',
+                            image: 'https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?w=100&h=100&fit=crop',
+                            systemQuantity: 20,
+                            actualQuantity: 18,
+                            difference: -2,
+                            unit: 'kg',
+                            unitPrice: 45.0,
+                            totalValue: 810.0,
+                            type: 'deficit'
+                        },
+                        {
+                            id: 'item3',
+                            name: '细砂糖',
+                            image: 'https://images.unsplash.com/photo-1587735243615-c03f25aaff15?w=100&h=100&fit=crop',
+                            systemQuantity: 30,
+                            actualQuantity: 30,
+                            difference: 0,
+                            unit: 'kg',
+                            unitPrice: 6.8,
+                            totalValue: 204.0,
+                            type: 'match'
+                        },
+                        {
+                            id: 'item4',
+                            name: '鸡蛋',
+                            image: 'https://images.unsplash.com/photo-1518569656558-1f25e69d93d7?w=100&h=100&fit=crop',
+                            systemQuantity: 100,
+                            actualQuantity: 105,
+                            difference: 5,
+                            unit: '个',
+                            unitPrice: 1.2,
+                            totalValue: 126.0,
+                            type: 'surplus'
+                        },
+                        {
+                            id: 'item5',
+                            name: '牛奶',
+                            image: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=100&h=100&fit=crop',
+                            systemQuantity: 24,
+                            actualQuantity: 22,
+                            difference: -2,
+                            unit: '瓶',
+                            unitPrice: 12.5,
+                            totalValue: 275.0,
+                            type: 'deficit'
+                        }
+                    ]
+                },
+                {
+                    id: 'PD20241230002',
+                    timestamp: new Date(now.getTime() - 4 * 60 * 60 * 1000), // 4小时前
+                    warehouseName: '二号仓库 (B区)',
+                    warehouseId: 'warehouse2',
+                    operator: '李四',
+                    status: 'completed',
+                    totalItems: 8,
+                    totalValue: 8650.00,
+                    surplusItems: 0,
+                    deficitItems: 0,
+                    matchItems: 8,
+                    items: [
+                        {
+                            id: 'item6',
+                            name: '橄榄油',
+                            image: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=100&h=100&fit=crop',
+                            systemQuantity: 12,
+                            actualQuantity: 12,
+                            difference: 0,
+                            unit: '瓶',
+                            unitPrice: 85.0,
+                            totalValue: 1020.0,
+                            type: 'match'
+                        },
+                        {
+                            id: 'item7',
+                            name: '意大利面',
+                            image: 'https://images.unsplash.com/photo-1551892374-ecf8754cf8b0?w=100&h=100&fit=crop',
+                            systemQuantity: 50,
+                            actualQuantity: 50,
+                            difference: 0,
+                            unit: '包',
+                            unitPrice: 15.5,
+                            totalValue: 775.0,
+                            type: 'match'
+                        }
+                    ]
+                },
+                {
+                    id: 'PD20241229001',
+                    timestamp: new Date(now.getTime() - 24 * 60 * 60 * 1000), // 昨天
+                    warehouseName: '三号仓库 (C区)',
+                    warehouseId: 'warehouse3',
+                    operator: '王五',
+                    status: 'completed',
+                    totalItems: 20,
+                    totalValue: 15420.80,
+                    surplusItems: 5,
+                    deficitItems: 8,
+                    matchItems: 7,
+                    items: [
+                        {
+                            id: 'item8',
+                            name: '巧克力',
+                            image: 'https://images.unsplash.com/photo-1511381939415-e44015466834?w=100&h=100&fit=crop',
+                            systemQuantity: 30,
+                            actualQuantity: 25,
+                            difference: -5,
+                            unit: '块',
+                            unitPrice: 25.0,
+                            totalValue: 625.0,
+                            type: 'deficit'
+                        },
+                        {
+                            id: 'item9',
+                            name: '咖啡豆',
+                            image: 'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=100&h=100&fit=crop',
+                            systemQuantity: 10,
+                            actualQuantity: 15,
+                            difference: 5,
+                            unit: 'kg',
+                            unitPrice: 120.0,
+                            totalValue: 1800.0,
+                            type: 'surplus'
+                        },
+                        {
+                            id: 'item10',
+                            name: '蜂蜜',
+                            image: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=100&h=100&fit=crop',
+                            systemQuantity: 15,
+                            actualQuantity: 12,
+                            difference: -3,
+                            unit: '瓶',
+                            unitPrice: 68.0,
+                            totalValue: 816.0,
+                            type: 'deficit'
+                        }
+                    ]
+                },
+                {
+                    id: 'PD20241228001',
+                    timestamp: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000), // 前天
+                    warehouseName: '四号仓库 (D区)',
+                    warehouseId: 'warehouse4',
+                    operator: '赵六',
+                    status: 'cancelled',
+                    totalItems: 12,
+                    totalValue: 6800.00,
+                    surplusItems: 2,
+                    deficitItems: 1,
+                    matchItems: 9,
+                    cancelledAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000 + 30 * 60 * 1000),
+                    cancelReason: '发现系统数据异常，需要重新核对',
+                    items: [
+                        {
+                            id: 'item11',
+                            name: '大米',
+                            image: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=100&h=100&fit=crop',
+                            systemQuantity: 100,
+                            actualQuantity: 102,
+                            difference: 2,
+                            unit: 'kg',
+                            unitPrice: 8.5,
+                            totalValue: 867.0,
+                            type: 'surplus'
+                        }
+                    ]
+                },
+                {
+                    id: 'PD20241227001',
+                    timestamp: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000), // 3天前
+                    warehouseName: '五号仓库 (E区)',
+                    warehouseId: 'warehouse5',
+                    operator: '孙七',
+                    status: 'completed',
+                    totalItems: 25,
+                    totalValue: 22350.60,
+                    surplusItems: 8,
+                    deficitItems: 3,
+                    matchItems: 14,
+                    items: [
+                        {
+                            id: 'item12',
+                            name: '三文鱼',
+                            image: 'https://images.unsplash.com/photo-1544943910-4c1dc44aab44?w=100&h=100&fit=crop',
+                            systemQuantity: 5,
+                            actualQuantity: 8,
+                            difference: 3,
+                            unit: 'kg',
+                            unitPrice: 180.0,
+                            totalValue: 1440.0,
+                            type: 'surplus'
+                        },
+                        {
+                            id: 'item13',
+                            name: '牛排',
+                            image: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=100&h=100&fit=crop',
+                            systemQuantity: 10,
+                            actualQuantity: 7,
+                            difference: -3,
+                            unit: 'kg',
+                            unitPrice: 220.0,
+                            totalValue: 1540.0,
+                            type: 'deficit'
+                        },
+                        {
+                            id: 'item14',
+                            name: '龙虾',
+                            image: 'https://images.unsplash.com/photo-1559717201-fbb671ff56b7?w=100&h=100&fit=crop',
+                            systemQuantity: 3,
+                            actualQuantity: 8,
+                            difference: 5,
+                            unit: 'kg',
+                            unitPrice: 350.0,
+                            totalValue: 2800.0,
+                            type: 'surplus'
+                        }
+                    ]
+                }
+            ];
+            
+            return mockData;
+        }
+
+        // 保存历史记录到localStorage
+        function saveHistoryRecords() {
+            const recordsToSave = historyRecords.map(record => ({
+                ...record,
+                timestamp: record.timestamp.toISOString(),
+                cancelledAt: record.cancelledAt ? record.cancelledAt.toISOString() : null
+            }));
+            
+            localStorage.setItem('inventoryHistory', JSON.stringify(recordsToSave));
+        }
+
+        // 渲染统计信息
+        function renderStatistics() {
+            const filteredRecords = getFilteredRecords();
+            
+            const totalRecords = filteredRecords.length;
+            const completedRecords = filteredRecords.filter(r => r.status === 'completed').length;
+            const differenceRecords = filteredRecords.filter(r => r.surplusItems > 0 || r.deficitItems > 0).length;
+            const totalValue = filteredRecords.reduce((sum, r) => sum + (r.totalValue || 0), 0);
+            
+            document.getElementById('totalRecords').textContent = totalRecords;
+            document.getElementById('completedRecords').textContent = completedRecords;
+            document.getElementById('differenceItems').textContent = differenceRecords;
+            document.getElementById('totalValue').textContent = '¥' + totalValue.toLocaleString('zh-CN', { minimumFractionDigits: 2 });
+        }
+
+        // 渲染历史记录列表
+        function renderHistoryList() {
+            const historyList = document.getElementById('historyList');
+            const filteredRecords = getFilteredRecords();
+            
+            if (filteredRecords.length === 0) {
+                historyList.innerHTML = `
+                    <div class="text-center py-12">
+                        <i class="fas fa-clipboard-list text-gray-400 text-4xl mb-4"></i>
+                        <p class="text-gray-500">暂无盘点记录</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            historyList.innerHTML = filteredRecords.map(record => {
+                const resultType = getInventoryResultType(record);
+                const resultInfo = getInventoryResultInfo(resultType);
+                
+                return `
+                    <div class="history-card ${record.status === 'cancelled' ? 'cancelled' : ''} bg-white rounded-2xl p-4 shadow-sm border border-gray-100 cursor-pointer" onclick="window.location.href='pandian-lishi-xiangqing.html?id=${record.id}'">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
+                                <div class="w-10 h-10 sm:w-12 sm:h-12 ${resultInfo.bgColor} rounded-xl flex items-center justify-center flex-shrink-0">
+                                    <i class="${resultInfo.icon} ${resultInfo.textColor} text-base sm:text-lg"></i>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <div class="font-semibold text-gray-800 text-sm sm:text-base truncate">${record.id}</div>
+                                    <div class="text-xs sm:text-sm text-gray-500 truncate">${record.warehouseName}</div>
+                                </div>
+                            </div>
+                            <div class="text-right flex-shrink-0 ml-2">
+                                <div class="status-badge ${record.status === 'completed' ? 'status-completed' : 'status-cancelled'} text-xs">
+                                    ${record.status === 'completed' ? '已完成' : '已取消'}
+                                </div>
+                                <div class="text-xs text-gray-500 mt-1">${formatDateTime(record.timestamp)}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-3">
+                            <div class="text-center">
+                                <div class="text-base sm:text-lg font-bold text-blue-600">${record.totalItems}</div>
+                                <div class="text-xs text-gray-500">总材料</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-base sm:text-lg font-bold text-green-600">${record.matchItems}</div>
+                                <div class="text-xs text-gray-500">相符</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-base sm:text-lg font-bold text-blue-500">${record.surplusItems}</div>
+                                <div class="text-xs text-gray-500">盘盈</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-base sm:text-lg font-bold text-red-500">${record.deficitItems}</div>
+                                <div class="text-xs text-gray-500">盘亏</div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-sm text-gray-600">总货值:</span>
+                                <span class="font-semibold text-gray-800 text-sm sm:text-base">¥${record.totalValue.toLocaleString('zh-CN', { minimumFractionDigits: 2 })}</span>
+                            </div>
+                            <div class="flex items-center justify-between sm:justify-end space-x-2">
+                                <span class="diff-${resultType} px-2 py-1 rounded-full text-xs font-medium">
+                                    ${resultInfo.label}
+                                </span>
+                                <i class="fas fa-chevron-right text-gray-400 text-sm"></i>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 获取盘点结果类型
+        function getInventoryResultType(record) {
+            if (record.surplusItems > 0 && record.deficitItems > 0) {
+                return 'mixed';
+            } else if (record.surplusItems > 0) {
+                return 'positive';
+            } else if (record.deficitItems > 0) {
+                return 'negative';
+            } else {
+                return 'zero';
+            }
+        }
+
+        // 获取盘点结果信息
+        function getInventoryResultInfo(type) {
+            const info = {
+                'zero': {
+                    label: '账实相符',
+                    icon: 'fas fa-check-circle',
+                    bgColor: 'bg-green-100',
+                    textColor: 'text-green-600'
+                },
+                'positive': {
+                    label: '盘盈',
+                    icon: 'fas fa-arrow-up',
+                    bgColor: 'bg-blue-100',
+                    textColor: 'text-blue-600'
+                },
+                'negative': {
+                    label: '盘亏',
+                    icon: 'fas fa-arrow-down',
+                    bgColor: 'bg-red-100',
+                    textColor: 'text-red-600'
+                },
+                'mixed': {
+                    label: '有差异',
+                    icon: 'fas fa-exchange-alt',
+                    bgColor: 'bg-yellow-100',
+                    textColor: 'text-yellow-600'
+                }
+            };
+            
+            return info[type] || info['zero'];
+        }
+
+        // 获取筛选后的记录
+        function getFilteredRecords() {
+            return historyRecords.filter(record => {
+                // 状态筛选
+                if (currentFilters.status !== 'all' && record.status !== currentFilters.status) {
+                    return false;
+                }
+                
+                // 差异筛选
+                if (currentFilters.difference !== 'all') {
+                    const resultType = getInventoryResultType(record);
+                    if (currentFilters.difference === 'match' && resultType !== 'zero') {
+                        return false;
+                    }
+                    if (currentFilters.difference === 'surplus' && resultType !== 'positive') {
+                        return false;
+                    }
+                    if (currentFilters.difference === 'deficit' && resultType !== 'negative') {
+                        return false;
+                    }
+                }
+                
+                // 时间筛选
+                if (currentFilters.time !== 'all') {
+                    const recordDate = new Date(record.timestamp);
+                    const now = new Date();
+                    
+                    if (currentFilters.time === 'today') {
+                        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                        if (recordDate < today) return false;
+                    } else if (currentFilters.time === 'week') {
+                        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                        if (recordDate < weekAgo) return false;
+                    } else if (currentFilters.time === 'month') {
+                        const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                        if (recordDate < monthAgo) return false;
+                    }
+                }
+                
+                // 仓库筛选
+                if (currentFilters.warehouse !== 'all' && record.warehouseId !== currentFilters.warehouse) {
+                    return false;
+                }
+                
+                return true;
+            });
+        }
+
+
+        // 筛选功能
+        function filterByStatus(status) {
+            currentFilters.status = status;
+            updateFilterButtons('[data-filter]', status);
+            renderStatistics();
+            renderHistoryList();
+            updateFilterSummary();
+        }
+
+        function filterByDifference(difference) {
+            currentFilters.difference = difference;
+            updateFilterButtons('[data-diff]', difference);
+            renderStatistics();
+            renderHistoryList();
+            updateFilterSummary();
+        }
+
+        function filterByTime(time) {
+            currentFilters.time = time;
+            updateFilterButtons('[data-time]', time);
+            renderStatistics();
+            renderHistoryList();
+            updateFilterSummary();
+        }
+
+        function filterByWarehouse() {
+            const warehouseSelect = document.getElementById('warehouseFilter');
+            currentFilters.warehouse = warehouseSelect.value;
+            renderStatistics();
+            renderHistoryList();
+            updateFilterSummary();
+        }
+
+        function updateFilterButtons(selector, activeValue) {
+            document.querySelectorAll(selector).forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.filter === activeValue || btn.dataset.diff === activeValue || btn.dataset.time === activeValue) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        // 清除筛选
+        function clearFilters() {
+            currentFilters = {
+                status: 'all',
+                difference: 'all',
+                time: 'today',
+                warehouse: 'all'
+            };
+            
+            // 重置按钮状态
+            document.querySelectorAll('[data-filter]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('[data-filter="all"]').classList.add('active');
+            
+            document.querySelectorAll('[data-diff]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('[data-diff="all"]').classList.add('active');
+            
+            document.querySelectorAll('[data-time]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('[data-time="today"]').classList.add('active');
+            
+            document.getElementById('warehouseFilter').value = 'all';
+            
+            // 隐藏自定义时间选择器
+            const customDatePicker = document.getElementById('customDatePicker');
+            if (customDatePicker) {
+                customDatePicker.classList.add('hidden');
+            }
+            
+            updateFilterSummary();
+            renderStatistics();
+            renderHistoryList();
+        }
+
+        // 导出功能
+        function exportHistory() {
+            showToast('正在导出盘点历史...', 'info');
+            
+            // 模拟导出处理
+            setTimeout(() => {
+                showToast('盘点历史已导出到下载文件夹', 'success');
+            }, 2000);
+        }
+
+        function exportRecord(recordId) {
+            showToast('正在导出盘点详情...', 'info');
+            
+            // 模拟导出处理
+            setTimeout(() => {
+                showToast(`盘点单 ${recordId} 已导出`, 'success');
+            }, 1500);
+        }
+
+        // 打印功能
+        function printHistory() {
+            const filteredRecords = getFilteredRecords();
+            const printContent = generateHistoryPrintContent(filteredRecords);
+            
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(printContent);
+            printWindow.document.close();
+            printWindow.print();
+        }
+
+        function printRecord(recordId) {
+            const record = historyRecords.find(r => r.id === recordId);
+            if (!record) return;
+            
+            const printContent = generateRecordPrintContent(record);
+            
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(printContent);
+            printWindow.document.close();
+            printWindow.print();
+        }
+
+        function generateHistoryPrintContent(records) {
+            return `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>盘点历史报表</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        .header { text-align: center; margin-bottom: 30px; }
+                        .summary { margin-bottom: 20px; }
+                        table { width: 100%; border-collapse: collapse; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f2f2f2; }
+                        .text-center { text-align: center; }
+                        .text-right { text-align: right; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>盘点历史报表</h1>
+                        <p>生成时间: ${new Date().toLocaleString('zh-CN')}</p>
+                    </div>
+                    
+                    <div class="summary">
+                        <p><strong>统计摘要:</strong></p>
+                        <p>总记录数: ${records.length}</p>
+                        <p>已完成: ${records.filter(r => r.status === 'completed').length}</p>
+                        <p>总货值: ¥${records.reduce((sum, r) => sum + r.totalValue, 0).toLocaleString('zh-CN', { minimumFractionDigits: 2 })}</p>
+                    </div>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>盘点单号</th>
+                                <th>时间</th>
+                                <th>仓库</th>
+                                <th>操作员</th>
+                                <th>状态</th>
+                                <th>总材料</th>
+                                <th>盘盈</th>
+                                <th>盘亏</th>
+                                <th>总货值</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${records.map(record => `
+                                <tr>
+                                    <td>${record.id}</td>
+                                    <td>${formatDateTime(record.timestamp)}</td>
+                                    <td>${record.warehouseName}</td>
+                                    <td>${record.operator}</td>
+                                    <td class="text-center">${record.status === 'completed' ? '已完成' : '已取消'}</td>
+                                    <td class="text-center">${record.totalItems}</td>
+                                    <td class="text-center">${record.surplusItems}</td>
+                                    <td class="text-center">${record.deficitItems}</td>
+                                    <td class="text-right">¥${record.totalValue.toLocaleString('zh-CN', { minimumFractionDigits: 2 })}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </body>
+                </html>
+            `;
+        }
+
+        function generateRecordPrintContent(record) {
+            return `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>盘点单 - ${record.id}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        .header { text-align: center; margin-bottom: 30px; }
+                        .info { margin-bottom: 20px; }
+                        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+                        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f2f2f2; }
+                        .text-center { text-align: center; }
+                        .text-right { text-align: right; }
+                        .summary { background-color: #f9f9f9; padding: 15px; border-radius: 5px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>盘点单</h1>
+                        <h2>${record.id}</h2>
+                    </div>
+                    
+                    <div class="info">
+                        <div class="info-grid">
+                            <div><strong>盘点时间:</strong> ${formatDateTime(record.timestamp)}</div>
+                            <div><strong>操作员:</strong> ${record.operator}</div>
+                            <div><strong>仓库:</strong> ${record.warehouseName}</div>
+                            <div><strong>状态:</strong> ${record.status === 'completed' ? '已完成' : '已取消'}</div>
+                        </div>
+                    </div>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>材料名称</th>
+                                <th>系统数量</th>
+                                <th>实际数量</th>
+                                <th>差异</th>
+                                <th>单价</th>
+                                <th>货值</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${record.items.map(item => `
+                                <tr>
+                                    <td>${item.name}</td>
+                                    <td class="text-center">${item.systemQuantity} ${item.unit}</td>
+                                    <td class="text-center">${item.actualQuantity} ${item.unit}</td>
+                                    <td class="text-center">${item.difference > 0 ? '+' + item.difference : item.difference} ${item.unit}</td>
+                                    <td class="text-right">¥${item.unitPrice}</td>
+                                    <td class="text-right">¥${item.totalValue.toFixed(2)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    
+                    <div class="summary">
+                        <div class="info-grid">
+                            <div><strong>总材料数:</strong> ${record.totalItems}</div>
+                            <div><strong>账实相符:</strong> ${record.matchItems}</div>
+                            <div><strong>盘盈材料:</strong> ${record.surplusItems}</div>
+                            <div><strong>盘亏材料:</strong> ${record.deficitItems}</div>
+                        </div>
+                        <div style="margin-top: 15px; text-align: right;">
+                            <strong style="font-size: 18px;">盘点总货值: ¥${record.totalValue.toLocaleString('zh-CN', { minimumFractionDigits: 2 })}</strong>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 40px; text-align: center; color: #666;">
+                        <p>打印时间: ${new Date().toLocaleString('zh-CN')}</p>
+                    </div>
+                </body>
+                </html>
+            `;
+        }
+
+        // 工具函数
+        function formatDateTime(date) {
+            const d = new Date(date);
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const hours = String(d.getHours()).padStart(2, '0');
+            const minutes = String(d.getMinutes()).padStart(2, '0');
+            
+            return `${year}-${month}-${day} ${hours}:${minutes}`;
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            const bgColor = {
+                'success': 'bg-green-500',
+                'error': 'bg-red-500',
+                'warning': 'bg-yellow-500',
+                'info': 'bg-blue-500'
+            }[type] || 'bg-blue-500';
+            
+            toast.className = `fixed top-4 left-1/2 transform -translate-x-1/2 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300`;
+            toast.textContent = message;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translate(-50%, -100%)';
+                setTimeout(() => {
+                    document.body.removeChild(toast);
+                }, 300);
+            }, 3000);
+        }
+
+        // 切换功能
+        function toggleFilters() {
+            const content = document.getElementById('filterContent');
+            const icon = document.getElementById('filterIcon');
+            
+            isFilterExpanded = !isFilterExpanded;
+            
+            if (isFilterExpanded) {
+                content.classList.remove('hidden');
+                icon.classList.add('rotate-180');
+            } else {
+                content.classList.add('hidden');
+                icon.classList.remove('rotate-180');
+            }
+        }
+
+
+        function updateFilterSummary() {
+            const summary = document.getElementById('filterSummary');
+            let summaryText = [];
+            
+            // 时间筛选摘要
+            if (currentFilters.time === 'today') {
+                summaryText.push('今天');
+            } else if (currentFilters.time === 'week') {
+                summaryText.push('本周');
+            } else if (currentFilters.time === 'month') {
+                summaryText.push('本月');
+            } else if (currentFilters.time === 'custom') {
+                summaryText.push('自定义时间');
+            }
+            
+            // 状态筛选摘要
+             if (currentFilters.status !== 'all') {
+                 const statusText = currentFilters.status === 'completed' ? '已完成' : '已取消';
+                 summaryText.push(statusText);
+             }
+             
+             // 差异筛选摘要
+             if (currentFilters.difference !== 'all') {
+                 const diffText = {
+                     'match': '账实相符',
+                     'surplus': '盘盈',
+                     'deficit': '盘亏'
+                 }[currentFilters.difference];
+                 summaryText.push(diffText);
+             }
+             
+             // 仓库筛选摘要
+             if (currentFilters.warehouse !== 'all') {
+                 const warehouseSelect = document.getElementById('warehouseFilter');
+                 const warehouseText = warehouseSelect.options[warehouseSelect.selectedIndex].text;
+                 summaryText.push(warehouseText);
+             }
+             
+             summary.textContent = summaryText.length > 0 ? summaryText.join(', ') : '今天';
+         }
+
+         // 自定义时间选择器功能
+         function showCustomDatePicker() {
+             const customDatePicker = document.getElementById('customDatePicker');
+             if (customDatePicker) {
+                 customDatePicker.classList.remove('hidden');
+             }
+         }
+
+         function cancelCustomDate() {
+             const customDatePicker = document.getElementById('customDatePicker');
+             if (customDatePicker) {
+                 customDatePicker.classList.add('hidden');
+             }
+             filterByTime('today');
+         }
+
+         function applyCustomDate() {
+             const startDate = document.getElementById('startDate').value;
+             const endDate = document.getElementById('endDate').value;
+             
+             if (!startDate || !endDate) {
+                 showToast('请选择开始和结束日期', 'warning');
+                 return;
+             }
+             
+             if (new Date(startDate) > new Date(endDate)) {
+                 showToast('开始日期不能晚于结束日期', 'warning');
+                 return;
+             }
+             
+             currentFilters.startDate = startDate;
+             currentFilters.endDate = endDate;
+             currentFilters.time = 'custom';
+             
+             const customDatePicker = document.getElementById('customDatePicker');
+             if (customDatePicker) {
+                 customDatePicker.classList.add('hidden');
+             }
+             
+             updateFilterButtons('[data-time]', 'custom');
+             renderStatistics();
+             renderHistoryList();
+             updateFilterSummary();
+         }
+
+         // 统计卡片样式
+         const statsCardStyle = `
+             .stats-card {
+                 background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+                 border: 1px solid #e5e7eb;
+                 border-radius: 16px;
+                 padding: 20px;
+                 text-align: center;
+                 transition: all 0.3s ease;
+             }
+             
+             .stats-card:hover {
+                 transform: translateY(-2px);
+                 box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+             }
+         `;
+         
+         // 添加样式到页面
+         const styleElement = document.createElement('style');
+         styleElement.textContent = statsCardStyle;
+         document.head.appendChild(styleElement);
+         
+         // 页面加载完成后初始化
+         document.addEventListener('DOMContentLoaded', function() {
+             loadHistoryRecords();
+             renderStatistics();
+             renderHistoryList();
+             updateFilterSummary();
+         });
+     </script>
+ </body>
+ </html>

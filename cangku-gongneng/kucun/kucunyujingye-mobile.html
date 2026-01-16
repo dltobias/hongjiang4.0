@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>库存预警 - 烘焙ERP手机端</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .card-shadow { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .touch-feedback:active { transform: scale(0.98); }
+        .slide-up { animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .alert-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            line-height: 1;
+            font-weight: 600;
+            color: white;
+        }
+        .warning-urgent {
+            border-left: 4px solid #EF4444;
+            background: linear-gradient(90deg, #FEF2F2 0%, #FFFFFF 100%);
+        }
+        .warning-moderate {
+            border-left: 4px solid #F59E0B;
+            background: linear-gradient(90deg, #FFFBEB 0%, #FFFFFF 100%);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- 顶部导航栏 -->
+    <div class="bg-white shadow-sm border-b sticky top-0 z-30">
+        <div class="flex items-center justify-between px-4 py-3">
+            <div class="flex items-center space-x-3">
+                <button onclick="history.back()" class="p-2 -ml-2 rounded-lg hover:bg-gray-100 touch-feedback">
+                    <i class="fas fa-arrow-left text-gray-600"></i>
+                </button>
+                <h1 class="text-lg font-semibold text-gray-800">库存预警</h1>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button id="filter-btn" class="p-2 rounded-lg hover:bg-gray-100 touch-feedback">
+                    <i class="fas fa-filter text-gray-600"></i>
+                </button>
+                <button id="search-btn" class="p-2 rounded-lg hover:bg-gray-100 touch-feedback">
+                    <i class="fas fa-search text-gray-600"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- 搜索框 (隐藏状态) -->
+        <div id="search-box" class="hidden px-4 pb-3">
+            <div class="relative">
+                <input type="text" placeholder="搜索材料名称、批次号..." 
+                       class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- 预警概览 -->
+    <div class="px-4 py-3">
+        <div class="grid grid-cols-3 gap-3">
+            <div class="bg-white rounded-lg p-3 card-shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-xs text-gray-500 mb-1">材料总数</div>
+                        <div class="text-lg font-semibold text-gray-800">35</div>
+                    </div>
+                    <div class="p-2 rounded-full bg-blue-100">
+                        <i class="fas fa-boxes text-blue-600"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg p-3 card-shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-xs text-gray-500 mb-1">库存不足</div>
+                        <div class="text-lg font-semibold text-red-600">5</div>
+                    </div>
+                    <div class="p-2 rounded-full bg-red-100 relative">
+                        <span class="alert-badge bg-red-600">5</span>
+                        <i class="fas fa-exclamation-triangle text-red-600"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg p-3 card-shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-xs text-gray-500 mb-1">即将过期</div>
+                        <div class="text-lg font-semibold text-amber-600">3</div>
+                    </div>
+                    <div class="p-2 rounded-full bg-amber-100 relative">
+                        <span class="alert-badge bg-amber-500">3</span>
+                        <i class="fas fa-clock text-amber-600"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 筛选标签 -->
+    <div class="px-4 mb-4">
+        <div class="flex space-x-2 overflow-x-auto pb-2">
+            <button class="filter-tag active" data-filter="all">全部预警</button>
+            <button class="filter-tag" data-filter="stock">库存不足</button>
+            <button class="filter-tag" data-filter="expiry">即将过期</button>
+            <button class="filter-tag" data-filter="urgent">紧急</button>
+            <button class="filter-tag" data-filter="flour">粉类</button>
+            <button class="filter-tag" data-filter="sugar">糖类</button>
+            <button class="filter-tag" data-filter="dairy">乳制品</button>
+        </div>
+    </div>
+
+    <!-- 筛选面板 (隐藏状态) -->
+    <div id="filter-panel" class="hidden mx-4 mb-4">
+        <div class="bg-white rounded-lg card-shadow p-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-medium text-gray-800">筛选条件</h3>
+                <button id="close-filter" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">仓库</label>
+                    <select class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="all">所有仓库</option>
+                        <option value="main">主仓库</option>
+                        <option value="cold">冷藏仓库</option>
+                        <option value="dry">干货仓库</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">材料分类</label>
+                    <select class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="all">所有分类</option>
+                        <option value="flour">粉类</option>
+                        <option value="sugar">糖类</option>
+                        <option value="oil">油脂类</option>
+                        <option value="dairy">乳制品</option>
+                    </select>
+                </div>
+                
+                <div class="flex space-x-2">
+                    <button class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg font-medium hover:bg-gray-300 touch-feedback">重置</button>
+                    <button class="flex-1 bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 touch-feedback">应用</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 预警列表 -->
+    <div class="px-4 pb-20">
+        <div class="space-y-3">
+            <!-- 库存不足预警1 -->
+            <div class="bg-white rounded-lg p-4 card-shadow slide-up warning-urgent">
+                <div class="flex justify-between items-start mb-3">
+                    <div class="flex-1">
+                        <div class="flex items-center space-x-2 mb-1">
+                            <h3 class="font-medium text-gray-800">白砂糖</h3>
+                            <span class="inline-block px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium">库存不足</span>
+                        </div>
+                        <p class="text-sm text-gray-500">糖类 · SG2023062215</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-lg font-semibold text-red-600">10 kg</div>
+                        <div class="text-xs text-gray-500">安全库存: 30kg</div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4 text-sm mb-3">
+                    <div>
+                        <span class="text-gray-500">存放仓库:</span>
+                        <span class="text-gray-800">主仓库</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">有效期至:</span>
+                        <span class="text-gray-800">2024-02-15</span>
+                    </div>
+                </div>
+                
+                <div class="flex space-x-2">
+                    <button class="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 touch-feedback">
+                        <i class="fas fa-plus mr-1"></i>立即入库
+                    </button>
+                    <button class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 touch-feedback">
+                        查看详情
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 库存不足预警2 -->
+            <div class="bg-white rounded-lg p-4 card-shadow slide-up warning-urgent">
+                <div class="flex justify-between items-start mb-3">
+                    <div class="flex-1">
+                        <div class="flex items-center space-x-2 mb-1">
+                            <h3 class="font-medium text-gray-800">低筋面粉</h3>
+                            <span class="inline-block px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium">库存不足</span>
+                        </div>
+                        <p class="text-sm text-gray-500">粉类 · FL2023072201</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-lg font-semibold text-red-600">8 kg</div>
+                        <div class="text-xs text-gray-500">安全库存: 25kg</div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4 text-sm mb-3">
+                    <div>
+                        <span class="text-gray-500">存放仓库:</span>
+                        <span class="text-gray-800">原料仓库</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">有效期至:</span>
+                        <span class="text-gray-800">2023-12-22</span>
+                    </div>
+                </div>
+                
+                <div class="flex space-x-2">
+                    <button class="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 touch-feedback">
+                        <i class="fas fa-plus mr-1"></i>立即入库
+                    </button>
+                    <button class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 touch-feedback">
+                        查看详情
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 库存不足预警3 -->
+            <div class="bg-white rounded-lg p-4 card-shadow slide-up warning-urgent">
+                <div class="flex justify-between items-start mb-3">
+                    <div class="flex-1">
+                        <div class="flex items-center space-x-2 mb-1">
+                            <h3 class="font-medium text-gray-800">杏仁粉</h3>
+                            <span class="inline-block px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium">库存不足</span>
+                        </div>
+                        <p class="text-sm text-gray-500">坚果粉 · AP2023080301</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-lg font-semibold text-red-600">2 kg</div>
+                        <div class="text-xs text-gray-500">安全库存: 10kg</div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4 text-sm mb-3">
+                    <div>
+                        <span class="text-gray-500">存放仓库:</span>
+                        <span class="text-gray-800">原料仓库</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">有效期至:</span>
+                        <span class="text-gray-800">2024-03-03</span>
+                    </div>
+                </div>
+                
+                <div class="flex space-x-2">
+                    <button class="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 touch-feedback">
+                        <i class="fas fa-plus mr-1"></i>立即入库
+                    </button>
+                    <button class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 touch-feedback">
+                        查看详情
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 即将过期预警1 -->
+            <div class="bg-white rounded-lg p-4 card-shadow slide-up warning-moderate">
+                <div class="flex justify-between items-start mb-3">
+                    <div class="flex-1">
+                        <div class="flex items-center space-x-2 mb-1">
+                            <h3 class="font-medium text-gray-800">鲜奶油</h3>
+                            <span class="inline-block px-2 py-1 bg-amber-100 text-amber-800 rounded text-xs font-medium">即将过期</span>
+                        </div>
+                        <p class="text-sm text-gray-500">乳制品 · CR2023081501</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-lg font-semibold text-gray-800">5 L</div>
+                        <div class="text-xs text-amber-600 font-medium">5天后过期</div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4 text-sm mb-3">
+                    <div>
+                        <span class="text-gray-500">存放仓库:</span>
+                        <span class="text-gray-800">主仓库</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">有效期至:</span>
+                        <span class="text-amber-600 font-medium">2023-08-25</span>
+                    </div>
+                </div>
+                
+                <div class="flex space-x-2">
+                    <button class="flex-1 bg-amber-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-amber-700 touch-feedback">
+                        <i class="fas fa-clock mr-1"></i>优先使用
+                    </button>
+                    <button class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 touch-feedback">
+                        查看详情
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 即将过期预警2 -->
+            <div class="bg-white rounded-lg p-4 card-shadow slide-up warning-moderate">
+                <div class="flex justify-between items-start mb-3">
+                    <div class="flex-1">
+                        <div class="flex items-center space-x-2 mb-1">
+                            <h3 class="font-medium text-gray-800">黄油</h3>
+                            <span class="inline-block px-2 py-1 bg-amber-100 text-amber-800 rounded text-xs font-medium">即将过期</span>
+                        </div>
+                        <p class="text-sm text-gray-500">油脂类 · BT2023073001</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-lg font-semibold text-gray-800">10 kg</div>
+                        <div class="text-xs text-amber-600 font-medium">10天后过期</div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4 text-sm mb-3">
+                    <div>
+                        <span class="text-gray-500">存放仓库:</span>
+                        <span class="text-gray-800">主仓库</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">有效期至:</span>
+                        <span class="text-amber-600 font-medium">2023-08-30</span>
+                    </div>
+                </div>
+                
+                <div class="flex space-x-2">
+                    <button class="flex-1 bg-amber-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-amber-700 touch-feedback">
+                        <i class="fas fa-clock mr-1"></i>优先使用
+                    </button>
+                    <button class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 touch-feedback">
+                        查看详情
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部导航栏 -->
+    <nav class="bottom-nav">
+        <div class="grid grid-cols-4">
+            <a href="shouye-mobile.html" class="bottom-nav-item">
+                <i class="fas fa-home"></i>
+                <span>首页</span>
+            </a>
+            <a href="cangku-mobile.html" class="bottom-nav-item active">
+                <i class="fas fa-chart-line"></i>
+                <span>ERP</span>
+            </a>
+            <a href="#" class="bottom-nav-item">
+                <i class="fas fa-users"></i>
+                <span>社区</span>
+            </a>
+            <a href="#" class="bottom-nav-item">
+                <i class="fas fa-user"></i>
+                <span>我的</span>
+            </a>
+        </div>
+    </nav>
+
+    <script>
+        // 搜索功能
+        document.getElementById('search-btn').addEventListener('click', function() {
+            const searchBox = document.getElementById('search-box');
+            searchBox.classList.toggle('hidden');
+            if (!searchBox.classList.contains('hidden')) {
+                searchBox.querySelector('input').focus();
+            }
+        });
+
+        // 筛选面板
+        document.getElementById('filter-btn').addEventListener('click', function() {
+            const filterPanel = document.getElementById('filter-panel');
+            filterPanel.classList.toggle('hidden');
+        });
+
+        document.getElementById('close-filter').addEventListener('click', function() {
+            document.getElementById('filter-panel').classList.add('hidden');
+        });
+
+        // 筛选标签功能
+        document.querySelectorAll('.filter-tag').forEach(tag => {
+            tag.addEventListener('click', function() {
+                document.querySelectorAll('.filter-tag').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                // 这里可以添加实际的筛选逻辑
+                console.log('筛选:', this.dataset.filter);
+            });
+        });
+
+        // 点击其他地方关闭筛选面板
+        document.addEventListener('click', function(e) {
+            const filterBtn = document.getElementById('filter-btn');
+            const filterPanel = document.getElementById('filter-panel');
+            
+            if (!filterBtn.contains(e.target) && !filterPanel.contains(e.target)) {
+                filterPanel.classList.add('hidden');
+            }
+        });
+    </script>
+
+    <style>
+        .filter-tag {
+            @apply px-4 py-2 bg-white text-gray-600 rounded-full text-sm font-medium whitespace-nowrap border border-gray-200 hover:bg-gray-50 touch-feedback;
+        }
+        .filter-tag.active {
+            @apply bg-blue-600 text-white border-blue-600;
+        }
+    </style>
+</body>
+</html>

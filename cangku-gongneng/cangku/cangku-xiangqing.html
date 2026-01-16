@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>仓库详情 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Cookpad Design System */
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+            --text-main: #333333;
+            --text-sub: #8b8b8b;
+            --bg-light: #f7f7f5;
+            --bg-white: #ffffff;
+            --danger-red: #ef4444;
+            --warning-yellow: #f59e0b;
+            --success-green: #10b981;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-main);
+        }
+
+        /* 卡片样式 */
+        .card {
+            background: var(--bg-white);
+            border-radius: 16px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.02);
+            transition: all 0.2s ease;
+        }
+        
+        /* 统一图标样式 */
+        .icon-base {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        
+        .icon-lg {
+            width: 4rem;
+            height: 4rem;
+            border-radius: 16px;
+            font-size: 1.5rem;
+        }
+
+        /* 颜色变体 */
+        .icon-orange { background-color: #fff7ed; color: #ea580c; }
+        .icon-blue { background-color: #eff6ff; color: #2563eb; }
+        .icon-green { background-color: #ecfdf5; color: #059669; }
+        .icon-purple { background-color: #f5f3ff; color: #7c3aed; }
+        .icon-red { background-color: #fef2f2; color: #dc2626; }
+        .icon-cyan { background-color: #ecfeff; color: #0891b2; }
+        
+        .status-dot {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        /* 统计项样式 */
+        .stat-item {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            border: 1px solid #f3f4f6;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background-color: #e5e7eb;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+        
+        .alert-badge {
+            background: #fef2f2;
+            color: #ef4444;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            border: 1px solid #fee2e2;
+        }
+        
+        .success-badge {
+            background: #ecfdf5;
+            color: #059669;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            border: 1px solid #d1fae5;
+        }
+
+        /* 按钮样式 */
+        .btn-primary {
+            background: linear-gradient(135deg, #ff9f43 0%, #ff8c00 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(255, 140, 0, 0.2);
+        }
+        .btn-primary:active { transform: scale(0.98); }
+        
+        .btn-danger {
+            background-color: #fee2e2;
+            color: #dc2626;
+        }
+        .btn-danger:active { transform: scale(0.98); }
+
+        .btn-secondary {
+            background-color: #f3f4f6;
+            color: #4b5563;
+        }
+        .btn-secondary:active { transform: scale(0.98); }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- 顶部导航栏 -->
+    <div class="bg-white px-4 py-3 shadow-sm border-b border-gray-100 sticky top-0 z-30">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <button onclick="goBack()" class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div>
+                    <div class="text-lg font-bold text-gray-800 tracking-wide" id="warehouseName">仓库详情</div>
+                    <div class="text-xs text-gray-500 font-medium mt-0.5" id="warehouseCode">加载中...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 仓库基本信息卡片 -->
+    <div class="px-4 mt-4">
+        <div class="card p-5">
+            <div class="flex items-start space-x-4">
+                <!-- 仓库图标 -->
+                <div id="warehouseIcon" class="icon-base icon-lg icon-orange flex-shrink-0">
+                    <i class="fas fa-warehouse"></i>
+                </div>
+                
+                <!-- 基本信息 -->
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center space-x-2 mb-1">
+                        <h2 class="text-xl font-bold text-gray-800 truncate" id="warehouseNameDetail">主原料仓</h2>
+                        <div class="flex items-center space-x-1.5 bg-green-50 px-2 py-0.5 rounded-full border border-green-100">
+                            <div id="statusIndicator" class="w-1.5 h-1.5 rounded-full bg-green-500 status-dot"></div>
+                            <span id="statusText" class="text-xs text-green-600 font-bold">启用中</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center flex-wrap gap-2 mb-2">
+                        <span class="text-xs font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded" id="warehouseCodeDetail">WH001</span>
+                        <span id="warehouseTypeBadge" class="px-2 py-0.5 bg-orange-50 text-orange-600 rounded text-xs font-bold border border-orange-100">原料仓</span>
+                        <div id="alertBadge" class="alert-badge hidden">
+                            <i class="fas fa-exclamation-triangle mr-1 text-[10px]"></i>
+                            <span id="alertCount">3</span> 个预警
+                        </div>
+                    </div>
+                    
+                    <p class="text-sm text-gray-500 line-clamp-2" id="warehouseDescription">存放面粉、糖等基础原料</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 统计数据 -->
+    <div class="px-4 mt-4">
+        <div class="grid grid-cols-3 gap-3">
+            <div class="stat-item">
+                <div class="text-xl font-bold text-gray-800" id="itemCount">45</div>
+                <div class="text-xs text-gray-500 mt-1">物料种类</div>
+            </div>
+            <div class="stat-item relative overflow-hidden">
+                <div class="relative z-10">
+                    <div class="text-xl font-bold text-gray-800" id="utilizationPercent">78%</div>
+                    <div class="text-xs text-gray-500 mt-1">空间利用率</div>
+                </div>
+                <div class="absolute bottom-0 left-0 right-0 h-1 bg-gray-100">
+                    <div id="utilizationProgress" class="h-full bg-green-500" style="width: 78%"></div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="text-lg font-bold text-gray-800 truncate" id="locationText">A区1层</div>
+                <div class="text-xs text-gray-500 mt-1">物理位置</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 详细信息 -->
+    <div class="px-4 mt-4">
+        <div class="card p-5">
+            <h3 class="text-base font-bold text-gray-800 mb-4 flex items-center">
+                <i class="fas fa-info-circle text-orange-500 mr-2"></i>详细信息
+            </h3>
+            
+            <div class="space-y-4">
+                <!-- 仓库配置 -->
+                <div>
+                    <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">基础配置</h4>
+                    <div class="grid grid-cols-2 gap-y-3 gap-x-4 text-sm">
+                        <div class="flex justify-between items-center border-b border-gray-50 pb-2">
+                            <span class="text-gray-500">仓库编号</span>
+                            <span class="font-medium text-gray-800 font-mono" id="detailCode">WH001</span>
+                        </div>
+                        <div class="flex justify-between items-center border-b border-gray-50 pb-2">
+                            <span class="text-gray-500">仓库类型</span>
+                            <span class="font-medium text-gray-800" id="detailType">原料仓</span>
+                        </div>
+                        <div class="flex justify-between items-center border-b border-gray-50 pb-2">
+                            <span class="text-gray-500">创建时间</span>
+                            <span class="font-medium text-gray-800" id="createTime">2023-08-15</span>
+                        </div>
+                        <div class="flex justify-between items-center border-b border-gray-50 pb-2">
+                            <span class="text-gray-500">最后更新</span>
+                            <span class="font-medium text-gray-800" id="updateTime">2023-11-28</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 位置信息 -->
+                <div class="pt-2">
+                    <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">位置与备注</h4>
+                    <div class="space-y-3 text-sm">
+                        <div class="flex flex-col gap-1">
+                            <span class="text-gray-500">物理位置</span>
+                            <div class="bg-gray-50 p-2 rounded-lg text-gray-800 font-medium" id="detailLocation">A区1层</div>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <span class="text-gray-500">备注说明</span>
+                            <div class="bg-gray-50 p-2 rounded-lg text-gray-800" id="detailRemark">存放面粉、糖等基础原料</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 功能开关状态 -->
+                <div class="pt-2 flex items-center justify-between">
+                    <span class="text-sm text-gray-600">库存预警功能</span>
+                    <div id="alertStatus" class="success-badge">
+                        <i class="fas fa-check mr-1 text-[10px]"></i> 已启用
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 库存概况 -->
+    <div class="px-4 mt-4">
+        <div class="card p-5">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-base font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-boxes text-orange-500 mr-2"></i>库存概况
+                </h3>
+                <a href="cailiaokucun-mobile.html" class="text-xs font-bold text-orange-500 hover:text-orange-600 flex items-center bg-orange-50 px-2 py-1 rounded-lg transition-colors">
+                    查看详情 <i class="fas fa-chevron-right text-[10px] ml-1"></i>
+                </a>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div class="text-center p-4 bg-orange-50 rounded-xl border border-orange-100">
+                    <div class="text-lg font-bold text-orange-600" id="totalValue">¥45,280</div>
+                    <div class="text-xs text-orange-400 mt-1 font-medium">库存总值</div>
+                </div>
+                <div class="text-center p-4 bg-red-50 rounded-xl border border-red-100">
+                    <div class="text-lg font-bold text-red-600" id="lowStockCount">5</div>
+                    <div class="text-xs text-red-400 mt-1 font-medium">低库存预警</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 操作按钮 -->
+    <div class="px-4 mt-6 pb-8">
+        <!-- 主要操作 -->
+        <div class="grid grid-cols-2 gap-3 mb-3">
+            <button onclick="editWarehouse()" class="btn-primary py-3.5 rounded-xl font-bold text-sm flex items-center justify-center space-x-2">
+                <i class="fas fa-edit"></i>
+                <span>编辑仓库</span>
+            </button>
+            <button onclick="deleteWarehouse()" class="btn-danger py-3.5 rounded-xl font-bold text-sm flex items-center justify-center space-x-2 transition-colors">
+                <i class="fas fa-trash"></i>
+                <span>删除仓库</span>
+            </button>
+        </div>
+        
+        <!-- 次要操作 -->
+        <button onclick="viewInventory()" class="w-full btn-secondary py-3 rounded-xl font-bold text-sm flex items-center justify-center space-x-2 hover:bg-gray-200 transition-colors">
+            <i class="fas fa-boxes"></i>
+            <span>查看库存明细</span>
+        </button>
+    </div>
+
+    <script>
+        // 仓库数据
+        const warehousesData = {
+            1: {
+                id: 1,
+                name: '主原料仓',
+                code: 'WH001',
+                type: 'raw',
+                typeName: '原料仓',
+                enabled: true,
+                alertCount: 3,
+                itemCount: 45,
+                utilization: 78,
+                location: 'A区1层',
+                description: '存放面粉、糖等基础原料',
+                createTime: '2023-08-15',
+                updateTime: '2023-11-28',
+                totalValue: '¥45,280',
+                lowStockCount: 5,
+                enableAlert: true,
+                remark: '主要存放烘焙基础原料，温度控制在18-22℃'
+            },
+            2: {
+                id: 2,
+                name: '成品仓库',
+                code: 'WH002',
+                type: 'product',
+                typeName: '成品仓',
+                enabled: true,
+                alertCount: 0,
+                itemCount: 28,
+                utilization: 45,
+                location: 'B区2层',
+                description: '存放已完成的烘焙产品',
+                createTime: '2023-08-20',
+                updateTime: '2023-11-27',
+                totalValue: '¥32,150',
+                lowStockCount: 2,
+                enableAlert: true,
+                remark: '成品存放区域，保持干燥通风'
+            },
+            3: {
+                id: 3,
+                name: '冷冻储存区',
+                code: 'WH003',
+                type: 'frozen',
+                typeName: '冷冻仓',
+                enabled: true,
+                alertCount: 1,
+                itemCount: 15,
+                utilization: 65,
+                location: 'C区地下1层',
+                description: '冷冻保存易腐原料',
+                createTime: '2023-09-01',
+                updateTime: '2023-11-26',
+                totalValue: '¥18,900',
+                lowStockCount: 3,
+                enableAlert: true,
+                remark: '冷冻保存区域，温度保持在-18℃以下'
+            }
+        };
+
+        let currentWarehouseId = 1;
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 从URL参数获取仓库ID
+            const urlParams = new URLSearchParams(window.location.search);
+            const warehouseId = urlParams.get('id');
+            if (warehouseId && warehousesData[warehouseId]) {
+                currentWarehouseId = parseInt(warehouseId);
+            }
+            
+            loadWarehouseData();
+        });
+
+        // 加载仓库数据
+        function loadWarehouseData() {
+            const warehouse = warehousesData[currentWarehouseId];
+            if (!warehouse) {
+                showToast('仓库信息不存在', 'error');
+                return;
+            }
+
+            // 更新导航栏
+            document.getElementById('warehouseName').textContent = warehouse.name;
+            document.getElementById('warehouseCode').textContent = warehouse.code;
+
+            // 更新基本信息
+            document.getElementById('warehouseNameDetail').textContent = warehouse.name;
+            document.getElementById('warehouseCodeDetail').textContent = warehouse.code;
+            document.getElementById('warehouseDescription').textContent = warehouse.description;
+
+            // 更新图标
+            const iconElement = document.getElementById('warehouseIcon');
+            const iconClass = getWarehouseIcon(warehouse.type);
+            const iconBg = getWarehouseIconBg(warehouse.type);
+            iconElement.className = `warehouse-icon ${iconBg}`;
+            iconElement.innerHTML = `<i class="fas ${iconClass} text-white text-3xl"></i>`;
+
+            // 更新状态
+            const statusIndicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            if (warehouse.enabled) {
+                statusIndicator.className = 'w-3 h-3 rounded-full bg-green-500 status-dot';
+                statusText.textContent = '启用中';
+                statusText.className = 'text-sm text-green-600 font-medium';
+            } else {
+                statusIndicator.className = 'w-3 h-3 rounded-full bg-gray-400';
+                statusText.textContent = '已禁用';
+                statusText.className = 'text-sm text-gray-500 font-medium';
+            }
+
+            // 更新类型标签
+            const typeBadge = document.getElementById('warehouseTypeBadge');
+            typeBadge.textContent = warehouse.typeName;
+            typeBadge.className = `px-3 py-1 rounded-full text-sm font-medium ${getTypeBadgeClass(warehouse.type)}`;
+
+            // 更新预警信息
+            const alertBadge = document.getElementById('alertBadge');
+            const alertCount = document.getElementById('alertCount');
+            if (warehouse.alertCount > 0) {
+                alertBadge.classList.remove('hidden');
+                alertCount.textContent = warehouse.alertCount;
+            } else {
+                alertBadge.classList.add('hidden');
+            }
+
+            // 更新统计数据
+            document.getElementById('itemCount').textContent = warehouse.itemCount;
+            document.getElementById('utilizationPercent').textContent = warehouse.utilization + '%';
+            document.getElementById('utilizationProgress').style.width = warehouse.utilization + '%';
+            document.getElementById('locationText').textContent = warehouse.location;
+
+            // 更新详细信息
+            document.getElementById('detailCode').textContent = warehouse.code;
+            document.getElementById('detailType').textContent = warehouse.typeName;
+            document.getElementById('createTime').textContent = warehouse.createTime;
+            document.getElementById('updateTime').textContent = warehouse.updateTime;
+            document.getElementById('detailLocation').textContent = warehouse.location;
+            document.getElementById('detailRemark').textContent = warehouse.remark || warehouse.description;
+
+            // 更新预警状态
+            const alertStatus = document.getElementById('alertStatus');
+            if (warehouse.enableAlert) {
+                alertStatus.innerHTML = '<i class="fas fa-check mr-1 text-[10px]"></i> 已启用';
+                alertStatus.className = 'success-badge';
+            } else {
+                alertStatus.innerHTML = '<i class="fas fa-times mr-1 text-[10px]"></i> 已禁用';
+                alertStatus.className = 'alert-badge';
+            }
+
+            // 更新库存概况
+            document.getElementById('totalValue').textContent = warehouse.totalValue;
+            document.getElementById('lowStockCount').textContent = warehouse.lowStockCount;
+        }
+
+        // 获取仓库图标
+        function getWarehouseIcon(type) {
+            const icons = {
+                'raw': 'fa-wheat-awn',
+                'product': 'fa-box',
+                'frozen': 'fa-snowflake',
+                'normal': 'fa-warehouse',
+                'damaged': 'fa-exclamation-triangle'
+            };
+            return icons[type] || 'fa-warehouse';
+        }
+
+        // 获取仓库图标背景
+        function getWarehouseIconBg(type) {
+            const backgrounds = {
+                'raw': 'gradient-primary',
+                'product': 'gradient-recipe',
+                'frozen': 'gradient-inventory',
+                'normal': 'gradient-message',
+                'damaged': 'gradient-order'
+            };
+            return backgrounds[type] || 'gradient-primary';
+        }
+
+        // 获取类型标签样式
+        function getTypeBadgeClass(type) {
+            const classes = {
+                'raw': 'bg-orange-50 text-orange-600',
+                'product': 'bg-green-50 text-green-600',
+                'frozen': 'bg-cyan-50 text-cyan-600',
+                'normal': 'bg-gray-50 text-gray-600',
+                'damaged': 'bg-red-50 text-red-600'
+            };
+            return classes[type] || 'bg-gray-50 text-gray-600';
+        }
+
+        // 编辑仓库
+        function editWarehouse() {
+            window.location.href = `cangku-bianji.html?id=${currentWarehouseId}`;
+        }
+
+        // 删除仓库
+        function deleteWarehouse() {
+            const warehouse = warehousesData[currentWarehouseId];
+            if (!warehouse) return;
+            
+            // 检查仓库是否有库存
+            if (warehouse.itemCount > 0) {
+                showConfirmDialog(
+                    '无法删除仓库',
+                    `该仓库中还有 ${warehouse.itemCount} 种物料，请先清空库存后再删除。`,
+                    '知道了',
+                    null,
+                    () => {}
+                );
+                return;
+            }
+            
+            showConfirmDialog(
+                '确认删除仓库',
+                `确定要删除仓库"${warehouse.name}"吗？此操作不可恢复。`,
+                '取消',
+                '确认删除',
+                () => {
+                    // 执行删除操作
+                    showToast('正在删除仓库...', 'info');
+                    
+                    setTimeout(() => {
+                        showToast('仓库删除成功', 'success');
+                        // 返回仓库列表
+                        setTimeout(() => {
+                            window.location.href = 'cangku-liebiao.html';
+                        }, 1500);
+                    }, 1000);
+                }
+            );
+        }
+
+        // 查看库存
+        function viewInventory() {
+            window.location.href = `cailiaokucun-mobile.html?warehouse=${currentWarehouseId}`;
+        }
+
+        // 显示确认对话框
+        function showConfirmDialog(title, message, cancelText, confirmText, onConfirm) {
+            const dialog = document.createElement('div');
+            dialog.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+            dialog.innerHTML = `
+                <div class="bg-white rounded-xl p-6 max-w-sm w-full">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">${title}</h3>
+                    <p class="text-sm text-gray-600 mb-6">${message}</p>
+                    <div class="flex space-x-3">
+                        <button onclick="closeDialog()" class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-medium">
+                            ${cancelText}
+                        </button>
+                        ${confirmText ? `
+                            <button onclick="confirmAction()" class="flex-1 py-3 px-4 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-colors">
+                                ${confirmText}
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(dialog);
+            
+            window.closeDialog = function() {
+                document.body.removeChild(dialog);
+            };
+            
+            window.confirmAction = function() {
+                document.body.removeChild(dialog);
+                if (onConfirm) onConfirm();
+            };
+        }
+
+        // 返回列表
+        function goBack() {
+            window.location.href = 'cangku-liebiao.html';
+        }
+
+        // 显示提示消息
+        function showToast(message, type = 'info') {
+            const existingToast = document.querySelector('.toast');
+            if (existingToast) {
+                existingToast.remove();
+            }
+            
+            const toast = document.createElement('div');
+            toast.className = 'toast fixed top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-lg text-white text-sm z-50 transition-opacity duration-300 opacity-0';
+            
+            switch(type) {
+                case 'success':
+                    toast.classList.add('bg-green-600');
+                    break;
+                case 'error':
+                    toast.classList.add('bg-red-600');
+                    break;
+                case 'warning':
+                    toast.classList.add('bg-yellow-600');
+                    break;
+                default:
+                    toast.classList.add('bg-orange-600');
+            }
+            
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.add('opacity-90');
+            }, 10);
+            
+            setTimeout(() => {
+                toast.classList.remove('opacity-90');
+                toast.classList.add('opacity-0');
+                
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 2000);
+        }
+    </script>
+</body>
+</html> 

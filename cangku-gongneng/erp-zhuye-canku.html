@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>仓库管理 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Cookpad 风格配色 - 统一配色 */
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+            --text-main: #333333;
+            --text-sub: #8b8b8b;
+            --bg-light: #f7f7f5;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+        .module-section {
+            scroll-margin-top: 70px; /* Adjusted for shorter header */
+            padding-bottom: 2rem;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        /* 统一使用橙色调，保留原有类名以防JS引用，但样式改为统一风格 */
+        .gradient-primary {
+            background: linear-gradient(135deg, #ff9f43 0%, #ff8c00 100%);
+        }
+        .gradient-inventory {
+            background: linear-gradient(135deg, #ffb347 0%, #ffcc33 100%);
+        }
+        .gradient-recipe {
+            background: linear-gradient(135deg, #ff9f43 0%, #ff8c00 100%);
+        }
+        .gradient-message {
+            background: linear-gradient(135deg, #ffb347 0%, #ffcc33 100%);
+        }
+        .gradient-order {
+            background: linear-gradient(135deg, #ff9f43 0%, #ff8c00 100%);
+        }
+        
+        /* 统一图标样式 - 现代柔和风格 (Soft Tint) */
+        .icon-base {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        
+        .icon-unified {
+            width: 2.75rem; /* 44px */
+            height: 2.75rem;
+            border-radius: 12px; /* 更圆润的圆角 (Squircle风格) */
+            margin: 0 auto 0.5rem auto;
+        }
+        
+        .icon-unified-lg {
+            width: 3.25rem; /* 52px */
+            height: 3.25rem;
+            border-radius: 16px;
+        }
+
+        /* 语义化配色方案 */
+        /* 仓库 - 蓝色系 (Blue) - 代表冷静、库存、秩序 */
+        .icon-blue {
+            background-color: #eff6ff; /* blue-50 */
+            color: #2563eb; /* blue-600 */
+        }
+        
+        /* 运营 - 绿色系 (Emerald) - 代表增长、流动、健康 */
+        .icon-green {
+            background-color: #ecfdf5; /* emerald-50 */
+            color: #059669; /* emerald-600 */
+        }
+        
+        /* 权限/系统 - 紫色系 (Violet) - 代表管理、智慧、控制 */
+        .icon-purple {
+            background-color: #f5f3ff; /* violet-50 */
+            color: #7c3aed; /* violet-600 */
+        }
+        
+        /* 统计 - 橙色系 (Orange) - 品牌色，代表数据洞察、活力 */
+        .icon-orange {
+            background-color: #fff7ed; /* orange-50 */
+            color: #ea580c; /* orange-600 */
+        }
+
+        /* 红色系 - 用于预警/报损 */
+        .icon-red {
+            background-color: #fef2f2; /* red-50 */
+            color: #dc2626; /* red-600 */
+        }
+
+        /* 青色系 - 用于调拨/流转 */
+        .icon-cyan {
+            background-color: #ecfeff; /* cyan-50 */
+            color: #0891b2; /* cyan-600 */
+        }
+        
+        /* Indigo系 - 用于查询 */
+        .icon-indigo {
+            background-color: #eef2ff; /* indigo-50 */
+            color: #4f46e5; /* indigo-600 */
+        }
+        
+        .card {
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .bottom-nav { 
+            background: rgba(255, 255, 255, 0.98); 
+            backdrop-filter: blur(10px); 
+            border-top: 1px solid #f0f0f0; 
+            padding-bottom: env(safe-area-inset-bottom); 
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 50;
+        }
+        .bottom-nav-item { 
+            padding: 8px 0 4px; 
+            color: #999; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .bottom-nav-item.active { color: #ff8c00; }
+        .bottom-nav-item i { font-size: 22px; margin-bottom: 2px; }
+        .bottom-nav-item span { font-size: 10px; font-weight: 500; }
+        .main-content {
+            padding-bottom: 80px;
+        }
+        
+        .hover-scale {
+            transition: all 0.2s ease;
+        }
+        .hover-scale:hover {
+            transform: scale(1.02);
+        }
+        .hover-scale:active {
+            transform: scale(0.98);
+        }
+        
+        .status-dot {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        /* 实时更新指示器动画 */
+        .pulse-dot {
+            animation: pulse-animation 2s infinite;
+        }
+        @keyframes pulse-animation {
+            0% {
+                transform: scale(0.8);
+                box-shadow: 0 0 0 0 rgba(72, 187, 120, 0.7);
+            }
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 6px rgba(72, 187, 120, 0);
+            }
+            100% {
+                transform: scale(0.8);
+                box-shadow: 0 0 0 0 rgba(72, 187, 120, 0);
+            }
+        }
+        
+        /* 下拉刷新指示器 */
+        .pull-refresh-indicator {
+            position: fixed;
+            top: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 140, 0, 0.9); /* Orange */
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0 0 0.75rem 0.75rem;
+            font-size: 0.875rem;
+            z-index: 1000;
+            transition: top 0.3s ease;
+        }
+        .pull-refresh-indicator.show {
+            top: 0;
+        }
+        /* 4列布局响应式支持 */
+        @media (max-width: 375px) {
+            .grid-cols-4 {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+        
+        @media (max-width: 320px) {
+            .grid-cols-4 {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+        
+        /* 虚拟滚动支持 */
+        .virtual-scroll-container {
+            height: 400px;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .virtual-scroll-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+        }
+        
+        /* 提高颜色对比度 */
+        .text-gray-500 {
+            color: #6b7280; /* 确保对比度符合WCAG标准 */
+        }
+        
+        /* 焦点样式增强 */
+        button:focus, a:focus, input:focus {
+            outline: 2px solid #3b82f6;
+            outline-offset: 2px;
+        }
+        
+        /* 减少动画对性能的影响 */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+        
+        /* 模块导航样式 */
+        .module-nav {
+            transition: all 0.3s ease;
+            color: #6b7280;
+            border: 1px solid transparent;
+        }
+        
+        .module-nav.active {
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+            border: 1px solid transparent;
+        }
+        
+        .module-nav.active.warehouse-active,
+        .module-nav.active.operation-active,
+        .module-nav.active.system-active,
+        .module-nav.active.statistics-active {
+            background: linear-gradient(135deg, #ff9f43 0%, #ff8c00 100%);
+            border-color: #ff8c00;
+        }
+        
+        .module-nav.active i {
+            color: white;
+        }
+        
+        .module-nav.active span {
+            color: white;
+            font-weight: 600;
+        }
+        
+        .module-nav:hover:not(.active) {
+            background-color: #f3f4f6;
+            color: #3b82f6;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .module-nav:hover:not(.active) i {
+            color: #3b82f6;
+        }
+        
+        .module-content {
+            transition: opacity 0.3s ease;
+        }
+        
+        /* 点击波纹效果 */
+        .ripple {
+            position: relative;
+            overflow: hidden;
+        }
+        .ripple:after {
+            content: "";
+            display: block;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            background-image: radial-gradient(circle, #fff 10%, transparent 10.01%);
+            background-repeat: no-repeat;
+            background-position: 50%;
+            transform: scale(10, 10);
+            opacity: 0;
+            transition: transform 0.5s, opacity 0.5s;
+        }
+        .ripple:active:after {
+            transform: scale(0, 0);
+            opacity: 0.3;
+            transition: 0s;
+        }
+        
+        /* 卡片样式优化 */
+        .feature-card {
+            transition: all 0.3s ease;
+            border: 1px solid rgba(229, 231, 235, 0.5);
+        }
+        .feature-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border-color: rgba(209, 213, 219, 0.8);
+        }
+        
+        /* 图标容器 */
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* 卡片阴影效果 */
+        .card-shadow {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        /* 高亮卡片 */
+        .highlight-card {
+            position: relative;
+            overflow: hidden;
+        }
+        .highlight-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent 65%, rgba(255, 255, 255, 0.2) 70%, transparent 75%);
+            background-size: 200% 200%;
+            animation: shine 3s infinite;
+        }
+        @keyframes shine {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        /* 消息角标 */
+        .message-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* 悬浮按钮提示样式 */
+        .tooltip {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        
+        /* 开关样式 */
+        .toggle-label {
+            transition: background-color 0.2s;
+        }
+        .toggle-label:before {
+            content: "";
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s;
+            top: 2px;
+            left: 2px;
+        }
+        input:checked + .toggle-label {
+            background-color: #10B981;
+        }
+        input:checked + .toggle-label:before {
+            transform: translateX(24px);
+        }
+
+        /* Nav Tab Active State */
+        .nav-tab.active {
+            color: #165DFF;
+            border-bottom: 2px solid #165DFF;
+            font-weight: 600;
+        }
+        .nav-tab {
+            padding-bottom: 8px;
+            color: #666;
+            transition: all 0.3s;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- 下拉刷新指示器 -->
+    <div class="pull-refresh-indicator" id="pullRefreshIndicator">
+        <i class="fas fa-sync-alt mr-2"></i>下拉刷新
+    </div>
+
+    <!-- 主内容区域 -->
+    <main class="main-content">
+        <div id="module-content" class="mt-4">
+            
+            <!-- 仓库管理模块内容 -->
+            <section id="warehouse-module" class="module-section">
+                <!-- 仓库功能入口 -->
+                <div class="px-4 mt-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-base font-semibold text-gray-900">仓库功能</h3>
+                    </div>
+                    <div class="grid grid-cols-4 gap-4">
+                        <a href="cangku/cangku-liebiao.html" class="bg-white rounded-xl p-4 text-center shadow-sm hover-scale">
+                            <div class="icon-base icon-unified icon-blue">
+                                <i class="fas fa-warehouse text-lg"></i>
+                            </div>
+                            <p class="text-xs text-gray-700 font-medium">仓库管理</p>
+                        </a>
+                        
+                        <a href="ruku/rukuye-zhuye.html" class="bg-white rounded-xl p-4 text-center shadow-sm hover-scale relative">
+                            <div class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">3</div>
+                            <div class="icon-base icon-unified icon-green">
+                                <i class="fas fa-sign-in-alt text-lg"></i>
+                            </div>
+                            <p class="text-xs text-gray-700 font-medium">入库管理</p>
+                        </a>
+                        
+                        <a href="chuku/chukuzhuye.html" class="bg-white rounded-xl p-4 text-center shadow-sm hover-scale relative">
+                            <div class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">5</div>
+                            <div class="icon-base icon-unified icon-orange">
+                                <i class="fas fa-sign-out-alt text-lg"></i>
+                            </div>
+                            <p class="text-xs text-gray-700 font-medium">出库管理</p>
+                        </a>
+                        
+                        <a href="cailiao/cailiao-zhuye.html" class="bg-white rounded-xl p-4 text-center shadow-sm hover-scale">
+                            <div class="icon-base icon-unified icon-purple">
+                                <i class="fas fa-cubes text-lg"></i>
+                            </div>
+                            <p class="text-xs text-gray-700 font-medium">材料管理</p>
+                        </a>
+                        
+                        <a href="pandian/pandianzhuye.html" class="bg-white rounded-xl p-4 text-center shadow-sm hover-scale">
+                            <div class="icon-base icon-unified icon-cyan">
+                                <i class="fas fa-clipboard-check text-lg"></i>
+                            </div>
+                            <p class="text-xs text-gray-700 font-medium">库存盘点</p>
+                        </a>
+                        
+                        <a href="kucun/kucunchaxunzhuye.html" class="bg-white rounded-xl p-4 text-center shadow-sm hover-scale">
+                            <div class="icon-base icon-unified icon-indigo">
+                                <i class="fas fa-boxes text-lg"></i>
+                            </div>
+                            <p class="text-xs text-gray-700 font-medium">库存查询</p>
+                        </a>
+                        
+                        <a href="diaobo/diaobo-zhuye.html" class="bg-white rounded-xl p-4 text-center shadow-sm hover-scale">
+                            <div class="icon-base icon-unified icon-blue">
+                                <i class="fas fa-exchange-alt text-lg"></i>
+                            </div>
+                            <p class="text-xs text-gray-700 font-medium">调拨管理</p>
+                        </a>
+                        
+                        <a href="kucunyujing.html" class="bg-white rounded-xl p-4 text-center shadow-sm hover-scale relative">
+                            <div class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">2</div>
+                            <div class="icon-base icon-unified icon-red">
+                                <i class="fas fa-bell text-lg"></i>
+                            </div>
+                            <p class="text-xs text-gray-700 font-medium">库存预警</p>
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 运营管理模块内容 -->
+            <section id="operation-module" class="module-section">
+                <!-- 运营功能入口 -->
+                <div class="px-4 mt-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-800">运营功能</h3>
+                    </div>
+                    <div class="grid grid-cols-4 gap-4">
+                        <a href="../yunying/shangpin/shangpin-zhuye.html" class="feature-card bg-white rounded-xl p-4 text-center shadow-sm hover-scale">
+                            <div class="icon-base icon-unified-lg icon-green mx-auto mb-2">
+                                <i class="fas fa-box text-xl"></i>
+                            </div>
+                            <p class="text-xs text-gray-700 font-medium">商品</p>
+                        </a>
+                        
+                        <a href="../yunying/yaohuo/yaohuo-zhuye.html" class="feature-card bg-white rounded-xl p-4 text-center shadow-sm hover-scale relative">
+                            <div class="message-badge">
+                                <span>8</span>
+                            </div>
+                            <div class="icon-base icon-unified-lg icon-blue mx-auto mb-2">
+                                <i class="fas fa-clipboard-list text-xl"></i>
+                            </div>
+                            <p class="text-xs text-gray-700 font-medium">要货</p>
+                        </a>
+                        
+                        <a href="../yunying/shengchan/shengchan-zhuye.html" class="feature-card bg-white rounded-xl p-4 text-center shadow-sm hover-scale relative">
+                            <div class="message-badge">
+                                <span>3</span>
+                            </div>
+                            <div class="icon-base icon-unified-lg icon-orange mx-auto mb-2">
+                                <i class="fas fa-industry text-xl"></i>
+                            </div>
+                            <p class="text-xs text-gray-700 font-medium">生产</p>
+                        </a>
+
+                        <a href="../yunying/shangjia/shangjia-zhuye.html" class="feature-card bg-white rounded-xl p-4 text-center shadow-sm hover-scale relative">
+                             <div class="message-badge">
+                                <span>15</span>
+                            </div>
+                            <div class="icon-base icon-unified-lg icon-orange mx-auto mb-2">
+                                <i class="fas fa-store text-xl"></i>
+                            </div>
+                            <p class="text-xs text-gray-700 font-medium">上架</p>
+                        </a>
+                        
+                        <a href="../yunying/xiaoshou/xiaoshou-zhuye.html" class="feature-card bg-white rounded-xl p-4 text-center shadow-sm hover-scale">
+                            <div class="icon-base icon-unified-lg icon-purple mx-auto mb-2">
+                                <i class="fas fa-chart-line text-xl"></i>
+                            </div>
+                            <p class="text-xs text-gray-700 font-medium">销售</p>
+                        </a>
+
+                        <a href="../yunying/peisong/peisong-zhuye.html" class="feature-card bg-white rounded-xl p-4 text-center shadow-sm hover-scale relative">
+                            <div class="message-badge">
+                                <span>5</span>
+                            </div>
+                            <div class="icon-base icon-unified-lg icon-green mx-auto mb-2">
+                                <i class="fas fa-truck text-xl"></i>
+                            </div>
+                            <p class="text-xs text-gray-700 font-medium">配送</p>
+                        </a>
+                        
+                        <button onclick="openLossModal()" class="feature-card bg-white rounded-xl p-4 text-center shadow-sm hover-scale">
+                            <div class="icon-base icon-unified-lg icon-red mx-auto mb-2">
+                                <i class="fas fa-exclamation-triangle text-xl"></i>
+                            </div>
+                            <p class="text-xs text-gray-700 font-medium">报损</p>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 权限管理模块内容 -->
+            <section id="system-module" class="module-section">
+                <!-- 权限功能入口 -->
+                <div class="px-4 mt-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-base font-semibold text-gray-900">权限功能</h3>
+                    </div>
+                    <!-- 权限管理核心功能 -->
+                    <div class="grid grid-cols-3 gap-4">
+                        <!-- 组织架构 -->
+                        <button onclick="openOrganizationModal()" class="bg-white rounded-xl p-4 text-center shadow-sm hover-scale">
+                            <div class="icon-base icon-unified icon-blue">
+                                <i class="fas fa-sitemap text-lg"></i>
+                            </div>
+                            <p class="text-xs text-gray-700 font-medium">组织架构</p>
+                        </button>
+                        
+                        <!-- 角色管理 -->
+                        <button onclick="openHRModal()" class="bg-white rounded-xl p-4 text-center shadow-sm hover-scale relative">
+                            <div class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">6</div>
+                            <div class="icon-base icon-unified icon-purple">
+                                <i class="fas fa-users-cog text-lg"></i>
+                            </div>
+                            <p class="text-xs text-gray-700 font-medium">角色管理</p>
+                        </button>
+                        
+                        <!-- 子账号 -->
+                        <button onclick="openFinanceModal()" class="bg-white rounded-xl p-4 text-center shadow-sm hover-scale relative">
+                            <div class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">3</div>
+                            <div class="icon-base icon-unified icon-orange">
+                                <i class="fas fa-user-shield text-lg"></i>
+                            </div>
+                            <p class="text-xs text-gray-700 font-medium">子账号</p>
+                        </button>
+
+                        <!-- 供应商管理 (Moved) -->
+                        <a href="../quanxian-gongneng/gongyingshang/gongyingshang-list.html" class="bg-white rounded-xl p-4 text-center shadow-sm hover-scale">
+                            <div class="icon-base icon-unified icon-purple">
+                                <i class="fas fa-handshake text-lg"></i>
+                            </div>
+                            <p class="text-xs text-gray-700 font-medium">供应商管理</p>
+                        </a>
+
+                        <!-- 人员管理 (Moved) -->
+                        <a href="../quanxian-gongneng/renyuan-GL/renyuan-GL-list.html" class="bg-white rounded-xl p-4 text-center shadow-sm hover-scale">
+                            <div class="icon-base icon-unified icon-indigo">
+                                <i class="fas fa-user-check text-lg"></i>
+                            </div>
+                            <p class="text-xs text-gray-700 font-medium">人员管理</p>
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 统计分析模块内容 -->
+            <section id="statistics-module" class="module-section">
+                <!-- 统计功能入口 -->
+                <div class="px-4 mt-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-800">统计功能</h3>
+                        <!-- 台账功能入口图标 -->
+                        <button onclick="document.getElementById('ledger-module').scrollIntoView({behavior: 'smooth'})" class="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center text-orange-500 hover:bg-orange-100 transition-colors">
+                            <i class="fas fa-book"></i>
+                        </button>
+                    </div>
+                    <!-- 8个核心统计功能，采用4x2布局 -->
+                    <div class="grid grid-cols-4 gap-3">
+                        <!-- 库存统计 -->
+                        <button onclick="openInventoryStats()" class="feature-card bg-white rounded-xl p-3 text-center shadow-sm hover-scale">
+                            <div class="icon-base icon-unified icon-blue">
+                                <i class="fas fa-boxes text-lg"></i>
+                            </div>
+                            <p class="text-xs text-gray-700 font-medium">库存统计</p>
+                        </button>
+                        
+                        <!-- 出库统计 -->
+                        <button onclick="openOutboundStats()" class="feature-card bg-white rounded-xl p-3 text-center shadow-sm hover-scale">
+                            <div class="icon-base icon-unified icon-orange">
+                                <i class="fas fa-truck text-lg"></i>
+                            </div>
+                            <p class="text-xs text-gray-700 font-medium">出库统计</p>
+                        </button>
+                        
+                        <!-- 入库统计 -->
+                        <button onclick="openInboundStats()" class="feature-card bg-white rounded-xl p-3 text-center shadow-sm hover-scale">
+                            <div class="icon-base icon-unified icon-green">
+                                <i class="fas fa-dolly text-lg"></i>
+                            </div>
+                            <p class="text-xs text-gray-700 font-medium">入库统计</p>
+                        </button>
+                        
+                        <!-- 要货统计 -->
+                        <button onclick="openRequirementStats()" class="feature-card bg-white rounded-xl p-3 text-center shadow-sm hover-scale relative">
+                            <div class="message-badge">
+                                <span>8</span>
+                            </div>
+                            <div class="icon-base icon-unified icon-blue">
+                                <i class="fas fa-clipboard-list text-lg"></i>
+                            </div>
+                            <p class="text-xs text-gray-700 font-medium">要货统计</p>
+                        </button>
+                        
+                        <!-- 生产统计 -->
+                        <button onclick="openProductionStats()" class="feature-card bg-white rounded-xl p-3 text-center shadow-sm hover-scale relative">
+                            <div class="message-badge">
+                                <span>3</span>
+                            </div>
+                            <div class="icon-base icon-unified icon-orange">
+                                <i class="fas fa-industry text-lg"></i>
+                            </div>
+                            <p class="text-xs text-gray-700 font-medium">生产统计</p>
+                        </button>
+                        
+                        <!-- 销售统计 -->
+                        <button onclick="openSalesStats()" class="feature-card bg-white rounded-xl p-3 text-center shadow-sm hover-scale">
+                            <div class="icon-base icon-unified icon-purple">
+                                <i class="fas fa-chart-pie text-lg"></i>
+                            </div>
+                            <p class="text-xs text-gray-700 font-medium">销售统计</p>
+                        </button>
+                        
+                        <!-- 报损统计 -->
+                        <a href="../yunying/baosun/baosun-zhuye.html" class="feature-card bg-white rounded-xl p-3 text-center shadow-sm hover-scale">
+                            <div class="icon-base icon-unified icon-red">
+                                <i class="fas fa-exclamation-triangle text-lg"></i>
+                            </div>
+                            <p class="text-xs text-gray-700 font-medium">报损统计</p>
+                        </a>
+                        
+                        <!-- 经营统计 -->
+                        <button onclick="openBusinessStats()" class="feature-card bg-white rounded-xl p-3 text-center shadow-sm hover-scale">
+                            <div class="icon-base icon-unified icon-cyan">
+                                <i class="fas fa-chart-bar text-lg"></i>
+                            </div>
+                            <p class="text-xs text-gray-700 font-medium">经营统计</p>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 台账功能模块内容 -->
+            <section id="ledger-module" class="module-section">
+                <div class="px-4 mt-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <a href="../tai-zhang/taizhang-zhuye.html" class="flex items-center gap-2 group">
+                            <h3 class="text-lg font-semibold text-gray-800 group-hover:text-orange-600 transition-colors">台账功能</h3>
+                            <i class="fas fa-external-link-alt text-xs text-gray-400 group-hover:text-orange-600 transition-colors"></i>
+                        </a>
+                    </div>
+                    <div class="grid grid-cols-4 gap-4">
+                        <!-- 台账管理主页入口 (新增) -->
+                        <a href="../tai-zhang/taizhang-zhuye.html" class="bg-gradient-to-br from-orange-400 to-orange-600 rounded-xl p-4 text-center shadow-md hover-scale relative overflow-hidden group">
+                            <div class="absolute top-0 right-0 w-20 h-20 bg-white opacity-10 rounded-full -mr-10 -mt-10"></div>
+                            <div class="relative z-10">
+                                <div class="w-12 h-12 rounded-xl bg-white bg-opacity-20 flex items-center justify-center mb-2 mx-auto">
+                                    <i class="fas fa-clipboard-list text-white text-xl"></i>
+                                </div>
+                                <p class="text-xs text-white font-bold">台账管理</p>
+                                <p class="text-[10px] text-white opacity-90 mt-0.5">总览</p>
+                            </div>
+                        </a>
+
+                        <!-- 0. 工厂设置 -->
+                        <a href="../tai-zhang/gongchang-SZ/gongchang-sz-list.html" class="bg-white rounded-xl p-4 text-center shadow-sm hover-scale">
+                            <div class="icon-base icon-unified icon-gray">
+                                <i class="fas fa-industry text-lg text-gray-600"></i>
+                            </div>
+                            <p class="text-xs text-gray-700 font-medium">工厂设置</p>
+                        </a>
+
+                        <!-- 1. 生产记录 -->
+                        <a href="../tai-zhang/shengchan-JL/shengchan-taizhang-list.html" class="bg-white rounded-xl p-4 text-center shadow-sm hover-scale">
+                            <div class="icon-base icon-unified icon-orange">
+                                <i class="fas fa-industry text-lg"></i>
+                            </div>
+                            <p class="text-xs text-gray-700 font-medium">生产记录</p>
+                        </a>
+                        
+                        <!-- 2. 原料追溯 -->
+                        <a href="../tai-zhang/yuanliao-zs/yuanliao-zs-list.html" class="bg-white rounded-xl p-4 text-center shadow-sm hover-scale">
+                            <div class="icon-base icon-unified icon-green">
+                                <i class="fas fa-seedling text-lg"></i>
+                            </div>
+                            <p class="text-xs text-gray-700 font-medium">原料追溯</p>
+                        </a>
+                        
+                        <!-- 3. 质量检验 -->
+                        <a href="../tai-zhang/zhiliang-jy/zhiliang-jy-list.html" class="bg-white rounded-xl p-4 text-center shadow-sm hover-scale">
+                            <div class="icon-base icon-unified icon-blue">
+                                <i class="fas fa-microscope text-lg"></i>
+                            </div>
+                            <p class="text-xs text-gray-700 font-medium">质量检验</p>
+                        </a>
+                        
+                        <!-- 5. 设备 -->
+                        <a href="../tai-zhang/shebei-taizhang/shebei-taizhang-list.html" class="bg-white rounded-xl p-4 text-center shadow-sm hover-scale">
+                            <div class="icon-base icon-unified icon-cyan">
+                                <i class="fas fa-blender text-lg"></i>
+                            </div>
+                            <p class="text-xs text-gray-700 font-medium">设备台账</p>
+                        </a>
+                        
+                        <!-- 7. 销售追溯 -->
+                        <a href="../tai-zhang/xiaoshou-ZS/xiaoshou-zs-query.html" class="bg-white rounded-xl p-4 text-center shadow-sm hover-scale">
+                            <div class="icon-base icon-unified icon-red">
+                                <i class="fas fa-shipping-fast text-lg"></i>
+                            </div>
+                            <p class="text-xs text-gray-700 font-medium">销售追溯</p>
+                        </a>
+
+
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- 底部导航栏 -->
+    <nav class="bottom-nav" id="mainBottomNav">
+        <div class="grid grid-cols-4">
+            <a href="../shouye/shouye-mobile.html" class="bottom-nav-item">
+                <i class="fas fa-home"></i>
+                <span>首页</span>
+            </a>
+            <a href="#" class="bottom-nav-item active">
+                <i class="fas fa-chart-pie"></i>
+                <span>ERP</span>
+            </a>
+            <a href="../shequ/shequ-zhuye.html" class="bottom-nav-item">
+                <i class="fas fa-users"></i>
+                <span>社区</span>
+            </a>
+            <a href="../wode/wodezhuye.html" class="bottom-nav-item">
+                <i class="fas fa-user"></i>
+                <span>我的</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- 功能设置弹窗 -->
+    <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl max-h-[85vh] flex flex-col">
+            <!-- 弹窗头部 - 固定不滚动 -->
+            <div class="flex items-center justify-between p-6 pb-4 border-b border-gray-100 flex-shrink-0">
+                <h3 class="text-lg font-semibold text-gray-800">功能设置</h3>
+                <button id="closeSettings" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
+                    <i class="fas fa-times text-gray-600"></i>
+                </button>
+            </div>
+            
+            <!-- 弹窗内容 - 可滚动区域 -->
+            <div class="flex-1 overflow-y-auto px-6 pb-6" style="-webkit-overflow-scrolling: touch; scroll-behavior: smooth;">
+                <!-- 当前功能列表 -->
+                <div class="mb-6 mt-4">
+                    <h4 class="text-sm font-medium text-gray-600 mb-3 sticky top-0 bg-white py-2 z-10">当前显示功能</h4>
+                    <div id="currentFunctions" class="space-y-2">
+                        <!-- 动态生成当前功能列表 -->
+                    </div>
+                </div>
+                
+                <!-- 可添加功能列表 -->
+                <div class="pb-4">
+                    <h4 class="text-sm font-medium text-gray-600 mb-3 sticky top-0 bg-white py-2 z-10">可添加功能</h4>
+                    <div id="availableFunctions" class="space-y-2">
+                        <!-- 动态生成可添加功能列表 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Search Functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // 功能搜索逻辑
+            const searchInput = document.getElementById('functionSearchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', function(e) {
+                    const keyword = e.target.value.trim().toLowerCase();
+                    const modules = document.querySelectorAll('.module-section');
+                    
+                    modules.forEach(module => {
+                        const cards = module.querySelectorAll('.grid > a, .grid > button');
+                        let hasVisibleCards = false;
+                        
+                        cards.forEach(card => {
+                            const text = card.textContent.trim().toLowerCase();
+                            if (text.includes(keyword)) {
+                                card.style.display = '';
+                                hasVisibleCards = true;
+                            } else {
+                                card.style.display = 'none';
+                            }
+                        });
+                        
+                        if (keyword !== '' && !hasVisibleCards) {
+                            module.style.display = 'none';
+                        } else {
+                            module.style.display = '';
+                        }
+                    });
+                    
+                    if (keyword === '') {
+                        modules.forEach(module => module.style.display = '');
+                        document.querySelectorAll('.grid > a, .grid > button').forEach(card => card.style.display = '');
+                    }
+                });
+            }
+            
+            // Generate suggestions initially
+            generateSmartSuggestions();
+        });
+
+        // 下拉刷新功能
+        let startY = 0;
+        let refreshing = false;
+        const pullThreshold = 80;
+        const indicator = document.getElementById('pullRefreshIndicator');
+        
+        document.addEventListener('touchstart', function(e) {
+            startY = e.touches[0].clientY;
+        }, { passive: true });
+        
+        document.addEventListener('touchmove', function(e) {
+            if (refreshing) return;
+            
+            const y = e.touches[0].clientY;
+            const pullDistance = y - startY;
+            
+            if (document.scrollingElement.scrollTop === 0 && pullDistance > 0) {
+                indicator.textContent = '下拉刷新';
+                indicator.classList.add('show');
+                
+                if (pullDistance > pullThreshold) {
+                    indicator.textContent = '释放立即刷新';
+                }
+                
+                e.preventDefault();
+            }
+        }, { passive: false });
+        
+        document.addEventListener('touchend', function(e) {
+            if (refreshing) return;
+            
+            const y = e.changedTouches[0].clientY;
+            const pullDistance = y - startY;
+            
+            if (document.scrollingElement.scrollTop === 0 && pullDistance > pullThreshold) {
+                refreshContent();
+            } else {
+                indicator.classList.remove('show');
+            }
+        }, { passive: true });
+        
+        function refreshContent() {
+            refreshing = true;
+            indicator.textContent = '正在刷新...';
+            
+            // 模拟刷新操作
+            setTimeout(function() {
+                indicator.textContent = '刷新成功';
+                
+                // 更新数据
+                generateSmartSuggestions();
+                
+                setTimeout(function() {
+                    indicator.classList.remove('show');
+                    refreshing = false;
+                }, 500);
+            }, 1500);
+        }
+        
+        // 功能设置管理
+        const allFunctions = [
+            { name: '仓库设置', icon: 'fas fa-cog', gradient: 'bg-blue-50', iconColor: 'text-blue-600', onClick: 'openWarehouseSettingsModal()', id: 'settings', fixed: true },
+            { name: '入库管理', icon: 'fas fa-sign-in-alt', gradient: 'bg-green-50', iconColor: 'text-green-600', href: 'rukuye-mobile.html', id: 'inbound', fixed: true },
+            { name: '出库管理', icon: 'fas fa-sign-out-alt', gradient: 'bg-orange-50', iconColor: 'text-orange-600', href: 'chukuye-mobile.html', id: 'outbound', fixed: true },
+            { name: '材料管理', icon: 'fas fa-cubes', gradient: 'bg-purple-50', iconColor: 'text-purple-600', onClick: 'quickMaterial()', id: 'materials', removable: true },
+            { name: '库存盘点', icon: 'fas fa-clipboard-check', gradient: 'bg-cyan-50', iconColor: 'text-cyan-600', onClick: 'openInventoryModal()', id: 'inventory', removable: true },
+            { name: '库存查询', icon: 'fas fa-boxes', gradient: 'bg-indigo-50', iconColor: 'text-indigo-600', href: 'kucunchaxunzhuye.html', id: 'query', removable: true },
+            { name: '历史记录', icon: 'fas fa-history', gradient: 'bg-gray-50', iconColor: 'text-gray-600', onClick: 'openHistoryModal()', id: 'history' },
+            { name: '库存报表', icon: 'fas fa-chart-bar', gradient: 'bg-blue-50', iconColor: 'text-blue-600', onClick: 'openReportModal()', id: 'report' },
+            { name: '货位管理', icon: 'fas fa-map-marker-alt', gradient: 'bg-blue-50', iconColor: 'text-blue-600', onClick: 'openLocationModal()', id: 'location' }
+        ];
+        
+        // 打开设置弹窗
+        window.openSettings = function() {
+            const modal = document.getElementById('settingsModal');
+            const currentContainer = document.getElementById('currentFunctions');
+            const availableContainer = document.getElementById('availableFunctions');
+            
+            // 清空容器
+            currentContainer.innerHTML = '';
+            availableContainer.innerHTML = '';
+            
+            // 填充当前功能
+            const currentFunctions = [
+                allFunctions[0], allFunctions[1], allFunctions[2], 
+                allFunctions[3], allFunctions[4], allFunctions[5]
+            ];
+            
+            currentFunctions.forEach(func => {
+                const item = document.createElement('div');
+                item.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg';
+                
+                // 检查是否为固定功能（不可删除）
+                const isFixed = func.fixed;
+                
+                item.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 ${func.gradient} rounded-lg flex items-center justify-center">
+                            <i class="${func.icon} ${func.iconColor} text-sm"></i>
+                        </div>
+                        <span class="text-sm font-medium">${func.name}</span>
+                        ${isFixed ? '<span class="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded-full ml-2">固定</span>' : ''}
+                    </div>
+                    ${isFixed ? 
+                        '<span class="text-gray-400"><i class="fas fa-lock text-sm"></i></span>' : 
+                        `<button class="text-red-500 hover:text-red-700" onclick="removeFunction('${func.id}')"><i class="fas fa-trash text-sm"></i></button>`
+                    }
+                `;
+                currentContainer.appendChild(item);
+            });
+            
+            // 填充可添加功能
+            const availableFunctions = [allFunctions[6], allFunctions[7], allFunctions[8]];
+            
+            availableFunctions.forEach(func => {
+                const item = document.createElement('div');
+                item.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg';
+                item.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 ${func.gradient} rounded-lg flex items-center justify-center">
+                            <i class="${func.icon} ${func.iconColor} text-sm"></i>
+                        </div>
+                        <span class="text-sm font-medium">${func.name}</span>
+                    </div>
+                    <button class="text-blue-500 hover:text-blue-700" onclick="addFunction('${func.id}')">
+                        <i class="fas fa-plus text-sm"></i>
+                    </button>
+                `;
+                availableContainer.appendChild(item);
+            });
+            
+            modal.classList.remove('hidden');
+            
+            // 确保关闭按钮事件绑定
+            document.getElementById('closeSettings').onclick = closeSettings;
+        };
+        
+        // 关闭设置弹窗
+        window.closeSettings = function() {
+            const modal = document.getElementById('settingsModal');
+            modal.classList.add('hidden');
+        };
+        
+        // 添加功能
+        window.addFunction = function(functionId) {
+            const func = allFunctions.find(f => f.id === functionId);
+            if (!func) return;
+            
+            showToast(`已添加"${func.name}"功能`, 'success');
+            closeSettings();
+        };
+        
+        // 删除功能
+        window.removeFunction = function(functionId) {
+            const func = allFunctions.find(f => f.id === functionId);
+            if (!func) return;
+            
+            // 检查是否为固定功能，不允许删除
+            if (func.fixed) {
+                showToast('此功能为系统核心功能，不可删除', 'error');
+                return;
+            }
+            
+            showToast(`已移除"${func.name}"功能`, 'success');
+            closeSettings();
+        };
+        
+        // 显示提示消息
+        function showToast(message, type = 'info') {
+            // 移除现有的toast
+            const existingToast = document.querySelector('.toast');
+            if (existingToast) {
+                existingToast.remove();
+            }
+            
+            // 创建新toast
+            const toast = document.createElement('div');
+            toast.className = 'toast fixed top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-lg text-white text-sm z-50 transition-opacity duration-300 opacity-0';
+            
+            // 设置背景色
+            switch(type) {
+                case 'success':
+                    toast.classList.add('bg-green-600');
+                    break;
+                case 'error':
+                    toast.classList.add('bg-red-600');
+                    break;
+                case 'warning':
+                    toast.classList.add('bg-yellow-600');
+                    break;
+                default:
+                    toast.classList.add('bg-blue-600');
+            }
+            
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            // 显示动画
+            setTimeout(() => {
+                toast.classList.add('opacity-90');
+            }, 10);
+            
+            // 自动消失
+            setTimeout(() => {
+                toast.classList.remove('opacity-90');
+                toast.classList.add('opacity-0');
+                
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 2000);
+        }
+
+        // 模态框功能
+        function openHistoryModal() {
+            showToast('历史记录功能开发中', 'info');
+        }
+        
+        function openReportModal() {
+            showToast('库存报表功能开发中', 'info');
+        }
+        
+        function openSettingsModal() {
+            openWarehouseSettingsModal();
+        }
+        
+        function openLocationModal() {
+            showToast('货位管理功能开发中', 'info');
+        }
+
+        // 库存预警模态框
+        function openWarningModal() {
+            showToast('库存预警功能开发中', 'info');
+        }
+        
+        // 批次管理模态框
+        function openBatchModal() {
+            showToast('批次管理功能开发中', 'info');
+        }
+        
+        // 库存盘点模态框
+        function openInventoryModal() {
+            window.location.href = 'pandianzhuye.html';
+        }
+        
+        // 质量检查模态框
+        function openQualityModal() {
+            showToast('质量检查功能开发中', 'info');
+        }
+
+        // 快速操作功能
+        function quickMaterial() {
+            window.location.href = 'cailiao-zhuye.html';
+        }
+        
+        function quickInbound() {
+            window.location.href = 'rukuye-mobile.html';
+        }
+        
+        function quickOutbound() {
+            window.location.href = 'chukuye-mobile.html';
+        }
+        
+        function quickInventory() {
+            openInventoryModal();
+        }
+        
+        // 智能补货建议
+        function generateSmartSuggestions() {
+            const suggestions = [
+                {
+                    material: '高筋面粉',
+                    current: '5kg',
+                    suggest: '50kg',
+                    reason: '库存不足且消耗快'
+                },
+                {
+                    material: '黄油',
+                    current: '15kg',
+                    suggest: '20kg',
+                    reason: '接近安全库存'
+                },
+                {
+                    material: '白砂糖',
+                    current: '30kg',
+                    suggest: '20kg',
+                    reason: '历史消耗减少'
+                }
+            ];
+            
+            const container = document.getElementById('smartSuggestions');
+            if (container) {
+                container.innerHTML = '';
+                
+                suggestions.forEach(item => {
+                    const suggestionElement = document.createElement('div');
+                    suggestionElement.className = 'flex items-center justify-between p-2 bg-white bg-opacity-15 rounded-lg backdrop-blur-sm border border-white border-opacity-20';
+                    suggestionElement.innerHTML = `
+                        <div class="flex-1">
+                            <p class="text-sm font-medium">${item.material}</p>
+                            <p class="text-xs opacity-90">当前: ${item.current} · 建议: ${item.suggest}</p>
+                            <p class="text-xs opacity-75">原因: ${item.reason}</p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="applySuggestion(this)" class="px-2 py-1 bg-green-500 bg-opacity-80 rounded text-xs hover:bg-opacity-100 transition-colors">
+                                应用
+                            </button>
+                            <button onclick="ignoreSuggestion(this)" class="px-2 py-1 bg-white bg-opacity-20 rounded text-xs hover:bg-opacity-30 transition-colors">
+                                忽略
+                            </button>
+                        </div>
+                    `;
+                    container.appendChild(suggestionElement);
+                });
+            }
+        }
+        
+        function refreshSuggestions() {
+            const container = document.getElementById('smartSuggestions');
+            container.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin text-xl"></i></div>';
+            
+            setTimeout(() => {
+                generateSmartSuggestions();
+                showToast('建议已更新', 'success');
+            }, 1000);
+        }
+        
+        function applySuggestion(button) {
+            const suggestionElement = button.closest('div.flex.items-center');
+            suggestionElement.classList.add('opacity-50');
+            button.disabled = true;
+            button.nextElementSibling.disabled = true;
+            
+            showToast('已应用建议', 'success');
+        }
+        
+        function ignoreSuggestion(button) {
+            const suggestionElement = button.closest('div.flex.items-center');
+            suggestionElement.classList.add('opacity-50');
+            button.disabled = true;
+            button.previousElementSibling.disabled = true;
+            
+            showToast('已忽略建议', 'info');
+        }
+        
+        function applyAllSuggestions() {
+            const suggestions = document.querySelectorAll('#smartSuggestions > div');
+            suggestions.forEach(suggestion => {
+                suggestion.classList.add('opacity-50');
+                const buttons = suggestion.querySelectorAll('button');
+                buttons.forEach(button => button.disabled = true);
+            });
+            
+            showToast('已应用所有建议', 'success');
+        }
+        
+        // 详情模态框
+        function showDetailModal(type) {
+            const titles = {
+                'value': '库存总值详情',
+                'consumption': '今日消耗详情',
+                'days': '预计可用天数详情'
+            };
+            
+            // 创建模态框
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-end justify-center z-50';
+            modal.id = 'detailModal';
+            modal.innerHTML = `
+                <div class="bg-white rounded-t-3xl w-full max-h-[70vh] p-6 animate-slide-up">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-800">${titles[type]}</h3>
+                        <button onclick="closeDetailModal()" class="text-gray-500">
+                            <i class="fas fa-times text-lg"></i>
+                        </button>
+                    </div>
+                    <div class="overflow-y-auto">
+                        ${getDetailContent(type)}
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            // 添加动画样式
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slide-up {
+                    from { transform: translateY(100%); }
+                    to { transform: translateY(0); }
+                }
+                .animate-slide-up {
+                    animation: slide-up 0.3s ease-out forwards;
+                }
+            `;
+            document.head.appendChild(style);
+            
+            // 阻止滚动
+            document.body.style.overflow = 'hidden';
+            
+            // 点击背景关闭
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeDetailModal();
+                }
+            });
+        }
+        
+        function closeDetailModal() {
+            const modal = document.getElementById('detailModal');
+            if (modal) {
+                modal.remove();
+                document.body.style.overflow = '';
+            }
+        }
+        
+        function getDetailContent(type) {
+            // ... (keeping existing content, truncated for brevity in this specific replacement call but assume it's there in full implementation)
+            // For safety, I will include the full content of getDetailContent
+            switch(type) {
+                case 'value':
+                    return `
+                        <div class="space-y-4">
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <div class="text-center mb-3">
+                                    <p class="text-sm text-gray-600">库存总值</p>
+                                    <p class="text-2xl font-bold text-blue-600">¥128,500</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                case 'consumption':
+                    return `
+                        <div class="space-y-4">
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <div class="text-center mb-3">
+                                    <p class="text-sm text-gray-600">今日消耗</p>
+                                    <p class="text-2xl font-bold text-blue-600">¥1,280</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                case 'days':
+                    return `
+                        <div class="space-y-4">
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <div class="text-center mb-3">
+                                    <p class="text-sm text-gray-600">预计可用天数</p>
+                                    <p class="text-2xl font-bold text-blue-600">7天</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                default:
+                    return '<div class="p-4 text-center text-gray-500">暂无数据</div>';
+            }
+        }
+        
+        // 查看库存概况
+        function viewInventoryOverview() {
+            window.location.href = 'kucun-gailan.html';
+        }
+
+        // Placeholder functions for other modules
+        function viewOperationOverview() { showToast('功能开发中', 'info'); }
+        function showOperationWarningDetail() { showToast('功能开发中', 'info'); }
+        function refreshOperationData() { showToast('数据已刷新', 'success'); }
+        function openOperationSettings() { showToast('运营设置开发中', 'info'); }
+        function openRequirementModal() { showToast('要货管理开发中', 'info'); }
+        function openProductionModal() { showToast('生产管理开发中', 'info'); }
+        function openSalesModal() { showToast('销售管理开发中', 'info'); }
+        function openLossModal() { showToast('报损管理开发中', 'info'); }
+        function viewEnterpriseOverview() { showToast('功能开发中', 'info'); }
+        function showEnterpriseDetail() { showToast('功能开发中', 'info'); }
+        function openEnterpriseSettings() { showToast('权限设置开发中', 'info'); }
+        function openOrganizationModal() { showToast('组织架构开发中', 'info'); }
+        function openHRModal() { showToast('角色管理开发中', 'info'); }
+        function openFinanceModal() { showToast('审计日志开发中', 'info'); }
+        function openPerformanceModal() { showToast('访问控制开发中', 'info'); }
+        function openSalaryModal() { showToast('数据权限开发中', 'info'); }
+        function openTrainingModal() { showToast('审批流开发中', 'info'); }
+        function openDocumentModal() { showToast('安全策略开发中', 'info'); }
+        function refreshEnterpriseStatus() { showToast('状态已刷新', 'success'); }
+        function viewAllEnterpriseActivities() { showToast('查看全部动态', 'info'); }
+        function showEnterpriseActivityDetail() { showToast('查看详情', 'info'); }
+        function viewStatsOverview() { showToast('功能开发中', 'info'); }
+        function showStatsDetail() { showToast('功能开发中', 'info'); }
+        function openStatsSettings() { showToast('筛选条件开发中', 'info'); }
+        function openInventoryStats() { showToast('库存统计开发中', 'info'); }
+        function openOutboundStats() { showToast('出库统计开发中', 'info'); }
+        function openInboundStats() { showToast('入库统计开发中', 'info'); }
+        function openRequirementStats() { showToast('要货统计开发中', 'info'); }
+        function openProductionStats() { showToast('生产统计开发中', 'info'); }
+        function openSalesStats() { showToast('销售统计开发中', 'info'); }
+        function openLossStats() { showToast('报损统计开发中', 'info'); }
+        function openBusinessStats() { showToast('经营统计开发中', 'info'); }
+        function changeStatsTimeRange() { showToast('时间范围已切换', 'success'); }
+        function exportStatsData() { showToast('正在导出数据...', 'info'); }
+        function viewAllReports() { showToast('查看全部报表', 'info'); }
+        function generateReport() { showToast('正在生成报表...', 'info'); }
+        function filterDynamic(type) {
+            const items = document.querySelectorAll('#dynamicList > div');
+            const filterButtons = document.querySelectorAll('.flex.space-x-2.mb-3 button');
+            
+            filterButtons.forEach(button => {
+                if (button.textContent.trim().includes(type === 'all' ? '全部' : 
+                                                    type === 'in' ? '入库' : 
+                                                    type === 'out' ? '出库' : '盘点')) {
+                    button.classList.add('bg-blue-100', 'text-blue-600');
+                    button.classList.remove('text-gray-500');
+                } else {
+                    button.classList.remove('bg-blue-100', 'text-blue-600');
+                    button.classList.add('text-gray-500');
+                }
+            });
+            
+            items.forEach(item => {
+                if (type === 'all' || item.getAttribute('data-type') === type) {
+                    item.classList.remove('hidden');
+                } else {
+                    item.classList.add('hidden');
+                }
+            });
+        }
+        function batchProcessOperation() { showToast('批量处理开发中', 'info'); }
+    </script>
+</body>
+</html>

@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>盘点确认 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        orange: {
+                            50: '#fff7ed',
+                            100: '#ffedd5',
+                            200: '#fed7aa',
+                            300: '#fdba74',
+                            400: '#fb923c',
+                            500: '#f97316',
+                            600: '#ea580c',
+                            700: '#c2410c',
+                            800: '#9a3412',
+                            900: '#7c2d12',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Cookpad Design System */
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+            --text-main: #333333;
+            --text-sub: #8b8b8b;
+            --bg-light: #f7f7f5;
+            --bg-white: #ffffff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-main);
+            -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden;
+            max-width: 100vw;
+        }
+
+        /* 滚动条美化 */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 3px;
+        }
+
+        /* 卡片样式 */
+        .material-card {
+            background: var(--bg-white);
+            border-radius: 12px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            border: 1px solid #f0f0f0;
+            transition: all 0.2s;
+            overflow: hidden;
+        }
+        
+        .material-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 140, 0, 0.1);
+            border-color: #ffedd5;
+        }
+
+        /* 数量输入框 */
+        .quantity-input {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 4px 0;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            background: #ffffff;
+            text-align: center;
+            height: 36px;
+        }
+        
+        .quantity-input:focus {
+            outline: none;
+            border-color: var(--primary-orange);
+            background: #fff7ed;
+            box-shadow: 0 0 0 2px rgba(255, 159, 67, 0.1);
+        }
+
+        /* 差异显示样式 */
+        .difference-positive {
+            background: #f0fdf4;
+            border: 1px solid #dcfce7;
+            color: #16a34a;
+        }
+        
+        .difference-negative {
+            background: #fef2f2;
+            border: 1px solid #fee2e2;
+            color: #dc2626;
+        }
+        
+        .difference-zero {
+            background: #f9fafb;
+            border: 1px solid #f3f4f6;
+            color: #6b7280;
+        }
+
+        /* 动画 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen pb-32">
+    <!-- 顶部导航栏 - Cookpad 风格 -->
+    <div class="bg-white px-4 py-3 shadow-sm border-b border-gray-100 sticky top-0 z-30">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <button onclick="goBack()" class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div>
+                    <div class="text-lg font-bold text-gray-800 tracking-wide">盘点确认</div>
+                    <div class="text-xs text-gray-500 font-medium mt-0.5" id="warehouseInfo">请确认盘点信息</div>
+                </div>
+            </div>
+            <div class="flex items-center">
+                <button onclick="confirmInventory()" id="confirmBtn" class="px-4 py-2 bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white rounded-full font-medium transition-all duration-200 flex items-center space-x-2 shadow-md shadow-orange-200">
+                    <i class="fas fa-check text-sm"></i>
+                    <span>确认</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主内容区域 -->
+    <div class="px-4 py-3 main-container pb-32">
+        <!-- 盘点材料列表 -->
+        <div class="space-y-3" id="materialsList">
+            <!-- 材料卡片将通过JavaScript动态生成 -->
+        </div>
+    </div>
+    
+    <!-- 固定底部总计和操作区域 -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-40 pb-safe">
+        <!-- 总计信息 -->
+        <div class="px-4 py-3">
+            <div class="flex items-center space-x-3 mb-3">
+                <!-- 盘点品种 -->
+                <div class="flex-1 bg-gray-50 border border-gray-200 rounded-xl p-2.5">
+                    <div class="flex items-center space-x-2.5">
+                        <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center border border-gray-100 shadow-sm">
+                            <i class="fas fa-cube text-orange-500 text-sm"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="text-xs text-gray-500 font-medium">盘点品种</div>
+                            <div class="text-sm font-bold text-gray-800" id="totalItems">0</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 差异总值 -->
+                <div class="flex-1 bg-gray-50 border border-gray-200 rounded-xl p-2.5">
+                    <div class="flex items-center space-x-2.5">
+                        <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center border border-gray-100 shadow-sm">
+                            <i class="fas fa-balance-scale text-orange-500 text-sm"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="text-xs text-gray-500 font-medium">差异总值</div>
+                            <div class="text-sm font-bold text-gray-800" id="totalDiffValue">¥0.00</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- 继续添加按钮 -->
+            <button onclick="continueInventory()" class="w-full py-3 bg-white border border-orange-200 text-orange-600 rounded-xl font-bold transition-all duration-200 flex items-center justify-center space-x-2 shadow-sm hover:bg-orange-50 active:scale-98">
+                <i class="fas fa-plus text-sm"></i>
+                <span class="text-sm">继续添加盘点</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 加载指示器 -->
+    <div id="loadingIndicator" class="fixed inset-0 bg-white bg-opacity-80 flex items-center justify-center z-50 hidden">
+        <div class="text-center">
+            <div class="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+            <p class="text-gray-500 text-sm font-medium">处理中...</p>
+        </div>
+    </div>
+    
+    <!-- Toast 容器 -->
+    <div id="toast-container" class="fixed top-24 left-1/2 transform -translate-x-1/2 z-50 pointer-events-none"></div>
+
+    <script>
+        // 切换库存详情显示
+        function toggleStockDetails(materialId) {
+            const detailsDiv = document.getElementById(`stock-details-${materialId}`);
+            const iconElement = document.getElementById(`stock-icon-${materialId}`);
+            
+            if (detailsDiv.classList.contains('hidden')) {
+                // 先隐藏所有其他的库存详情
+                document.querySelectorAll('[id^="stock-details-"]').forEach(div => {
+                    div.classList.add('hidden');
+                });
+                document.querySelectorAll('[id^="stock-icon-"]').forEach(icon => {
+                    icon.classList.remove('rotate-180');
+                });
+                
+                // 显示当前的库存详情
+                detailsDiv.classList.remove('hidden');
+                iconElement.classList.add('rotate-180');
+            } else {
+                // 隐藏当前的库存详情
+                detailsDiv.classList.add('hidden');
+                iconElement.classList.remove('rotate-180');
+            }
+        }
+        
+        // 点击其他地方时隐藏库存详情
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('[id^="stock-btn-"]') && !event.target.closest('[id^="stock-details-"]')) {
+                document.querySelectorAll('[id^="stock-details-"]').forEach(div => {
+                    div.classList.add('hidden');
+                });
+                document.querySelectorAll('[id^="stock-icon-"]').forEach(icon => {
+                    icon.classList.remove('rotate-180');
+                });
+            }
+        });
+        
+        // 全局变量
+        let materialQuickInputCounters = {};
+        
+        function addQuickInput(materialId) {
+            const quickInputContainer = document.getElementById(`quickInputContainer-${materialId}`);
+            
+            // 为每个材料维护独立的计数器
+            if (!materialQuickInputCounters[materialId]) {
+                materialQuickInputCounters[materialId] = 0;
+            }
+            materialQuickInputCounters[materialId]++;
+            
+            const inputId = `quickInput-${materialId}-${materialQuickInputCounters[materialId]}`;
+            
+            const material = materials.find(m => m.id === materialId);
+            if (!material) return;
+            
+            const quickInputHtml = `
+                <div id="${inputId}" class="quick-input-row mb-2 p-2 bg-gray-50 rounded-lg border border-gray-200 relative animate-fade-in" style="touch-action: pan-x;">
+                    <div class="text-xs text-gray-500 mb-2 font-medium flex items-center justify-between">
+                        <span>其他规格 #${materialQuickInputCounters[materialId]}</span>
+                        <button onclick="removeQuickInput('${inputId}')" class="text-red-400 hover:text-red-600 transition-colors">
+                            <i class="fas fa-times text-xs"></i>
+                        </button>
+                    </div>
+                    <div class="flex items-center space-x-2 mb-2">
+                        <input type="number" 
+                               id="quickQuantity-${inputId}" 
+                               placeholder="数量" 
+                               class="flex-1 p-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 bg-white"
+                               oninput="updateQuickQuantity('${inputId}', ${materialId})">
+                        <select id="quickUnit-${inputId}" 
+                                class="p-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 bg-white" 
+                                onchange="updateQuickQuantity('${inputId}', ${materialId})">
+                            ${material.units.map(unit => `<option value="${unit.name}" ${unit.purchaseUnit ? 'selected' : ''}>${unit.name}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div id="quickConversion-${inputId}" class="text-xs text-orange-600 hidden bg-orange-50 p-1.5 rounded border border-orange-100">
+                        <i class="fas fa-calculator mr-1"></i>
+                        <span id="quickConversionText-${inputId}">换算结果</span>
+                    </div>
+
+                </div>
+            `;
+            
+            quickInputContainer.insertAdjacentHTML('beforeend', quickInputHtml);
+        }
+        
+        function removeQuickInput(inputId) {
+            const element = document.getElementById(inputId);
+            if (element) {
+                element.remove();
+            }
+        }
+        
+        function updateQuickQuantity(inputId, materialId) {
+            const quantityInput = document.getElementById(`quickQuantity-${inputId}`);
+            const unitSelect = document.getElementById(`quickUnit-${inputId}`);
+            const conversionDiv = document.getElementById(`quickConversion-${inputId}`);
+            const conversionText = document.getElementById(`quickConversionText-${inputId}`);
+            
+            const quantity = parseFloat(quantityInput.value) || 0;
+            const selectedUnit = unitSelect.value;
+            
+            if (quantity > 0 && selectedUnit) {
+                const material = materials.find(m => m.id === materialId);
+                if (material && material.units) {
+                    const unit = material.units.find(u => u.name === selectedUnit);
+                    if (unit) {
+                        const baseQuantity = quantity * unit.ratio;
+                        conversionText.textContent = `${quantity} ${selectedUnit} = ${baseQuantity} ${material.unit}`;
+                        conversionDiv.classList.remove('hidden');
+                        
+                        // 实时更新主输入框
+                        const mainQuantityInput = document.getElementById(`quantity-${materialId}`);
+                        if (mainQuantityInput) {
+                            mainQuantityInput.value = baseQuantity;
+                            updateQuantity(materialId, baseQuantity);
+                        }
+                    } else {
+                        conversionDiv.classList.add('hidden');
+                    }
+                } else {
+                    conversionDiv.classList.add('hidden');
+                }
+            } else {
+                conversionDiv.classList.add('hidden');
+                // 清空主输入框
+                const mainQuantityInput = document.getElementById(`quantity-${materialId}`);
+                if (mainQuantityInput) {
+                    mainQuantityInput.value = '';
+                    updateQuantity(materialId, 0);
+                }
+            }
+        }
+
+        // 材料数据 (与 pandianzhuye.html 保持一致，但补充单位信息以匹配ruku格式)
+        const materials = [
+            { 
+                id: 1, name: '高筋面粉', image: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', 
+                unit: 'g', currentStock: 2500, defaultShelfLife: 365, lastPrice: 8.5,
+                units: [
+                    { name: 'g', level: 1, ratio: 1, isBase: true },
+                    { name: '袋', level: 2, ratio: 500, purchaseUnit: false },
+                    { name: '箱', level: 3, ratio: 10000, purchaseUnit: true }
+                ]
+            },
+            { 
+                id: 2, name: '低筋面粉', image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', 
+                unit: 'g', currentStock: 1800, defaultShelfLife: 365, lastPrice: 7.8,
+                units: [
+                    { name: 'g', level: 1, ratio: 1, isBase: true },
+                    { name: '袋', level: 2, ratio: 500, purchaseUnit: false },
+                    { name: '箱', level: 3, ratio: 10000, purchaseUnit: true }
+                ]
+            },
+            { 
+                id: 3, name: '中筋面粉', image: 'https://images.unsplash.com/photo-1628873891973-761b1b8e8c4b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', 
+                unit: 'g', currentStock: 1200, defaultShelfLife: 365, lastPrice: 8.0,
+                units: [
+                    { name: 'g', level: 1, ratio: 1, isBase: true },
+                    { name: '袋', level: 2, ratio: 500, purchaseUnit: false },
+                    { name: '箱', level: 3, ratio: 10000, purchaseUnit: true }
+                ]
+            },
+            { 
+                id: 4, name: '全麦面粉', image: 'https://images.unsplash.com/photo-1549931319-a545dcf3bc73?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', 
+                unit: 'g', currentStock: 800, defaultShelfLife: 180, lastPrice: 12.0,
+                units: [
+                    { name: 'g', level: 1, ratio: 1, isBase: true },
+                    { name: '袋', level: 2, ratio: 500, purchaseUnit: false },
+                    { name: '箱', level: 3, ratio: 10000, purchaseUnit: true }
+                ]
+            },
+            { 
+                id: 5, name: '杏仁粉', image: 'https://images.unsplash.com/photo-1508747703725-719777637510?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', 
+                unit: 'g', currentStock: 300, defaultShelfLife: 90, lastPrice: 45.0,
+                units: [
+                    { name: 'g', level: 1, ratio: 1, isBase: true },
+                    { name: '包', level: 2, ratio: 100, purchaseUnit: true }
+                ]
+            },
+            { 
+                id: 6, name: '椰子粉', image: 'https://images.unsplash.com/photo-1520950237264-6b44f0d4b2b5?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', 
+                unit: 'g', currentStock: 250, defaultShelfLife: 120, lastPrice: 28.0,
+                units: [
+                    { name: 'g', level: 1, ratio: 1, isBase: true },
+                    { name: '包', level: 2, ratio: 100, purchaseUnit: true }
+                ]
+            },
+            { 
+                id: 7, name: '可可粉', image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', 
+                unit: 'g', currentStock: 400, defaultShelfLife: 730, lastPrice: 35.0,
+                units: [
+                    { name: 'g', level: 1, ratio: 1, isBase: true },
+                    { name: '罐', level: 2, ratio: 250, purchaseUnit: true }
+                ]
+            },
+            { 
+                id: 8, name: '泡打粉', image: 'https://images.unsplash.com/photo-1571115764595-644a1f56a55c?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', 
+                unit: 'g', currentStock: 150, defaultShelfLife: 540, lastPrice: 18.0,
+                units: [
+                    { name: 'g', level: 1, ratio: 1, isBase: true },
+                    { name: '罐', level: 2, ratio: 100, purchaseUnit: true }
+                ]
+            },
+            { 
+                id: 9, name: '黄油', image: 'https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', 
+                unit: 'g', currentStock: 800, defaultShelfLife: 30, lastPrice: 25.0,
+                units: [
+                    { name: 'g', level: 1, ratio: 1, isBase: true },
+                    { name: '块', level: 2, ratio: 250, purchaseUnit: true }
+                ]
+            },
+            { 
+                id: 10, name: '植物油', image: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', 
+                unit: 'ml', currentStock: 1500, defaultShelfLife: 365, lastPrice: 12.0,
+                units: [
+                    { name: 'ml', level: 1, ratio: 1, isBase: true },
+                    { name: '瓶', level: 2, ratio: 500, purchaseUnit: true }
+                ]
+            },
+            { 
+                id: 11, name: '橄榄油', image: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', 
+                unit: 'ml', currentStock: 500, defaultShelfLife: 730, lastPrice: 35.0,
+                units: [
+                    { name: 'ml', level: 1, ratio: 1, isBase: true },
+                    { name: '瓶', level: 2, ratio: 250, purchaseUnit: true }
+                ]
+            },
+            { 
+                id: 12, name: '椰子油', image: 'https://images.unsplash.com/photo-1520950237264-6b44f0d4b2b5?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', 
+                unit: 'ml', currentStock: 300, defaultShelfLife: 365, lastPrice: 28.0,
+                units: [
+                    { name: 'ml', level: 1, ratio: 1, isBase: true },
+                    { name: '瓶', level: 2, ratio: 200, purchaseUnit: true }
+                ]
+            },
+            { 
+                id: 13, name: '细砂糖', image: 'https://images.unsplash.com/photo-1559181567-c3190ca9959b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', 
+                unit: 'g', currentStock: 2000, defaultShelfLife: 1095, lastPrice: 6.0,
+                units: [
+                    { name: 'g', level: 1, ratio: 1, isBase: true },
+                    { name: '袋', level: 2, ratio: 1000, purchaseUnit: true }
+                ]
+            },
+            { 
+                id: 14, name: '红糖', image: 'https://images.unsplash.com/photo-1571115764595-644a1f56a55c?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', 
+                unit: 'g', currentStock: 800, defaultShelfLife: 730, lastPrice: 8.5,
+                units: [
+                    { name: 'g', level: 1, ratio: 1, isBase: true },
+                    { name: '袋', level: 2, ratio: 500, purchaseUnit: true }
+                ]
+            },
+            { 
+                id: 15, name: '糖粉', image: 'https://images.unsplash.com/photo-1559181567-c3190ca9959b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', 
+                unit: 'g', currentStock: 600, defaultShelfLife: 1095, lastPrice: 7.2,
+                units: [
+                    { name: 'g', level: 1, ratio: 1, isBase: true },
+                    { name: '袋', level: 2, ratio: 500, purchaseUnit: true }
+                ]
+            },
+            { 
+                id: 16, name: '蜂蜜', image: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', 
+                unit: 'ml', currentStock: 400, defaultShelfLife: 1095, lastPrice: 45.0,
+                units: [
+                    { name: 'ml', level: 1, ratio: 1, isBase: true },
+                    { name: '瓶', level: 2, ratio: 500, purchaseUnit: true }
+                ]
+            },
+            { 
+                id: 17, name: '枫糖浆', image: 'https://images.unsplash.com/photo-1571115764595-644a1f56a55c?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', 
+                unit: 'ml', currentStock: 200, defaultShelfLife: 365, lastPrice: 65.0,
+                units: [
+                    { name: 'ml', level: 1, ratio: 1, isBase: true },
+                    { name: '瓶', level: 2, ratio: 250, purchaseUnit: true }
+                ]
+            },
+            { 
+                id: 18, name: '鸡蛋', image: 'https://images.unsplash.com/photo-1518569656558-1f25e69d93d7?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', 
+                unit: '个', currentStock: 50, defaultShelfLife: 21, lastPrice: 1.2,
+                units: [
+                    { name: '个', level: 1, ratio: 1, isBase: true },
+                    { name: '盒', level: 2, ratio: 12, purchaseUnit: true }
+                ]
+            },
+            { 
+                id: 19, name: '蛋黄', image: 'https://images.unsplash.com/photo-1518569656558-1f25e69d93d7?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', 
+                unit: '个', currentStock: 20, defaultShelfLife: 3, lastPrice: 0.8,
+                units: [
+                    { name: '个', level: 1, ratio: 1, isBase: true }
+                ]
+            },
+            { 
+                id: 20, name: '牛奶', image: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', 
+                unit: 'ml', currentStock: 1000, defaultShelfLife: 7, lastPrice: 0.012,
+                units: [
+                    { name: 'ml', level: 1, ratio: 1, isBase: true },
+                    { name: '盒', level: 2, ratio: 250, purchaseUnit: true }
+                ]
+            },
+            { 
+                id: 21, name: '淡奶油', image: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', 
+                unit: 'ml', currentStock: 500, defaultShelfLife: 14, lastPrice: 0.025,
+                units: [
+                    { name: 'ml', level: 1, ratio: 1, isBase: true },
+                    { name: '罐', level: 2, ratio: 1000, purchaseUnit: false },
+                    { name: '箱', level: 3, ratio: 12000, purchaseUnit: true }
+                ]
+            },
+            { 
+                id: 22, name: '酸奶', image: 'https://images.unsplash.com/photo-1571212515416-ffa0c0cd2adf?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', 
+                unit: 'ml', currentStock: 300, defaultShelfLife: 14, lastPrice: 0.018,
+                units: [
+                    { name: 'ml', level: 1, ratio: 1, isBase: true },
+                    { name: '杯', level: 2, ratio: 200, purchaseUnit: true }
+                ]
+            },
+            { 
+                id: 23, name: '奶油奶酪', image: 'https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', 
+                unit: 'g', currentStock: 200, defaultShelfLife: 30, lastPrice: 35.0,
+                units: [
+                    { name: 'g', level: 1, ratio: 1, isBase: true },
+                    { name: '块', level: 2, ratio: 250, purchaseUnit: true }
+                ]
+            },
+            { 
+                id: 24, name: '马斯卡彭', image: 'https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', 
+                unit: 'g', currentStock: 150, defaultShelfLife: 14, lastPrice: 55.0,
+                units: [
+                    { name: 'g', level: 1, ratio: 1, isBase: true },
+                    { name: '盒', level: 2, ratio: 250, purchaseUnit: true }
+                ]
+            }
+        ];
+        
+        let inventoryData = null;
+        
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadInventoryData();
+            updateCurrentTime();
+            setInterval(updateCurrentTime, 1000);
+        });
+        
+        // 加载盘点数据
+        function loadInventoryData() {
+            const pendingData = localStorage.getItem('pendingInventoryData');
+            if (!pendingData) {
+                showToast('没有找到盘点数据，返回盘点页面', 'error');
+                setTimeout(() => {
+                    window.location.href = 'pandianzhuye.html';
+                }, 2000);
+                return;
+            }
+            
+            try {
+                inventoryData = JSON.parse(pendingData);
+                document.getElementById('warehouseInfo').textContent = `盘点仓库: ${inventoryData.warehouseName || '未知仓库'}`;
+                renderMaterialsList();
+                calculateTotal();
+            } catch (error) {
+                console.error('解析盘点数据失败:', error);
+                showToast('盘点数据格式错误', 'error');
+            }
+        }
+        
+        // 渲染材料列表
+        function renderMaterialsList() {
+            const container = document.getElementById('materialsList');
+            if (!container) return;
+            container.innerHTML = '';
+            
+            inventoryData.items.forEach((item, index) => {
+                const material = materials.find(m => m.id === item.materialId);
+                if (!material) return;
+                
+                // 计算差异
+                // 这里假设用户盘点的单位与系统主要单位一致，或者我们只比较盘点单位下的数量
+                // 获取该单位下的系统库存 (这里简化处理，假设 material.currentStock 是基本单位库存)
+                // 实际应该根据 item.unit 转换 systemStock
+                let systemStock = material.currentStock;
+                let displaySystemStock = systemStock;
+                
+                // 简单的单位转换逻辑 (仅作示例，实际应更复杂)
+                if (item.unit !== material.unit) {
+                    const unitInfo = material.units.find(u => u.name === item.unit);
+                    if (unitInfo) {
+                        displaySystemStock = (systemStock / unitInfo.ratio).toFixed(2);
+                    }
+                }
+                
+                // 确保 quantity 是数字
+                const quantity = parseFloat(item.quantity) || 0;
+                const difference = quantity - displaySystemStock;
+                const differenceClass = difference > 0 ? 'difference-positive' : 
+                                      difference < 0 ? 'difference-negative' : 'difference-zero';
+                const differenceIcon = difference > 0 ? 'fas fa-arrow-up' : 
+                                     difference < 0 ? 'fas fa-arrow-down' : 'fas fa-equals';
+                
+                const diffValue = difference * material.lastPrice;
+                
+                const cardHtml = `
+                    <div class="material-card bg-white rounded-xl shadow-sm border border-gray-100 p-3 relative animate-fade-in" id="card-${material.id}">
+                        <!-- 删除按钮 - 右上角 -->
+                        <button onclick="removeMaterial(${material.id})" class="absolute -top-2 -right-2 w-7 h-7 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-110 z-10" title="删除材料">
+                            <i class="fas fa-times text-xs"></i>
+                        </button>
+                        
+                        <!-- 材料信息和差异整体显示框 -->
+                        <div class="bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-3 mb-3">
+                            <div class="flex items-center space-x-3 mb-3">
+                                <div class="flex-shrink-0 w-12 h-12 bg-orange-50 rounded-lg overflow-hidden border border-orange-100">
+                                    <img src="${material.image}" alt="${material.name}" class="w-full h-full object-cover">
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-2">
+                                            <h3 class="text-base font-semibold text-gray-900 truncate">${material.name}</h3>
+                                            <div class="relative">
+                                                <button onclick="toggleStockDetails(${material.id})" 
+                                                        class="text-xs text-gray-500 hover:bg-white hover:text-orange-600 px-1.5 py-0.5 rounded border border-transparent hover:border-gray-200 transition-all flex items-center space-x-1"
+                                                        id="stock-btn-${material.id}">
+                                                    <span>账面 ${displaySystemStock} ${item.unit}</span>
+                                                    <i class="fas fa-chevron-down text-[10px] transition-transform" id="stock-icon-${material.id}"></i>
+                                                </button>
+                                                <div class="hidden absolute z-20 mt-1 left-0 bg-white border border-gray-100 rounded-lg shadow-xl p-3 text-xs stock-details w-48" 
+                                                     id="stock-details-${material.id}">
+                                                    <div class="text-gray-400 mb-2 font-medium">库存详情</div>
+                                                    <div class="text-gray-800 font-semibold leading-relaxed" id="stock-content-${material.id}">
+                                                        账面库存：${displaySystemStock} ${item.unit}<br>
+                                                        实盘数量：${quantity} ${item.unit}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <div class="text-[10px] text-gray-500 mb-0.5">差异金额</div>
+                                            <div class="text-base font-bold ${diffValue >= 0 ? 'text-gray-900' : 'text-red-600'}" id="diffValue-${material.id}">¥${diffValue.toFixed(2)}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 差异展示区域 (替代价格和保质期) -->
+                            <div class="grid grid-cols-2 gap-2">
+                                <div class="bg-white border border-gray-200 rounded-lg p-2 flex flex-col justify-center text-center">
+                                    <div class="text-[10px] text-gray-500 font-medium mb-0.5">系统账面</div>
+                                    <div class="font-bold text-gray-800 text-sm">${displaySystemStock} <span class="text-[10px] font-normal text-gray-400">${item.unit}</span></div>
+                                </div>
+                                <div class="${differenceClass} border rounded-lg p-2 flex flex-col justify-center text-center">
+                                    <div class="flex justify-center items-center space-x-1 mb-0.5">
+                                        <div class="text-[10px] font-medium">盘点差异</div>
+                                        <i class="${differenceIcon} text-[10px]"></i>
+                                    </div>
+                                    <div class="font-bold text-sm">${difference > 0 ? '+' : ''}${difference.toFixed(2)} <span class="text-[10px] font-normal opacity-75">${item.unit}</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 数量步进器和单位选择 -->
+                        <div class="flex items-center justify-between mb-1.5 gap-2">
+                            <div class="flex items-center flex-1 bg-gray-50 rounded-lg p-1 border border-gray-200">
+                                <button onclick="adjustQuantity(${material.id}, -1)" class="w-7 h-7 bg-white text-gray-500 rounded-md flex items-center justify-center shadow-sm hover:text-orange-600 active:scale-95 transition-all">
+                                    <i class="fas fa-minus text-xs"></i>
+                                </button>
+                                <input type="number" 
+                                       class="quantity-input flex-1 mx-1 bg-transparent border-none text-sm font-bold text-gray-800 focus:ring-0 p-0" 
+                                       id="quantity-${material.id}" 
+                                       value="${quantity}" 
+                                       min="0" 
+                                       onchange="updateQuantity(${material.id}, this.value)"
+                                       onfocus="this.select()"
+                                       placeholder="0">
+                                <button onclick="adjustQuantity(${material.id}, 1)" class="w-7 h-7 bg-white text-gray-500 rounded-md flex items-center justify-center shadow-sm hover:text-orange-600 active:scale-95 transition-all">
+                                    <i class="fas fa-plus text-xs"></i>
+                                </button>
+                            </div>
+                            <select id="unit-${material.id}" class="text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-2 py-0 h-[36px] focus:outline-none focus:border-orange-300 min-w-[60px]" onchange="updateUnit(${material.id}, this.value)">
+                                ${material.units.map(unit => `<option value="${unit.name}" ${unit.name === item.unit ? 'selected' : ''}>${unit.name}</option>`).join('')}
+                            </select>
+                            
+                            <!-- 多规格按钮 (内联) -->
+                            <button onclick="addQuickInput(${item.materialId})" class="flex items-center justify-center w-[36px] h-[36px] bg-orange-50 text-orange-500 rounded-lg border border-orange-100 hover:bg-orange-100 transition-colors flex-shrink-0" title="添加其他规格">
+                                <i class="fas fa-plus-circle text-base"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- 多规格快速输入容器 -->
+                        <div id="quickInputContainer-${item.materialId}" class="mt-1">
+                            <!-- 快速输入框将动态添加到这里 -->
+                        </div>
+                    </div>
+                `;
+                
+                container.innerHTML += cardHtml;
+            });
+        }
+        
+        // 计算总计
+        function calculateTotal() {
+            let totalDiffValue = 0;
+            const totalItems = inventoryData.items.length;
+            
+            inventoryData.items.forEach(item => {
+                const material = materials.find(m => m.id === item.materialId);
+                if (material) {
+                    let systemStock = material.currentStock;
+                    let displaySystemStock = systemStock;
+                    
+                    if (item.unit !== material.unit) {
+                        const unitInfo = material.units.find(u => u.name === item.unit);
+                        if (unitInfo) {
+                            displaySystemStock = systemStock / unitInfo.ratio;
+                        }
+                    }
+                    
+                    const quantity = parseFloat(item.quantity) || 0;
+                    const difference = quantity - displaySystemStock;
+                    totalDiffValue += difference * material.lastPrice;
+                }
+            });
+            
+            document.getElementById('totalItems').textContent = totalItems;
+            document.getElementById('totalDiffValue').textContent = `¥${totalDiffValue.toFixed(2)}`;
+            document.getElementById('totalDiffValue').className = `text-sm font-bold ${totalDiffValue >= 0 ? 'text-blue-800' : 'text-red-600'}`;
+        }
+        
+        // 调整数量
+        function adjustQuantity(materialId, change) {
+            const input = document.getElementById(`quantity-${materialId}`);
+            if (!input) return;
+            
+            let currentValue = parseFloat(input.value) || 0;
+            let newValue = Math.max(0, currentValue + change);
+            
+            input.value = newValue;
+            updateQuantity(materialId, newValue);
+            
+            // 添加视觉反馈
+            if (Math.abs(change) >= 1) {
+                input.style.transform = 'scale(1.05)';
+                setTimeout(() => {
+                    input.style.transform = 'scale(1)';
+                }, 200);
+            }
+        }
+        
+        // 更新数量
+        function updateQuantity(materialId, quantity) {
+            const newQuantity = Math.max(0, parseFloat(quantity) || 0);
+            
+            // 更新盘点数据中的数量
+            const itemIndex = inventoryData.items.findIndex(item => item.materialId === materialId);
+            if (itemIndex !== -1) {
+                inventoryData.items[itemIndex].quantity = newQuantity;
+                
+                // 更新localStorage
+                localStorage.setItem('pendingInventoryData', JSON.stringify(inventoryData));
+                
+                // 重新渲染该卡片以更新差异显示 (为了简单，这里重新渲染整个列表，或者只更新DOM)
+                // 为了性能，最好只更新DOM，但这里代码量少，重新渲染列表也行，不过会丢失焦点
+                // 让我们只更新相关DOM元素
+                updateCardDOM(materialId, newQuantity);
+                
+                // 重新计算总计
+                calculateTotal();
+            }
+        }
+        
+        function updateCardDOM(materialId, newQuantity) {
+            const material = materials.find(m => m.id === materialId);
+            const item = inventoryData.items.find(i => i.materialId === materialId);
+            if (!material || !item) return;
+            
+            let systemStock = material.currentStock;
+            let displaySystemStock = systemStock;
+            
+            if (item.unit !== material.unit) {
+                const unitInfo = material.units.find(u => u.name === item.unit);
+                if (unitInfo) {
+                    displaySystemStock = systemStock / unitInfo.ratio;
+                }
+            }
+            
+            const difference = newQuantity - displaySystemStock;
+            const diffValue = difference * material.lastPrice;
+            
+            // 更新差异金额
+            const diffValueEl = document.getElementById(`diffValue-${materialId}`);
+            if (diffValueEl) {
+                diffValueEl.textContent = `¥${diffValue.toFixed(2)}`;
+                diffValueEl.className = `text-sm font-bold ${diffValue >= 0 ? 'text-gray-800' : 'text-red-500'}`;
+            }
+            
+            // 更新差异显示区域
+            // 这里比较麻烦，因为需要更新class和内容。
+            // 简单起见，我们重新渲染列表吧。
+            renderMaterialsList();
+            
+            // 恢复焦点
+            const input = document.getElementById(`quantity-${materialId}`);
+            if (input) {
+                input.focus();
+                // input.value = newQuantity; // 已经在renderMaterialsList中设置了
+            }
+        }
+        
+        // 更新单位
+        function updateUnit(materialId, newUnit) {
+            const itemIndex = inventoryData.items.findIndex(item => item.materialId === materialId);
+            if (itemIndex === -1) return;
+            
+            const item = inventoryData.items[itemIndex];
+            item.unit = newUnit;
+            
+            localStorage.setItem('pendingInventoryData', JSON.stringify(inventoryData));
+            renderMaterialsList();
+        }
+        
+        // 删除材料
+        function removeMaterial(materialId) {
+            if (confirm('确定要删除这个材料吗？')) {
+                inventoryData.items = inventoryData.items.filter(item => item.materialId !== materialId);
+                localStorage.setItem('pendingInventoryData', JSON.stringify(inventoryData));
+                renderMaterialsList();
+                calculateTotal();
+                
+                if (inventoryData.items.length === 0) {
+                    showToast('已删除所有材料，返回盘点主页', 'info');
+                    setTimeout(() => {
+                        window.location.href = 'pandianzhuye.html';
+                    }, 1500);
+                }
+            }
+        }
+        
+        // 继续盘点
+        function continueInventory() {
+            window.location.href = 'pandianzhuye.html';
+        }
+        
+        // 返回上一页
+        function goBack() {
+            window.location.href = 'pandianzhuye.html';
+        }
+        
+        // 确认盘点
+        function confirmInventory() {
+            const confirmBtn = document.getElementById('confirmBtn');
+            confirmBtn.disabled = true;
+            confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>处理中...';
+            
+            document.getElementById('loadingIndicator').classList.remove('hidden');
+            
+            setTimeout(() => {
+                // 模拟保存
+                localStorage.removeItem('pendingInventoryData');
+                // 这里可以添加保存历史记录的逻辑
+                
+                document.getElementById('loadingIndicator').classList.add('hidden');
+                showToast('盘点成功！', 'success');
+                
+                setTimeout(() => {
+                    window.location.href = 'pandianzhuye.html';
+                }, 1500);
+            }, 2000);
+        }
+        
+        // Toast提示功能
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let bgClass = 'bg-gray-800';
+            let icon = 'fa-info-circle';
+            
+            if (type === 'success') {
+                bgClass = 'bg-green-500';
+                icon = 'fa-check-circle';
+            } else if (type === 'warning') {
+                bgClass = 'bg-orange-500';
+                icon = 'fa-exclamation-triangle';
+            } else if (type === 'error') {
+                bgClass = 'bg-red-500';
+                icon = 'fa-times-circle';
+            }
+            
+            toast.className = `${bgClass} text-white px-4 py-2 rounded-full shadow-lg mb-2 flex items-center gap-2 text-sm animate-fade-in transition-all`;
+            toast.innerHTML = `<i class="fas ${icon}"></i> <span>${message}</span>`;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-10px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

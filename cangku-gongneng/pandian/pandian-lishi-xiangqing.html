@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>盘点详情 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Cookpad Design System */
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+            --text-main: #333333;
+            --text-sub: #8b8b8b;
+            --bg-light: #f7f7f5;
+            --bg-white: #ffffff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-main);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* 滚动条美化 */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 3px;
+        }
+
+        /* 隐藏滚动条 */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* 导出打印按钮样式 */
+        .action-btn {
+            background: white;
+            color: #4b5563;
+            border: 1px solid #e5e7eb;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .action-btn:hover {
+            background: #f9fafb;
+            border-color: #d1d5db;
+            color: #374151;
+        }
+
+        /* 筛选按钮样式 */
+        .detail-filter-btn {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #6b7280;
+            background-color: #f3f4f6;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .detail-filter-btn:hover {
+            background-color: #e5e7eb;
+            color: #374151;
+        }
+        
+        .detail-filter-btn.active {
+            background: linear-gradient(135deg, #ff9f43 0%, #ff8c00 100%);
+            color: white;
+            box-shadow: 0 2px 4px rgba(255, 140, 0, 0.2);
+        }
+
+        .stat-card {
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: 1px solid #f0f0f0;
+        }
+        
+        .stat-card:active {
+            transform: scale(0.98);
+        }
+        
+        .stat-card.active {
+            border-color: var(--primary-orange);
+            background-color: #fff7ed;
+            box-shadow: 0 2px 8px rgba(255, 159, 67, 0.15);
+        }
+
+        /* 动画 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen pb-20">
+    <!-- 顶部导航栏 -->
+    <div class="bg-white px-4 py-3 shadow-sm border-b border-gray-100 sticky top-0 z-30">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <button onclick="window.history.back()" class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div>
+                    <div class="text-lg font-bold text-gray-800 tracking-wide">盘点详情</div>
+                    <div class="text-xs text-gray-500 font-medium mt-0.5" id="headerRecordId">加载中...</div>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="exportRecord()" class="action-btn">
+                    <i class="fas fa-download text-xs mr-1"></i>
+                    <span>导出</span>
+                </button>
+                <button onclick="printRecord()" class="action-btn">
+                    <i class="fas fa-print text-xs mr-1"></i>
+                    <span>打印</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主要内容区域 -->
+    <div class="px-4 mt-4 animate-fade-in" id="detailContent">
+        <!-- 基本信息 -->
+        <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                <div class="flex justify-between sm:justify-start sm:space-x-4 p-2 bg-gray-50 rounded-lg">
+                    <span class="text-gray-500">盘点单号</span>
+                    <span class="font-medium text-gray-800" id="detailId">--</span>
+                </div>
+                <div class="flex justify-between sm:justify-start sm:space-x-4 p-2 bg-gray-50 rounded-lg">
+                    <span class="text-gray-500">操作员</span>
+                    <span class="font-medium text-gray-800" id="detailOperator">--</span>
+                </div>
+                <div class="flex justify-between sm:justify-start sm:space-x-4 p-2 bg-gray-50 rounded-lg">
+                    <span class="text-gray-500">盘点时间</span>
+                    <span class="font-medium text-gray-800" id="detailTime">--</span>
+                </div>
+                <div class="flex justify-between sm:justify-start sm:space-x-4 p-2 bg-gray-50 rounded-lg">
+                    <span class="text-gray-500">仓库</span>
+                    <span class="font-medium text-gray-800" id="detailWarehouse">--</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 统计卡片 -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+            <div class="stat-card active bg-white rounded-xl p-3 shadow-sm text-center" onclick="filterDetailItems('all')" data-filter="all">
+                <div class="text-xl font-bold text-blue-600" id="statTotal">0</div>
+                <div class="text-xs text-gray-500 mt-1">总材料数</div>
+            </div>
+            <div class="stat-card bg-white rounded-xl p-3 shadow-sm text-center" onclick="filterDetailItems('match')" data-filter="match">
+                <div class="text-xl font-bold text-green-600" id="statMatch">0</div>
+                <div class="text-xs text-gray-500 mt-1">账实相符</div>
+            </div>
+            <div class="stat-card bg-white rounded-xl p-3 shadow-sm text-center" onclick="filterDetailItems('surplus')" data-filter="surplus">
+                <div class="text-xl font-bold text-blue-500" id="statSurplus">0</div>
+                <div class="text-xs text-gray-500 mt-1">盘盈材料</div>
+            </div>
+            <div class="stat-card bg-white rounded-xl p-3 shadow-sm text-center" onclick="filterDetailItems('deficit')" data-filter="deficit">
+                <div class="text-xl font-bold text-red-500" id="statDeficit">0</div>
+                <div class="text-xs text-gray-500 mt-1">盘亏材料</div>
+            </div>
+        </div>
+
+        <!-- 盘点明细 -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="p-4 border-b border-gray-100">
+                <h4 class="font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-clipboard-list text-orange-500 mr-2"></i>
+                    盘点明细 (<span id="itemsCount">0</span>)
+                </h4>
+            </div>
+            
+            <div id="itemsList" class="divide-y divide-gray-50">
+                <!-- 明细列表动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 加载中提示 -->
+    <div id="loadingIndicator" class="fixed inset-0 bg-white flex items-center justify-center z-50">
+        <div class="text-center">
+            <div class="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p class="text-gray-600">加载中...</p>
+        </div>
+    </div>
+
+    <script>
+        let currentRecord = null;
+        let currentFilter = 'all';
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // 从URL获取recordId
+            const urlParams = new URLSearchParams(window.location.search);
+            const recordId = urlParams.get('id');
+
+            if (recordId) {
+                loadRecordDetails(recordId);
+            } else {
+                alert('未找到记录ID');
+                window.location.href = 'pandian-lishi.html';
+            }
+        });
+
+        function loadRecordDetails(recordId) {
+            // 模拟从localStorage加载
+            const savedRecords = JSON.parse(localStorage.getItem('inventoryHistory') || '[]');
+            currentRecord = savedRecords.find(r => r.id === recordId);
+
+            // 如果localStorage没有，尝试生成模拟数据（为了开发方便）
+            if (!currentRecord) {
+                 // 这里应该有一个更好的fallback或者错误提示
+                 // 为了演示，我们暂时假设数据总是存在的，因为是从列表页跳过来的
+                 // 实际上可能需要重新生成mock数据如果它丢失了
+                 const mockData = generateMockData();
+                 currentRecord = mockData.find(r => r.id === recordId);
+            }
+
+            if (currentRecord) {
+                renderRecordDetails();
+                document.getElementById('loadingIndicator').classList.add('hidden');
+            } else {
+                alert('未找到记录详情');
+                window.location.href = 'pandian-lishi.html';
+            }
+        }
+        
+        // 复制自 pandian-lishi.html 的 generateMockData，确保数据一致性
+        function generateMockData() {
+            const now = new Date();
+            // ... (这里需要确保有一样的数据生成逻辑，或者最好是从localStorage读取)
+            // 简单起见，这里只处理localStorage读取不到的情况，但在实际应用中应该依赖localStorage
+            return []; 
+        }
+
+        function renderRecordDetails() {
+            if (!currentRecord) return;
+
+            // 更新头部信息
+            document.getElementById('headerRecordId').textContent = currentRecord.id;
+            document.getElementById('detailId').textContent = currentRecord.id;
+            document.getElementById('detailOperator').textContent = currentRecord.operator;
+            document.getElementById('detailTime').textContent = new Date(currentRecord.timestamp).toLocaleString();
+            document.getElementById('detailWarehouse').textContent = currentRecord.warehouseName;
+
+            // 更新统计数据
+            document.getElementById('statTotal').textContent = currentRecord.totalItems;
+            document.getElementById('statMatch').textContent = currentRecord.matchItems;
+            document.getElementById('statSurplus').textContent = currentRecord.surplusItems;
+            document.getElementById('statDeficit').textContent = currentRecord.deficitItems;
+
+            // 更新列表数量
+            document.getElementById('itemsCount').textContent = currentRecord.items.length;
+
+            // 渲染列表
+            renderItemsList();
+        }
+
+        function renderItemsList() {
+            const itemsList = document.getElementById('itemsList');
+            const filteredItems = currentRecord.items.filter(item => {
+                if (currentFilter === 'all') return true;
+                if (currentFilter === 'surplus') return item.difference > 0;
+                if (currentFilter === 'deficit') return item.difference < 0;
+                if (currentFilter === 'match') return item.difference === 0;
+                return true;
+            });
+
+            if (filteredItems.length === 0) {
+                itemsList.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fas fa-inbox text-3xl mb-2 text-gray-300"></i>
+                        <p>没有符合条件的记录</p>
+                    </div>
+                `;
+                return;
+            }
+
+            itemsList.innerHTML = filteredItems.map(item => {
+                const diffClass = item.difference > 0 ? 'text-blue-600 bg-blue-50' : 
+                                 item.difference < 0 ? 'text-red-600 bg-red-50' : 
+                                 'text-green-600 bg-green-50';
+                const diffIcon = item.difference > 0 ? 'fa-arrow-up' : 
+                                item.difference < 0 ? 'fa-arrow-down' : 
+                                'fa-check';
+                const diffText = item.difference > 0 ? `+${item.difference}` : 
+                                item.difference < 0 ? `${item.difference}` : 
+                                '相符';
+
+                return `
+                    <div class="p-4 hover:bg-gray-50 transition-colors">
+                        <div class="flex items-start space-x-3">
+                            <div class="relative flex-shrink-0">
+                                <img src="${item.image}" alt="${item.name}" class="w-12 h-12 rounded-lg object-cover border border-gray-100">
+                                <div class="absolute -top-1 -right-1 w-5 h-5 ${diffClass} rounded-full flex items-center justify-center border border-white shadow-sm">
+                                    <i class="fas ${diffIcon} text-[10px]"></i>
+                                </div>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex justify-between items-start mb-1">
+                                    <div class="font-bold text-gray-800 text-sm truncate pr-2">${item.name}</div>
+                                    <div class="${diffClass} px-2 py-0.5 rounded-full text-xs font-bold whitespace-nowrap">
+                                        ${diffText}
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 text-xs text-gray-500">
+                                    <div>
+                                        <span>系统:</span>
+                                        <span class="font-medium text-gray-700 ml-1">${item.systemQuantity} ${item.unit}</span>
+                                    </div>
+                                    <div>
+                                        <span>实际:</span>
+                                        <span class="font-medium text-gray-700 ml-1">${item.actualQuantity} ${item.unit}</span>
+                                    </div>
+                                    <div>
+                                        <span>单价:</span>
+                                        <span class="font-medium text-gray-700 ml-1">¥${item.unitPrice}</span>
+                                    </div>
+                                    <div>
+                                        <span>金额:</span>
+                                        <span class="font-medium text-gray-700 ml-1">¥${item.totalValue}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterDetailItems(filterType) {
+            currentFilter = filterType;
+            
+            // 更新统计卡片状态
+            document.querySelectorAll('.stat-card').forEach(card => {
+                if (card.dataset.filter === filterType) {
+                    card.classList.add('active');
+                } else {
+                    card.classList.remove('active');
+                }
+            });
+
+            renderItemsList();
+        }
+
+        function exportRecord() {
+            alert('正在导出记录 ' + (currentRecord ? currentRecord.id : '') + '...');
+        }
+
+        function printRecord() {
+            window.print();
+        }
+    </script>
+</body>
+</html>

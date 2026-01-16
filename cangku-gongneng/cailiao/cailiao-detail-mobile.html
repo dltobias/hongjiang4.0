@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>材料详情 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .gradient-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .gradient-recipe {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+        .gradient-message {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+        .gradient-inventory {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        .gradient-order {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        .gradient-success {
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+        }
+        .gradient-warning {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+        }
+        
+        .card {
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .main-content {
+            padding-bottom: 20px;
+        }
+        
+        /* 信息卡片样式 */
+        .info-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border: 1px solid #f0f0f0;
+        }
+        
+        .info-card h3 {
+            color: #374151;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            color: #6b7280;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .info-value {
+            color: #374151;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        /* 库存状态样式 */
+        .stock-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .stock-status.normal {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .stock-status.low {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .stock-status.out {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        /* 操作按钮样式 */
+        .action-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            padding: 16px;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            width: 100%;
+            margin-bottom: 12px;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .action-btn.secondary {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            box-shadow: 0 4px 15px rgba(67, 233, 123, 0.3);
+        }
+        
+        .action-btn.secondary:hover {
+            box-shadow: 0 6px 20px rgba(67, 233, 123, 0.4);
+        }
+        
+        .action-btn.danger {
+            background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+            box-shadow: 0 4px 15px rgba(245, 101, 101, 0.3);
+        }
+        
+        .action-btn.danger:hover {
+            box-shadow: 0 6px 20px rgba(245, 101, 101, 0.4);
+        }
+        
+        /* 材料图片样式 */
+        .material-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin-bottom: 16px;
+        }
+        
+        /* 单位层级样式 */
+        .unit-level {
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            background: #f9fafb;
+            position: relative;
+            margin-left: 0;
+            transition: all 0.3s ease;
+        }
+        
+        .unit-level[data-level="1"] {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border-color: #3b82f6;
+            border-width: 2px;
+        }
+        
+        .unit-level[data-level="2"] {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border-color: #10b981;
+            margin-left: 20px;
+        }
+        
+        .unit-level[data-level="3"] {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-color: #f59e0b;
+            margin-left: 40px;
+        }
+        
+        .unit-level[data-level="4"] {
+            background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
+            border-color: #ec4899;
+            margin-left: 60px;
+        }
+        
+        /* 层级连接线 */
+        .unit-level:not([data-level="1"]):before {
+            content: '';
+            position: absolute;
+            left: -20px;
+            top: 50%;
+            width: 16px;
+            height: 2px;
+            background: #d1d5db;
+            transform: translateY(-50%);
+        }
+        
+        .unit-level:not([data-level="1"]):after {
+            content: '→';
+            position: absolute;
+            left: -8px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6b7280;
+            font-size: 12px;
+        }
+        
+        /* 弹窗样式 */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 400px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        /* 动画效果 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- 顶部状态栏 -->
+    <div class="gradient-primary px-4 py-4 shadow-lg">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <button onclick="history.back()" class="w-10 h-10 flex items-center justify-center rounded-full bg-white bg-opacity-20 hover:bg-opacity-30 transition-all">
+                    <i class="fas fa-chevron-left text-white"></i>
+                </button>
+                <div>
+                    <div class="text-lg font-bold text-white" id="materialTitle">材料详情</div>
+                    <div class="text-sm text-white text-opacity-80" id="materialSubtitle">查看和编辑材料信息</div>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="goToEditPage()" id="editBtn" class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-3 py-2 rounded-lg flex items-center space-x-2 transition-all">
+                    <i class="fas fa-edit text-sm"></i>
+                    <span class="text-sm font-medium">编辑</span>
+                </button>
+                <button onclick="showMoreOptions()" class="w-10 h-10 flex items-center justify-center rounded-full bg-white bg-opacity-20 hover:bg-opacity-30 transition-all">
+                    <i class="fas fa-ellipsis-v text-white"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主内容区域 -->
+    <div class="main-content px-4 mt-4" id="mainContent">
+        <!-- 材料基本信息 -->
+        <div class="info-card">
+            <div class="text-center mb-4">
+                <img id="materialImage" src="" alt="材料图片" class="material-image">
+                <h2 id="materialName" class="text-xl font-bold text-gray-800 mb-2"></h2>
+                <div id="materialCategory" class="inline-block px-3 py-1 rounded-full text-sm font-medium"></div>
+            </div>
+        </div>
+
+        <!-- 库存信息 -->
+        <div class="info-card">
+            <h3><i class="fas fa-boxes text-blue-600"></i>库存信息</h3>
+                         <div class="info-row">
+                <span class="info-label">当前库存</span>
+                <span class="info-value" id="currentStock"></span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">库存状态</span>
+                <span class="stock-status" id="stockStatus"></span>
+            </div>
+                         <div class="info-row">
+                <span class="info-label">预警值</span>
+                <span class="info-value" id="lowStockThreshold"></span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">库存单位</span>
+                <span class="info-value" id="stockUnit"></span>
+            </div>
+        </div>
+
+        <!-- 规格信息 -->
+        <div class="info-card">
+            <h3><i class="fas fa-ruler text-green-600"></i>规格信息</h3>
+            <div class="info-row">
+                <span class="info-label">材料编码</span>
+                <span class="info-value" id="materialCode"></span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">基本规格</span>
+                <span class="info-value" id="basicSpecification"></span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">包装规格</span>
+                <span class="info-value" id="packageSpecification"></span>
+            </div>
+            <div id="unitLevelsDisplay">
+                <!-- 多层级单位将通过JS动态生成 -->
+            </div>
+        </div>
+
+        <!-- 采购信息 -->
+        <div class="info-card">
+            <h3><i class="fas fa-shopping-cart text-purple-600"></i>采购信息</h3>
+            <div class="info-row">
+                <span class="info-label">采购价格</span>
+                <span class="info-value" id="purchasePrice"></span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">采购单位</span>
+                <span class="info-value" id="purchaseUnit"></span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">供应商</span>
+                <span class="info-value" id="supplierName"></span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">联系方式</span>
+                <span class="info-value" id="supplierContact"></span>
+            </div>
+        </div>
+
+        <!-- 可用量信息 -->
+        <div class="info-card" id="usablePortionCard" style="display: none;">
+            <h3><i class="fas fa-calculator text-orange-600"></i>实际可用量</h3>
+            <div class="info-row">
+                <span class="info-label">可用量</span>
+                <span class="info-value" id="usablePortion"></span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">可用率</span>
+                <span class="info-value" id="usableRate"></span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">实际成本</span>
+                <span class="info-value" id="actualCost"></span>
+            </div>
+        </div>
+
+        <!-- 销售信息 -->
+        <div class="info-card" id="saleInfoCard" style="display: none;">
+            <h3><i class="fas fa-tag text-red-600"></i>销售信息</h3>
+            <div class="info-row">
+                <span class="info-label">是否可售卖</span>
+                <span class="info-value" id="canSell"></span>
+            </div>
+            <div class="info-row" id="salePriceRow" style="display: none;">
+                <span class="info-label">销售价格</span>
+                <span class="info-value" id="salePrice"></span>
+            </div>
+            <div class="info-row" id="profitMarginRow" style="display: none;">
+                <span class="info-label">利润率</span>
+                <span class="info-value" id="profitMargin"></span>
+            </div>
+        </div>
+
+        <!-- 其他信息 -->
+        <div class="info-card">
+            <h3><i class="fas fa-info-circle text-gray-600"></i>其他信息</h3>
+            <div class="info-row">
+                <span class="info-label">创建时间</span>
+                <span class="info-value" id="createTime"></span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">最后更新</span>
+                <span class="info-value" id="updateTime"></span>
+            </div>
+                         <div class="info-row">
+                <span class="info-label">备注</span>
+                <span class="info-value" id="materialNote"></span>
+            </div>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="mt-6 space-y-3" id="actionButtons">
+            <button onclick="addStock()" class="action-btn">
+                <i class="fas fa-plus mr-2"></i>补充库存
+            </button>
+            <button onclick="useStock()" class="action-btn">
+                <i class="fas fa-minus mr-2"></i>使用库存
+            </button>
+            <button onclick="duplicateMaterial()" class="action-btn secondary">
+                <i class="fas fa-copy mr-2"></i>复制材料
+            </button>
+            <button onclick="deleteMaterial()" class="action-btn danger">
+                <i class="fas fa-trash mr-2"></i>删除材料
+            </button>
+        </div>
+    </div>
+
+    <!-- 更多操作菜单 -->
+    <div id="moreOptionsModal" class="modal hidden">
+        <div class="modal-content fade-in">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">更多操作</h3>
+                <button onclick="hideMoreOptions()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-2">
+                <button onclick="exportMaterial()" class="w-full text-left p-3 rounded-lg hover:bg-gray-50 flex items-center space-x-3">
+                    <i class="fas fa-download text-blue-600"></i>
+                    <span>导出材料信息</span>
+                </button>
+                <button onclick="printMaterial()" class="w-full text-left p-3 rounded-lg hover:bg-gray-50 flex items-center space-x-3">
+                    <i class="fas fa-print text-green-600"></i>
+                    <span>打印材料标签</span>
+                </button>
+                <button onclick="shareeMaterial()" class="w-full text-left p-3 rounded-lg hover:bg-gray-50 flex items-center space-x-3">
+                    <i class="fas fa-share text-purple-600"></i>
+                    <span>分享材料信息</span>
+                </button>
+                <button onclick="viewHistory()" class="w-full text-left p-3 rounded-lg hover:bg-gray-50 flex items-center space-x-3">
+                    <i class="fas fa-history text-orange-600"></i>
+                    <span>查看使用历史</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 库存操作弹窗 -->
+    <div id="stockModal" class="modal hidden">
+        <div class="modal-content fade-in">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-800" id="stockModalTitle"></h3>
+                <button onclick="hideStockModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">数量</label>
+                    <input type="number" id="stockAmount" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="请输入数量">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">单位</label>
+                    <select id="stockAmountUnit" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="g">g</option>
+                        <option value="kg">kg</option>
+                        <option value="ml">ml</option>
+                        <option value="L">L</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">备注</label>
+                    <textarea id="stockNote" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3" placeholder="备注信息（可选）"></textarea>
+                </div>
+                <div class="flex space-x-3">
+                    <button onclick="confirmStockOperation()" class="flex-1 action-btn">
+                        <i class="fas fa-check mr-2"></i>确认
+                    </button>
+                    <button onclick="hideStockModal()" class="flex-1 action-btn" style="background: #6b7280;">
+                        <i class="fas fa-times mr-2"></i>取消
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 获取URL参数
+        function getUrlParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        // 模拟材料数据
+        const materialData = {
+            1: {
+                id: 1,
+                name: '高筋面粉',
+                category: 'flour',
+                categoryName: '粉类',
+                categoryColor: 'amber',
+                image: 'https://images.unsplash.com/photo-1603566541830-a1f7a7982a1c?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80',
+                stock: 2500,
+                unit: 'g',
+                lowStock: 500,
+                status: 'normal',
+                materialCode: 'FL001',
+                warehouse: '主仓库',
+                specification: '1000g/袋',
+                basicSpecification: '1000g',
+                packageSpecification: '袋装',
+                barcode: '6901234567890',
+                purchasePrice: 6.50,
+                purchaseUnit: 'g',
+                usablePortion: 950,
+                usablePortionUnit: 'g',
+                usableRate: 95,
+                actualCost: 6.84,
+                canSell: false,
+                salePrice: null,
+                profitMargin: null,
+                supplier: {
+                    name: '金龙鱼食品有限公司',
+                    contact: '400-888-8888',
+                    price: 6.50
+                },
+                unitLevels: [
+                    { level: 1, name: '规格', amount: 1, unit: 'g' },
+                    { level: 2, name: '包装', amount: 1000, unit: 'g' },
+                    { level: 3, name: '箱装', amount: 10, unit: '包' }
+                ],
+                createTime: '2024-01-15 10:30:00',
+                updateTime: '2024-01-20 14:25:00',
+                note: '高品质面包专用粉，蛋白质含量12.5%'
+            },
+            2: {
+                id: 2,
+                name: '中筋面粉',
+                category: 'flour',
+                categoryName: '粉类',
+                categoryColor: 'amber',
+                image: 'https://images.unsplash.com/photo-1603566541830-a1f7a7982a1c?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80',
+                stock: 1800,
+                unit: 'g',
+                lowStock: 500,
+                status: 'normal',
+                materialCode: 'FL002',
+                warehouse: '主仓库',
+                specification: '1000g/袋',
+                basicSpecification: '1000g',
+                packageSpecification: '袋装',
+                barcode: '6901234567891',
+                purchasePrice: 5.80,
+                purchaseUnit: 'g',
+                usablePortion: 980,
+                usablePortionUnit: 'g',
+                usableRate: 98,
+                actualCost: 5.92,
+                canSell: true,
+                salePrice: 8.50,
+                profitMargin: 43.5,
+                supplier: {
+                    name: '金龙鱼食品有限公司',
+                    contact: '400-888-8888',
+                    price: 5.80
+                },
+                unitLevels: [
+                    { level: 1, name: '规格', amount: 1, unit: 'g' },
+                    { level: 2, name: '包装', amount: 1000, unit: 'g' }
+                ],
+                createTime: '2024-01-15 10:35:00',
+                updateTime: '2024-01-19 16:20:00',
+                note: '通用面粉，适合制作各种烘焙产品'
+            },
+            3: {
+                id: 3,
+                name: '低筋面粉',
+                category: 'flour',
+                categoryName: '粉类',
+                categoryColor: 'amber',
+                image: 'https://images.unsplash.com/photo-1603566541830-a1f7a7982a1c?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80',
+                stock: 300,
+                unit: 'g',
+                lowStock: 500,
+                status: 'low',
+                materialCode: 'FL003',
+                warehouse: '主仓库',
+                specification: '500g/袋',
+                basicSpecification: '500g',
+                packageSpecification: '袋装',
+                barcode: '6901234567892',
+                purchasePrice: 7.20,
+                purchaseUnit: 'g',
+                usablePortion: 480,
+                usablePortionUnit: 'g',
+                usableRate: 96,
+                actualCost: 7.50,
+                canSell: false,
+                salePrice: null,
+                profitMargin: null,
+                supplier: {
+                    name: '金龙鱼食品有限公司',
+                    contact: '400-888-8888',
+                    price: 7.20
+                },
+                unitLevels: [
+                    { level: 1, name: '规格', amount: 1, unit: 'g' },
+                    { level: 2, name: '包装', amount: 500, unit: 'g' }
+                ],
+                createTime: '2024-01-15 10:40:00',
+                updateTime: '2024-01-18 09:15:00',
+                note: '蛋糕专用粉，蛋白质含量8.5%'
+            }
+        };
+
+        let currentMaterial = null;
+        let isEditMode = false;
+        let currentStockOperation = null;
+
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            const materialId = getUrlParameter('id');
+            if (materialId && materialData[materialId]) {
+                currentMaterial = materialData[materialId];
+                loadMaterialData();
+            } else {
+                // 如果没有找到材料，显示错误信息
+                document.getElementById('mainContent').innerHTML = `
+                    <div class="text-center py-20">
+                        <i class="fas fa-exclamation-triangle text-gray-400 text-6xl mb-4"></i>
+                        <h3 class="text-xl font-semibold text-gray-800 mb-2">材料不存在</h3>
+                        <p class="text-gray-600 mb-4">请检查链接是否正确</p>
+                        <button onclick="history.back()" class="action-btn">
+                            <i class="fas fa-arrow-left mr-2"></i>返回上一页
+                        </button>
+                    </div>
+                `;
+            }
+        });
+
+        // 加载材料数据
+        function loadMaterialData() {
+            if (!currentMaterial) return;
+
+            // 设置标题
+            document.getElementById('materialTitle').textContent = currentMaterial.name;
+            document.getElementById('materialSubtitle').textContent = `${currentMaterial.categoryName} • ID: ${currentMaterial.id}`;
+
+            // 基本信息
+            document.getElementById('materialImage').src = currentMaterial.image;
+            document.getElementById('materialName').textContent = currentMaterial.name;
+            
+            const categoryElement = document.getElementById('materialCategory');
+            categoryElement.textContent = currentMaterial.categoryName;
+            categoryElement.className = `inline-block px-3 py-1 rounded-full text-sm font-medium bg-${currentMaterial.categoryColor}-100 text-${currentMaterial.categoryColor}-600`;
+
+            // 库存信息
+            document.getElementById('currentStock').textContent = `${currentMaterial.stock} ${currentMaterial.unit}`;
+            document.getElementById('editCurrentStock').value = currentMaterial.stock;
+            
+            document.getElementById('lowStockThreshold').textContent = `${currentMaterial.lowStock} ${currentMaterial.unit}`;
+            document.getElementById('editLowStockThreshold').value = currentMaterial.lowStock;
+            
+            document.getElementById('stockUnit').textContent = currentMaterial.unit;
+            document.getElementById('editStockUnit').value = currentMaterial.unit;
+
+            // 库存状态
+            const stockStatusElement = document.getElementById('stockStatus');
+            if (currentMaterial.status === 'out') {
+                stockStatusElement.className = 'stock-status out';
+                stockStatusElement.innerHTML = '<i class="fas fa-exclamation-triangle"></i>缺货';
+            } else if (currentMaterial.status === 'low') {
+                stockStatusElement.className = 'stock-status low';
+                stockStatusElement.innerHTML = '<i class="fas fa-exclamation-circle"></i>库存不足';
+            } else {
+                stockStatusElement.className = 'stock-status normal';
+                stockStatusElement.innerHTML = '<i class="fas fa-check-circle"></i>库存充足';
+            }
+
+            // 规格信息
+            document.getElementById('materialCode').textContent = currentMaterial.materialCode || '未设置';
+            document.getElementById('basicSpecification').textContent = currentMaterial.basicSpecification || '未设置';
+            document.getElementById('packageSpecification').textContent = currentMaterial.packageSpecification || '未设置';
+            
+            // 采购信息
+            document.getElementById('purchasePrice').textContent = `¥${currentMaterial.purchasePrice || currentMaterial.supplier.price}`;
+            document.getElementById('purchaseUnit').textContent = currentMaterial.purchaseUnit || currentMaterial.unit;
+            document.getElementById('supplierName').textContent = currentMaterial.supplier.name;
+            document.getElementById('supplierContact').textContent = currentMaterial.supplier.contact;
+            
+            // 实际可用量信息
+            if (currentMaterial.usablePortion && currentMaterial.usablePortionUnit) {
+                document.getElementById('usablePortionCard').style.display = 'block';
+                document.getElementById('usablePortion').textContent = `${currentMaterial.usablePortion} ${currentMaterial.usablePortionUnit}`;
+                document.getElementById('usableRate').textContent = `${currentMaterial.usableRate}%`;
+                document.getElementById('actualCost').textContent = `¥${currentMaterial.actualCost}`;
+            }
+            
+            // 销售信息
+            if (currentMaterial.canSell !== undefined) {
+                document.getElementById('saleInfoCard').style.display = 'block';
+                document.getElementById('canSell').textContent = currentMaterial.canSell ? '是' : '否';
+                
+                if (currentMaterial.canSell && currentMaterial.salePrice) {
+                    document.getElementById('salePriceRow').style.display = 'flex';
+                    document.getElementById('profitMarginRow').style.display = 'flex';
+                    document.getElementById('salePrice').textContent = `¥${currentMaterial.salePrice}`;
+                    document.getElementById('profitMargin').textContent = `${currentMaterial.profitMargin}%`;
+                }
+            }
+
+            // 其他信息
+            document.getElementById('createTime').textContent = currentMaterial.createTime;
+            document.getElementById('updateTime').textContent = currentMaterial.updateTime;
+            document.getElementById('materialNote').textContent = currentMaterial.note || '暂无备注';
+
+            // 渲染单位层级
+            renderUnitLevels();
+        }
+
+        // 渲染单位层级
+        function renderUnitLevels() {
+            const container = document.getElementById('unitLevelsDisplay');
+            container.innerHTML = '';
+
+            if (!currentMaterial.unitLevels || currentMaterial.unitLevels.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-sm">暂无规格信息</p>';
+                return;
+            }
+
+            currentMaterial.unitLevels.forEach(level => {
+                const levelElement = document.createElement('div');
+                levelElement.className = 'unit-level';
+                levelElement.setAttribute('data-level', level.level);
+                
+                levelElement.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="font-medium text-gray-800">${level.name}</div>
+                            <div class="text-sm text-gray-600">第${level.level}级单位</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-semibold text-gray-800">${level.amount} ${level.unit}</div>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(levelElement);
+            });
+        }
+
+        // 跳转到编辑页面
+        function goToEditPage() {
+            if (currentMaterial) {
+                window.location.href = `cailiao-edit-mobile.html?id=${currentMaterial.id}`;
+            }
+        }
+
+        // 显示更多操作菜单
+        function showMoreOptions() {
+            document.getElementById('moreOptionsModal').classList.remove('hidden');
+        }
+
+        // 隐藏更多操作菜单
+        function hideMoreOptions() {
+            document.getElementById('moreOptionsModal').classList.add('hidden');
+        }
+
+        // 库存操作
+        function addStock() {
+            currentStockOperation = 'add';
+            document.getElementById('stockModalTitle').textContent = '补充库存';
+            document.getElementById('stockAmountUnit').value = currentMaterial.unit;
+            document.getElementById('stockModal').classList.remove('hidden');
+        }
+
+        function useStock() {
+            currentStockOperation = 'use';
+            document.getElementById('stockModalTitle').textContent = '使用库存';
+            document.getElementById('stockAmountUnit').value = currentMaterial.unit;
+            document.getElementById('stockModal').classList.remove('hidden');
+        }
+
+        function hideStockModal() {
+            document.getElementById('stockModal').classList.add('hidden');
+            document.getElementById('stockAmount').value = '';
+            document.getElementById('stockNote').value = '';
+        }
+
+        function confirmStockOperation() {
+            const amount = parseInt(document.getElementById('stockAmount').value);
+            const unit = document.getElementById('stockAmountUnit').value;
+            const note = document.getElementById('stockNote').value;
+
+            if (!amount || amount <= 0) {
+                showToast('请输入有效的数量', 'error');
+                return;
+            }
+
+            if (currentStockOperation === 'add') {
+                currentMaterial.stock += amount;
+                showToast(`成功补充库存 ${amount} ${unit}`, 'success');
+            } else if (currentStockOperation === 'use') {
+                if (amount > currentMaterial.stock) {
+                    showToast('使用数量不能超过当前库存', 'error');
+                    return;
+                }
+                currentMaterial.stock -= amount;
+                showToast(`成功使用库存 ${amount} ${unit}`, 'success');
+            }
+
+            // 更新库存状态
+            if (currentMaterial.stock === 0) {
+                currentMaterial.status = 'out';
+            } else if (currentMaterial.stock <= currentMaterial.lowStock) {
+                currentMaterial.status = 'low';
+            } else {
+                currentMaterial.status = 'normal';
+            }
+
+            // 更新时间
+            currentMaterial.updateTime = new Date().toLocaleString('zh-CN');
+
+            // 重新加载数据
+            loadMaterialData();
+            hideStockModal();
+        }
+
+        // 复制材料
+        function duplicateMaterial() {
+            showToast('复制材料功能开发中...', 'info');
+        }
+
+        // 删除材料
+        function deleteMaterial() {
+            if (confirm('确定要删除这个材料吗？此操作不可恢复。')) {
+                showToast('删除成功', 'success');
+                setTimeout(() => {
+                    history.back();
+                }, 1500);
+            }
+        }
+
+        // 导出材料
+        function exportMaterial() {
+            hideMoreOptions();
+            showToast('导出功能开发中...', 'info');
+        }
+
+        // 打印材料
+        function printMaterial() {
+            hideMoreOptions();
+            showToast('打印功能开发中...', 'info');
+        }
+
+        // 分享材料
+        function shareeMaterial() {
+            hideMoreOptions();
+            showToast('分享功能开发中...', 'info');
+        }
+
+        // 查看历史
+        function viewHistory() {
+            hideMoreOptions();
+            showToast('历史记录功能开发中...', 'info');
+        }
+
+        // Toast提示功能
+        function showToast(message, type = 'info', duration = 3000) {
+            const existingToast = document.querySelector('.toast');
+            if (existingToast) {
+                existingToast.remove();
+            }
+            
+            const toast = document.createElement('div');
+            toast.className = `toast fixed top-20 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg z-50 flex items-center space-x-2`;
+            
+            let bgColor, textColor, icon;
+            switch(type) {
+                case 'success':
+                    bgColor = 'bg-green-500';
+                    textColor = 'text-white';
+                    icon = 'fas fa-check-circle';
+                    break;
+                case 'error':
+                    bgColor = 'bg-red-500';
+                    textColor = 'text-white';
+                    icon = 'fas fa-exclamation-circle';
+                    break;
+                case 'warning':
+                    bgColor = 'bg-yellow-500';
+                    textColor = 'text-white';
+                    icon = 'fas fa-exclamation-triangle';
+                    break;
+                default:
+                    bgColor = 'bg-blue-500';
+                    textColor = 'text-white';
+                    icon = 'fas fa-info-circle';
+            }
+            
+            toast.classList.add(bgColor, textColor);
+            toast.innerHTML = `
+                <i class="${icon}"></i>
+                <span>${message}</span>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.remove();
+                }
+            }, duration);
+        }
+
+        // 点击背景关闭弹窗
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('modal')) {
+                e.target.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html> 

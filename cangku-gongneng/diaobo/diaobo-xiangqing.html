@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>调拨详情 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Cookpad Design System */
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+            --text-main: #333333;
+            --text-sub: #8b8b8b;
+            --bg-light: #f7f7f5;
+            --bg-white: #ffffff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-main);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* 滚动条美化 */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 3px;
+        }
+
+        /* 卡片样式 */
+        .card {
+            background: var(--bg-white);
+            border-radius: 12px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            border: 1px solid #f0f0f0;
+            transition: all 0.2s;
+        }
+
+        /* 按钮样式 */
+        .btn-primary {
+            background: linear-gradient(135deg, #ff9f43 0%, #ff8c00 100%);
+            color: white;
+            box-shadow: 0 2px 6px rgba(255, 140, 0, 0.2);
+            transition: all 0.2s;
+        }
+        
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .btn-secondary {
+            background-color: #f3f4f6;
+            color: #4b5563;
+            border: 1px solid #e5e7eb;
+            transition: all 0.2s;
+        }
+        
+        .btn-secondary:active {
+            background-color: #e5e7eb;
+        }
+
+        /* 时间轴样式 */
+        .timeline-item {
+            position: relative;
+            padding-left: 24px;
+            padding-bottom: 24px;
+        }
+        
+        .timeline-item:last-child {
+            padding-bottom: 0;
+        }
+        
+        .timeline-line {
+            position: absolute;
+            left: 6px;
+            top: 6px;
+            bottom: 0;
+            width: 2px;
+            background-color: #e5e7eb;
+            z-index: 0;
+        }
+        
+        .timeline-item:last-child .timeline-line {
+            display: none;
+        }
+        
+        .timeline-dot {
+            position: absolute;
+            left: 0;
+            top: 6px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background-color: #fff;
+            border: 2px solid #d1d5db;
+            z-index: 1;
+        }
+        
+        .timeline-item.active .timeline-dot {
+            border-color: var(--primary-orange);
+            background-color: var(--primary-orange);
+            box-shadow: 0 0 0 3px rgba(255, 159, 67, 0.2);
+        }
+
+        /* 动画 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 h-screen flex flex-col overflow-hidden">
+    
+    <!-- 顶部导航栏 -->
+    <div class="bg-white px-4 py-3 shadow-sm border-b border-gray-100 z-30 flex-shrink-0">
+        <div class="flex items-center space-x-4">
+            <button onclick="history.back()" class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div>
+                <div class="text-lg font-bold text-gray-800 tracking-wide">调拨详情</div>
+                <div class="text-xs text-gray-500 font-mono mt-0.5">DB202312003</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主内容区域 (Scrollable) -->
+    <div class="flex-1 overflow-y-auto custom-scrollbar p-4 pb-24 space-y-4">
+        
+        <!-- 状态卡片 -->
+        <div class="card p-5 animate-fade-in">
+            <div class="flex items-center justify-between mb-6">
+                <span class="text-sm text-gray-500">当前状态</span>
+                <span class="bg-green-50 text-green-600 px-3 py-1 rounded-full text-xs font-bold border border-green-100 flex items-center gap-1">
+                    <i class="fas fa-check-circle text-[10px]"></i> 已完成
+                </span>
+            </div>
+            
+            <!-- 进度条 -->
+            <div class="relative flex justify-between items-center px-2">
+                <!-- 进度线背景 -->
+                <div class="absolute top-3 left-0 right-0 h-0.5 bg-gray-100 -z-0"></div>
+                <!-- 进度线前景 -->
+                <div class="absolute top-3 left-0 right-0 h-0.5 bg-green-500 -z-0" style="width: 100%"></div>
+                
+                <!-- 节点 1 -->
+                <div class="flex flex-col items-center relative z-10 group">
+                    <div class="w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center text-[10px] border-2 border-white shadow-sm">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <span class="text-[10px] text-gray-800 font-medium mt-1.5">提交</span>
+                </div>
+                
+                <!-- 节点 2 -->
+                <div class="flex flex-col items-center relative z-10 group">
+                    <div class="w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center text-[10px] border-2 border-white shadow-sm">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <span class="text-[10px] text-gray-800 font-medium mt-1.5">出库</span>
+                </div>
+                
+                <!-- 节点 3 -->
+                <div class="flex flex-col items-center relative z-10 group">
+                    <div class="w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center text-[10px] border-2 border-white shadow-sm">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <span class="text-[10px] text-gray-800 font-medium mt-1.5">运输</span>
+                </div>
+                
+                <!-- 节点 4 -->
+                <div class="flex flex-col items-center relative z-10 group">
+                    <div class="w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center text-[10px] border-2 border-white shadow-sm">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <span class="text-[10px] text-gray-800 font-medium mt-1.5">入库</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 基础信息 -->
+        <div class="card p-5 animate-fade-in" style="animation-delay: 0.1s;">
+            <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-50">
+                <h3 class="text-sm font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-info-circle text-orange-500 mr-2"></i>
+                    基础信息
+                </h3>
+                <span class="text-xs text-gray-400">2023-12-14 16:45</span>
+            </div>
+            
+            <div class="space-y-3">
+                <div class="flex items-center gap-3 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                    <div class="flex-1 text-center border-r border-gray-200 pr-3">
+                        <p class="text-[10px] text-gray-400 mb-1">调出仓库</p>
+                        <p class="text-sm font-bold text-gray-800">分店仓库A</p>
+                    </div>
+                    <i class="fas fa-arrow-right text-gray-300 text-xs"></i>
+                    <div class="flex-1 text-center pl-3">
+                        <p class="text-[10px] text-gray-400 mb-1">调入仓库</p>
+                        <p class="text-sm font-bold text-gray-800">分店仓库C</p>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4 mt-2 px-1">
+                    <div>
+                        <p class="text-[10px] text-gray-400 mb-0.5">创建人</p>
+                        <p class="text-sm font-medium text-gray-800">王店长</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-gray-400 mb-0.5">优先级</p>
+                        <p class="text-sm font-medium text-green-600">普通</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 物料明细 -->
+        <div class="card p-5 animate-fade-in" style="animation-delay: 0.2s;">
+            <div class="mb-4 pb-3 border-b border-gray-50">
+                <h3 class="text-sm font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-boxes text-orange-500 mr-2"></i>
+                    物料明细
+                </h3>
+            </div>
+            
+            <div class="space-y-3">
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-blue-500 shadow-sm border border-gray-50">
+                            <i class="fas fa-box text-lg"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-gray-800 text-sm">糖粉</h4>
+                            <p class="text-xs text-gray-500">规格: 5kg/包</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-bold text-base text-gray-800">15 <span class="text-xs font-normal text-gray-500">kg</span></p>
+                        <p class="text-[10px] text-gray-400">3包</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 备注信息 -->
+        <div class="card p-5 animate-fade-in" style="animation-delay: 0.3s;">
+            <div class="mb-3">
+                <h3 class="text-sm font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-sticky-note text-orange-500 mr-2"></i>
+                    备注信息
+                </h3>
+            </div>
+            <div class="bg-yellow-50 rounded-lg p-3 text-xs text-gray-600 leading-relaxed border border-yellow-100">
+                分店C急需糖粉用于周末新品制作，请尽快调拨。
+            </div>
+        </div>
+
+        <!-- 处理记录 -->
+        <div class="card p-5 animate-fade-in" style="animation-delay: 0.4s;">
+            <div class="mb-4">
+                <h3 class="text-sm font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-history text-orange-500 mr-2"></i>
+                    处理记录
+                </h3>
+            </div>
+            
+            <div class="pl-2">
+                <!-- 记录 1 -->
+                <div class="timeline-item active">
+                    <div class="timeline-line"></div>
+                    <div class="timeline-dot"></div>
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="text-sm font-bold text-gray-800">已完成入库</h4>
+                            <p class="text-xs text-gray-500 mt-1">分店仓库C 管理员 已确认收货</p>
+                        </div>
+                        <span class="text-[10px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded">12-14 18:20</span>
+                    </div>
+                </div>
+                
+                <!-- 记录 2 -->
+                <div class="timeline-item active">
+                    <div class="timeline-line"></div>
+                    <div class="timeline-dot"></div>
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="text-sm font-bold text-gray-800">运输中</h4>
+                            <p class="text-xs text-gray-500 mt-1">物流司机 张师傅 (13800138000)</p>
+                        </div>
+                        <span class="text-[10px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded">12-14 17:10</span>
+                    </div>
+                </div>
+                
+                <!-- 记录 3 -->
+                <div class="timeline-item active">
+                    <div class="timeline-line"></div>
+                    <div class="timeline-dot"></div>
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="text-sm font-bold text-gray-800">已出库</h4>
+                            <p class="text-xs text-gray-500 mt-1">分店仓库A 管理员 已确认出库</p>
+                        </div>
+                        <span class="text-[10px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded">12-14 17:00</span>
+                    </div>
+                </div>
+                
+                <!-- 记录 4 -->
+                <div class="timeline-item active">
+                    <div class="timeline-line"></div>
+                    <div class="timeline-dot"></div>
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="text-sm font-bold text-gray-800">提交申请</h4>
+                            <p class="text-xs text-gray-500 mt-1">王店长 提交了调拨申请</p>
+                        </div>
+                        <span class="text-[10px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded">12-14 16:45</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部操作栏 -->
+    <div class="bg-white border-t border-gray-100 p-4 fixed bottom-0 left-0 right-0 z-20">
+        <div class="flex space-x-3">
+            <button class="flex-1 btn-secondary py-3 rounded-xl font-medium text-sm flex items-center justify-center gap-2">
+                <i class="fas fa-print"></i> 打印单据
+            </button>
+            <button class="flex-1 btn-primary py-3 rounded-xl font-bold text-sm shadow-lg shadow-orange-100 flex items-center justify-center gap-2">
+                <i class="fas fa-phone-alt"></i> 联系相关人
+            </button>
+        </div>
+    </div>
+
+</body>
+</html>

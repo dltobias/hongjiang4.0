@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分类管理 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .gradient-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            z-index: 50;
+        }
+        .bottom-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 4px;
+            color: #6b7280;
+            transition: color 0.3s ease;
+        }
+        .bottom-nav-item.active {
+            color: #667eea;
+        }
+        .bottom-nav-item i {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+        .bottom-nav-item span {
+            font-size: 12px;
+        }
+        .main-content {
+            padding-bottom: 80px;
+        }
+        
+        /* 拖动排序样式 */
+        .category-item {
+            transition: background-color 0.2s ease;
+        }
+        .category-item.dragging {
+            background-color: #f3f4f6;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .category-item .drag-handle {
+            cursor: grab;
+        }
+        .category-item .drag-handle:active {
+            cursor: grabbing;
+        }
+        
+        /* 按钮样式 */
+        .action-button {
+            transition: all 0.2s ease;
+        }
+        .action-button:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- 顶部状态栏 -->
+    <div class="bg-white px-4 py-3 flex items-center justify-between shadow-sm">
+        <div class="flex items-center space-x-3">
+            <button onclick="history.back()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">
+                <i class="fas fa-chevron-left text-gray-600"></i>
+            </button>
+            <div>
+                <div class="text-sm font-semibold text-gray-800">分类管理</div>
+                <div class="text-xs text-gray-500">共 <span id="totalCategoryCount">9</span> 个分类</div>
+            </div>
+        </div>
+        <button onclick="addNewCategory()" class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
+            <i class="fas fa-plus text-sm"></i>
+        </button>
+    </div>
+
+    <!-- 主内容区域 -->
+    <div class="main-content p-4">
+        <!-- 操作提示 -->
+        <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-4">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-blue-800">操作提示</h3>
+                    <div class="mt-2 text-xs text-blue-700">
+                        <ul class="list-disc pl-5 space-y-1">
+                            <li>长按并拖动 <i class="fas fa-grip-lines"></i> 图标可以调整分类排序</li>
+                            <li>点击 <i class="fas fa-edit"></i> 图标可以编辑分类名称</li>
+                            <li>点击 <i class="fas fa-trash"></i> 图标可以删除分类</li>
+                            <li>点击右上角 <i class="fas fa-plus"></i> 图标可以添加新分类</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 分类列表 -->
+        <div class="bg-white rounded-xl shadow-sm" id="categoryList">
+            <!-- 分类项将通过JS动态生成 -->
+        </div>
+    </div>
+
+    <!-- 底部导航栏 -->
+    <div class="bottom-nav grid grid-cols-4 bg-white shadow-lg">
+        <a href="shouye-mobile.html" class="bottom-nav-item">
+            <i class="fas fa-home"></i>
+            <span>首页</span>
+        </a>
+        <a href="cangku-mobile.html" class="bottom-nav-item active">
+            <i class="fas fa-warehouse"></i>
+            <span>ERP</span>
+        </a>
+        <a href="shequ-mobile.html" class="bottom-nav-item">
+            <i class="fas fa-users"></i>
+            <span>社区</span>
+        </a>
+        <a href="#" class="bottom-nav-item">
+            <i class="fas fa-user-circle"></i>
+            <span>我的</span>
+        </a>
+    </div>
+
+    <!-- 编辑分类弹窗 -->
+    <div id="editCategoryModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-xl p-6 mx-4 w-full max-w-sm">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">编辑分类</h3>
+            
+            <div class="mb-4">
+                <label for="categoryName" class="block text-sm font-medium text-gray-700 mb-1">分类名称</label>
+                <input type="text" id="categoryName" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="请输入分类名称">
+            </div>
+            
+            <div class="mb-4">
+                <label for="categoryIcon" class="block text-sm font-medium text-gray-700 mb-1">分类图标</label>
+                <select id="categoryIcon" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="fa-wheat-awn">面粉图标</option>
+                    <option value="fa-oil-can">油脂图标</option>
+                    <option value="fa-candy-cane">糖类图标</option>
+                    <option value="fa-cheese">乳制品图标</option>
+                    <option value="fa-egg">蛋类图标</option>
+                    <option value="fa-apple-whole">水果图标</option>
+                    <option value="fa-seedling">坚果图标</option>
+                    <option value="fa-mortar-pestle">其他图标</option>
+                </select>
+            </div>
+            
+            <div class="mb-4">
+                <label for="categoryColor" class="block text-sm font-medium text-gray-700 mb-1">分类颜色</label>
+                <select id="categoryColor" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="amber">琥珀色</option>
+                    <option value="blue">蓝色</option>
+                    <option value="green">绿色</option>
+                    <option value="red">红色</option>
+                    <option value="pink">粉色</option>
+                    <option value="purple">紫色</option>
+                    <option value="orange">橙色</option>
+                    <option value="lime">青柠色</option>
+                    <option value="teal">蓝绿色</option>
+                </select>
+            </div>
+            
+            <div class="flex justify-end space-x-3">
+                <button onclick="closeEditModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg">取消</button>
+                <button onclick="saveCategory()" class="px-4 py-2 bg-blue-600 text-white rounded-lg">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除确认弹窗 -->
+    <div id="deleteCategoryModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-xl p-6 mx-4 w-full max-w-sm">
+            <h3 class="text-lg font-semibold text-gray-800 mb-2">删除分类</h3>
+            <p class="text-sm text-gray-600 mb-4">确定要删除 "<span id="deleteCategoryName">分类名称</span>" 吗？此操作不可撤销。</p>
+            
+            <div class="flex justify-end space-x-3">
+                <button onclick="closeDeleteModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg">取消</button>
+                <button onclick="confirmDeleteCategory()" class="px-4 py-2 bg-red-600 text-white rounded-lg">删除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 加载中提示 -->
+    <div id="loadingIndicator" class="fixed inset-0 bg-white bg-opacity-80 flex items-center justify-center z-50">
+        <div class="text-center">
+            <div class="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p class="text-gray-600">加载中...</p>
+        </div>
+    </div>
+
+    <script>
+        // 模拟分类数据
+        const categories = [
+            { id: 'flour', name: '粉类', count: 8, icon: 'fa-wheat-awn', color: 'amber' },
+            { id: 'oil', name: '油脂类', count: 6, icon: 'fa-oil-can', color: 'yellow' },
+            { id: 'sugar', name: '糖类', count: 5, icon: 'fa-candy-cane', color: 'pink' },
+            { id: 'dairy', name: '乳制品', count: 4, icon: 'fa-cheese', color: 'green' },
+            { id: 'egg', name: '蛋类', count: 2, icon: 'fa-egg', color: 'orange' },
+            { id: 'fruit', name: '水果类', count: 5, icon: 'fa-apple-whole', color: 'red' },
+            { id: 'nut', name: '坚果类', count: 3, icon: 'fa-seedling', color: 'lime' },
+            { id: 'other', name: '其他', count: 3, icon: 'fa-mortar-pestle', color: 'purple' }
+        ];
+        
+        // 当前编辑的分类
+        let currentEditCategory = null;
+        
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function() {
+            // 渲染分类列表
+            renderCategories();
+            
+            // 初始化拖拽排序
+            initDragAndDrop();
+            
+            // 隐藏加载指示器
+            setTimeout(hideLoading, 500);
+        });
+        
+        // 渲染分类列表
+        function renderCategories() {
+            const categoryListContainer = document.getElementById('categoryList');
+            categoryListContainer.innerHTML = '';
+            
+            categories.forEach((category, index) => {
+                const categoryElement = document.createElement('div');
+                categoryElement.className = 'category-item flex items-center justify-between p-4 border-b border-gray-100 last:border-b-0';
+                categoryElement.setAttribute('data-id', category.id);
+                
+                categoryElement.innerHTML = `
+                    <div class="flex items-center">
+                        <div class="drag-handle w-8 h-8 flex items-center justify-center text-gray-400 mr-2">
+                            <i class="fas fa-grip-lines"></i>
+                        </div>
+                        <div class="w-8 h-8 rounded-full bg-${category.color}-100 flex items-center justify-center mr-3">
+                            <i class="fas ${category.icon} text-${category.color}-600 text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-800">${category.name}</p>
+                            <p class="text-xs text-gray-500">${category.count} 种材料</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600" onclick="editCategory('${category.id}')">
+                            <i class="fas fa-edit text-sm"></i>
+                        </button>
+                        <button class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600" onclick="deleteCategory('${category.id}')">
+                            <i class="fas fa-trash text-sm"></i>
+                        </button>
+                    </div>
+                `;
+                
+                categoryListContainer.appendChild(categoryElement);
+            });
+            
+            // 更新分类总数
+            document.getElementById('totalCategoryCount').textContent = categories.length;
+        }
+        
+        // 初始化拖拽排序
+        function initDragAndDrop() {
+            const categoryItems = document.querySelectorAll('.category-item');
+            let draggedItem = null;
+            let startY = 0;
+            let currentY = 0;
+            let isDragging = false;
+            let longPressTimer = null;
+            
+            categoryItems.forEach(item => {
+                const dragHandle = item.querySelector('.drag-handle');
+                
+                // 触摸开始
+                dragHandle.addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    startY = touch.clientY;
+                    currentY = touch.clientY;
+                    
+                    // 长按检测
+                    longPressTimer = setTimeout(() => {
+                        isDragging = true;
+                        draggedItem = item;
+                        item.classList.add('dragging');
+                        
+                        // 触觉反馈
+                        if (navigator.vibrate) {
+                            navigator.vibrate(50);
+                        }
+                        
+                        showToast('开始拖拽排序', 'info');
+                    }, 500); // 500ms长按
+                }, { passive: false });
+                
+                // 触摸移动
+                dragHandle.addEventListener('touchmove', function(e) {
+                    if (!isDragging) return;
+                    
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    currentY = touch.clientY;
+                    
+                    // 移动拖拽元素
+                    const deltaY = currentY - startY;
+                    draggedItem.style.transform = `translateY(${deltaY}px)`;
+                    draggedItem.style.zIndex = '1000';
+                    
+                    // 查找插入位置
+                    const container = document.getElementById('categoryList');
+                    const afterElement = getDragAfterElement(container, currentY);
+                    
+                    if (afterElement == null) {
+                        container.appendChild(draggedItem);
+                    } else {
+                        container.insertBefore(draggedItem, afterElement);
+                    }
+                }, { passive: false });
+                
+                // 触摸结束
+                dragHandle.addEventListener('touchend', function(e) {
+                    clearTimeout(longPressTimer);
+                    
+                    if (isDragging) {
+                        e.preventDefault();
+                        isDragging = false;
+                        
+                        // 重置样式
+                        draggedItem.style.transform = '';
+                        draggedItem.style.zIndex = '';
+                        draggedItem.classList.remove('dragging');
+                        
+                        // 更新分类顺序
+                        updateCategoryOrder();
+                        
+                        draggedItem = null;
+                    }
+                }, { passive: false });
+                
+                // 触摸取消
+                dragHandle.addEventListener('touchcancel', function() {
+                    clearTimeout(longPressTimer);
+                    
+                    if (isDragging) {
+                        isDragging = false;
+                        draggedItem.style.transform = '';
+                        draggedItem.style.zIndex = '';
+                        draggedItem.classList.remove('dragging');
+                        draggedItem = null;
+                    }
+                });
+                
+                // 阻止默认的拖拽行为
+                item.addEventListener('dragstart', function(e) {
+                    e.preventDefault();
+                });
+            });
+        }
+        
+        // 获取拖拽后的位置
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.category-item:not(.dragging)')];
+            
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+        
+        // 更新分类顺序
+        function updateCategoryOrder(showToastMessage = true) {
+            const categoryItems = document.querySelectorAll('.category-item');
+            const newOrder = [];
+            
+            categoryItems.forEach(item => {
+                const categoryId = item.getAttribute('data-id');
+                const category = categories.find(c => c.id === categoryId);
+                if (category) {
+                    newOrder.push(category);
+                }
+            });
+            
+            // 更新分类数组
+            categories.length = 0;
+            categories.push(...newOrder);
+            
+            // 显示保存成功提示
+            if (showToastMessage) {
+                showToast('分类排序已更新', 'success');
+            }
+        }
+        
+        // 编辑分类
+        function editCategory(categoryId) {
+            const category = categories.find(c => c.id === categoryId);
+            if (!category) return;
+            
+            currentEditCategory = category;
+            
+            // 填充表单
+            document.getElementById('categoryName').value = category.name;
+            document.getElementById('categoryIcon').value = category.icon;
+            document.getElementById('categoryColor').value = category.color;
+            
+            // 显示弹窗
+            document.getElementById('editCategoryModal').classList.remove('hidden');
+        }
+        
+        // 关闭编辑弹窗
+        function closeEditModal() {
+            document.getElementById('editCategoryModal').classList.add('hidden');
+            currentEditCategory = null;
+        }
+        
+        // 保存分类
+        function saveCategory() {
+            const name = document.getElementById('categoryName').value.trim();
+            const icon = document.getElementById('categoryIcon').value;
+            const color = document.getElementById('categoryColor').value;
+            
+            // 验证表单
+            if (!name) {
+                showToast('请输入分类名称', 'error');
+                return;
+            }
+            
+            if (currentEditCategory) {
+                // 更新现有分类
+                currentEditCategory.name = name;
+                currentEditCategory.icon = icon;
+                currentEditCategory.color = color;
+                
+                // 重新渲染分类列表
+                renderCategories();
+                initDragAndDrop();
+                
+                showToast('分类已更新', 'success');
+            } else {
+                // 添加新分类
+                const newId = 'category_' + Date.now();
+                categories.push({
+                    id: newId,
+                    name: name,
+                    count: 0,
+                    icon: icon,
+                    color: color
+                });
+                
+                // 重新渲染分类列表
+                renderCategories();
+                initDragAndDrop();
+                
+                showToast('分类已添加', 'success');
+            }
+            
+            // 关闭弹窗
+            closeEditModal();
+        }
+        
+        // 添加新分类
+        function addNewCategory() {
+            currentEditCategory = null;
+            
+            // 清空表单
+            document.getElementById('categoryName').value = '';
+            document.getElementById('categoryIcon').value = 'fa-mortar-pestle';
+            document.getElementById('categoryColor').value = 'blue';
+            
+            // 显示弹窗
+            document.getElementById('editCategoryModal').classList.remove('hidden');
+        }
+        
+        // 删除分类
+        function deleteCategory(categoryId) {
+            const category = categories.find(c => c.id === categoryId);
+            if (!category) return;
+            
+            // 设置要删除的分类名称
+            document.getElementById('deleteCategoryName').textContent = category.name;
+            
+            // 保存当前要删除的分类ID
+            currentEditCategory = category;
+            
+            // 显示确认弹窗
+            document.getElementById('deleteCategoryModal').classList.remove('hidden');
+        }
+        
+        // 关闭删除弹窗
+        function closeDeleteModal() {
+            document.getElementById('deleteCategoryModal').classList.add('hidden');
+            currentEditCategory = null;
+        }
+        
+        // 确认删除分类
+        function confirmDeleteCategory() {
+            if (!currentEditCategory) return;
+            
+            // 如果分类中有材料，显示警告
+            if (currentEditCategory.count > 0) {
+                showToast(`无法删除，该分类下有 ${currentEditCategory.count} 种材料`, 'error');
+                closeDeleteModal();
+                return;
+            }
+            
+            // 删除分类
+            const index = categories.findIndex(c => c.id === currentEditCategory.id);
+            if (index !== -1) {
+                categories.splice(index, 1);
+            }
+            
+            // 重新渲染分类列表
+            renderCategories();
+            initDragAndDrop();
+            
+            // 关闭弹窗
+            closeDeleteModal();
+            
+            showToast('分类已删除', 'success');
+        }
+        
+        // 隐藏加载指示器
+        function hideLoading() {
+            document.getElementById('loadingIndicator').classList.add('hidden');
+        }
+        
+        // 显示提示消息
+        function showToast(message, type = 'info') {
+            // 移除现有的toast
+            const existingToast = document.querySelector('.toast');
+            if (existingToast) {
+                existingToast.remove();
+            }
+            
+            const toast = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
+            toast.className = `toast fixed top-4 left-1/2 transform -translate-x-1/2 ${bgColor} text-white px-4 py-2 rounded-lg z-50 transition-all duration-300`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translate(-50%, -100%)';
+                setTimeout(() => {
+                    if (document.body.contains(toast)) {
+                        document.body.removeChild(toast);
+                    }
+                }, 300);
+            }, 2000);
+        }
+    </script>
+</body>
+</html> 

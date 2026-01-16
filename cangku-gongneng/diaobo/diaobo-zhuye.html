@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>调拨管理 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Cookpad Design System */
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+            --text-main: #333333;
+            --text-sub: #8b8b8b;
+            --bg-light: #f7f7f5;
+            --bg-white: #ffffff;
+            --status-pending-bg: #fff7ed;
+            --status-pending-text: #c2410c;
+            --status-transit-bg: #eff6ff;
+            --status-transit-text: #1d4ed8;
+            --status-completed-bg: #f0fdf4;
+            --status-completed-text: #15803d;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-main);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* 滚动条美化 */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 3px;
+        }
+
+        /* 卡片样式 */
+        .card {
+            background: var(--bg-white);
+            border-radius: 12px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            border: 1px solid #f0f0f0;
+            transition: all 0.2s;
+        }
+        
+        .card:active {
+            transform: scale(0.98);
+        }
+
+        /* 统计卡片样式 */
+        .stats-card {
+            background: #ffffff;
+            border: 1px solid #f0f0f0;
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+        }
+        
+        .stats-card.active {
+            border-color: var(--primary-orange);
+            background-color: #fff7ed;
+        }
+
+        /* 标签页样式 */
+        .tab-btn {
+            position: relative;
+            color: var(--text-sub);
+            transition: all 0.3s;
+        }
+        
+        .tab-btn.active {
+            color: var(--primary-dark);
+            font-weight: 600;
+        }
+        
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 3px;
+            background-color: var(--primary-orange);
+            border-radius: 3px;
+        }
+
+        /* FAB Button */
+        .fab-btn {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff9f43 0%, #ff8c00 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(255, 159, 67, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            z-index: 50;
+        }
+        
+        .fab-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* 动画 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 h-screen flex flex-col overflow-hidden">
+    
+    <!-- 顶部导航栏 -->
+    <div class="bg-white px-4 py-3 shadow-sm border-b border-gray-100 z-30 flex-shrink-0">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <button onclick="window.location.href='../erp-zhuye-canku.html'" class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div>
+                    <div class="text-lg font-bold text-gray-800 tracking-wide">调拨管理</div>
+                    <div class="text-xs text-gray-500 font-medium mt-0.5">仓库间物料调拨</div>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="window.location.href='diaobolishi.html'" class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 hover:bg-orange-50 hover:text-orange-600 transition-all text-gray-500" title="调拨历史">
+                    <i class="fas fa-history text-sm"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 统计概览 -->
+    <div class="bg-white border-b border-gray-100 px-4 py-3 flex-shrink-0">
+        <div class="grid grid-cols-3 gap-3">
+            <div class="stats-card cursor-pointer group hover:border-orange-200 hover:bg-orange-50" onclick="filterByStatus('pending')">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-500">待审核</p>
+                        <p class="text-lg font-bold text-gray-800">5</p>
+                    </div>
+                    <div class="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center group-hover:bg-white transition-colors">
+                        <i class="fas fa-clock text-xs text-orange-500"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="stats-card cursor-pointer group hover:border-blue-200 hover:bg-blue-50" onclick="filterByStatus('transit')">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-500">调拨中</p>
+                        <p class="text-lg font-bold text-gray-800">3</p>
+                    </div>
+                    <div class="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center group-hover:bg-white transition-colors">
+                        <i class="fas fa-truck text-xs text-blue-500"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="stats-card cursor-pointer group hover:border-green-200 hover:bg-green-50" onclick="filterByStatus('completed')">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-500">今日完成</p>
+                        <p class="text-lg font-bold text-gray-800">12</p>
+                    </div>
+                    <div class="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center group-hover:bg-white transition-colors">
+                        <i class="fas fa-check-circle text-xs text-green-500"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 筛选和标签 -->
+    <div class="bg-white border-b border-gray-100 flex-shrink-0">
+        <!-- 搜索栏 -->
+        <div class="px-4 py-2 border-b border-gray-50">
+            <div class="relative">
+                <input type="text" placeholder="搜索调拨单号、物料名称..." 
+                       class="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-10 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-100 focus:border-orange-300 transition-all"
+                       id="searchInput">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i class="fas fa-search text-gray-400 text-xs"></i>
+                </div>
+                <button class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 hidden" 
+                        id="clearSearch" 
+                        onclick="clearSearch()">
+                    <i class="fas fa-times-circle text-sm"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- 标签页 -->
+        <div class="flex px-4 overflow-x-auto hide-scrollbar">
+            <button class="tab-btn active px-4 py-3 text-sm whitespace-nowrap" onclick="switchTab(this, 'all')">全部</button>
+            <button class="tab-btn px-4 py-3 text-sm whitespace-nowrap" onclick="switchTab(this, 'pending')">待审核</button>
+            <button class="tab-btn px-4 py-3 text-sm whitespace-nowrap" onclick="switchTab(this, 'transit')">调拨中</button>
+            <button class="tab-btn px-4 py-3 text-sm whitespace-nowrap" onclick="switchTab(this, 'completed')">已完成</button>
+        </div>
+    </div>
+
+    <!-- 列表区域 -->
+    <div class="flex-1 overflow-y-auto custom-scrollbar bg-gray-50 p-4" id="transferList">
+        <!-- 列表内容将通过JS动态生成 -->
+    </div>
+
+    <!-- 创建按钮 -->
+    <button onclick="window.location.href='diaoboxinjian.html'" class="fab-btn group">
+        <i class="fas fa-plus text-xl group-hover:rotate-90 transition-transform duration-300"></i>
+    </button>
+
+    <script>
+        // 模拟数据
+        const transfers = [
+            {
+                id: 'DB2023123001',
+                date: '2023-12-30 10:30',
+                from: '主仓库 (A区)',
+                to: '二号仓库 (B区)',
+                items: [
+                    { name: '高筋面粉', quantity: '50kg' },
+                    { name: '黄油', quantity: '20kg' }
+                ],
+                status: 'pending',
+                creator: '张三'
+            },
+            {
+                id: 'DB2023123002',
+                date: '2023-12-30 09:15',
+                from: '主仓库 (A区)',
+                to: '三号仓库 (C区)',
+                items: [
+                    { name: '白砂糖', quantity: '100kg' }
+                ],
+                status: 'transit',
+                creator: '李四'
+            },
+            {
+                id: 'DB2023122905',
+                date: '2023-12-29 16:45',
+                from: '二号仓库 (B区)',
+                to: '主仓库 (A区)',
+                items: [
+                    { name: '鸡蛋', quantity: '10箱' },
+                    { name: '牛奶', quantity: '20箱' }
+                ],
+                status: 'completed',
+                creator: '王五'
+            },
+            {
+                id: 'DB2023122903',
+                date: '2023-12-29 14:20',
+                from: '主仓库 (A区)',
+                to: '四号仓库 (D区)',
+                items: [
+                    { name: '巧克力豆', quantity: '5kg' }
+                ],
+                status: 'completed',
+                creator: '赵六'
+            },
+             {
+                id: 'DB2023122901',
+                date: '2023-12-29 09:00',
+                from: '五号仓库 (E区)',
+                to: '主仓库 (A区)',
+                items: [
+                    { name: '包装盒', quantity: '500个' }
+                ],
+                status: 'rejected',
+                creator: '孙七'
+            }
+        ];
+
+        let currentTab = 'all';
+        let searchQuery = '';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderList();
+            initSearch();
+        });
+
+        // 切换标签
+        function switchTab(btn, tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentTab = tab;
+            renderList();
+        }
+
+        // 状态筛选（从统计卡片点击）
+        function filterByStatus(status) {
+            // 找到对应的Tab按钮并激活
+            const tabs = document.querySelectorAll('.tab-btn');
+            tabs.forEach(tab => {
+                if (tab.getAttribute('onclick').includes(status)) {
+                    tab.click();
+                }
+            });
+        }
+
+        // 渲染列表
+        function renderList() {
+            const container = document.getElementById('transferList');
+            let filtered = transfers;
+
+            // 标签筛选
+            if (currentTab !== 'all') {
+                filtered = filtered.filter(t => t.status === currentTab);
+            }
+
+            // 搜索筛选
+            if (searchQuery) {
+                const q = searchQuery.toLowerCase();
+                filtered = filtered.filter(t => 
+                    t.id.toLowerCase().includes(q) || 
+                    t.items.some(i => i.name.toLowerCase().includes(q)) ||
+                    t.from.toLowerCase().includes(q) ||
+                    t.to.toLowerCase().includes(q)
+                );
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-64 text-center">
+                        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                            <i class="fas fa-inbox text-gray-300 text-2xl"></i>
+                        </div>
+                        <p class="text-gray-500 text-sm">暂无相关调拨记录</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(item => createCard(item)).join('');
+        }
+
+        // 创建卡片HTML
+        function createCard(item) {
+            const statusConfig = {
+                pending: { text: '待审核', class: 'bg-orange-50 text-orange-600 border-orange-100', icon: 'fa-clock' },
+                transit: { text: '调拨中', class: 'bg-blue-50 text-blue-600 border-blue-100', icon: 'fa-truck' },
+                completed: { text: '已完成', class: 'bg-green-50 text-green-600 border-green-100', icon: 'fa-check-circle' },
+                rejected: { text: '已拒绝', class: 'bg-red-50 text-red-600 border-red-100', icon: 'fa-times-circle' }
+            };
+
+            const status = statusConfig[item.status] || statusConfig.pending;
+            
+            // 生成物品概览文本
+            const itemsText = item.items.map(i => `${i.name} × ${i.quantity}`).join('，');
+
+            return `
+                <div class="card p-4 mb-3 animate-fade-in" onclick="viewDetail('${item.id}')">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <span class="text-xs font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">${item.id}</span>
+                            <div class="text-xs text-gray-400 mt-1">${item.date}</div>
+                        </div>
+                        <span class="text-xs px-2 py-1 rounded-full border flex items-center gap-1 ${status.class}">
+                            <i class="fas ${status.icon} text-[10px]"></i> ${status.text}
+                        </span>
+                    </div>
+                    
+                    <div class="flex items-center gap-3 mb-4 relative">
+                        <!-- 仓库流向 -->
+                        <div class="flex-1 bg-gray-50 rounded-lg p-2.5 border border-gray-100 relative">
+                            <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
+                                <span>调出</span>
+                                <span>调入</span>
+                            </div>
+                            <div class="flex items-center justify-between font-medium text-sm text-gray-800">
+                                <span class="truncate max-w-[45%]">${item.from.split(' ')[0]}</span>
+                                <i class="fas fa-arrow-right text-gray-300 text-xs"></i>
+                                <span class="truncate max-w-[45%]">${item.to.split(' ')[0]}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-gray-50 pt-3">
+                        <div class="flex justify-between items-end">
+                            <div class="flex-1 mr-4">
+                                <p class="text-xs text-gray-500 mb-1">调拨物品</p>
+                                <p class="text-sm text-gray-800 font-medium truncate">${itemsText}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-xs text-gray-400">创建人</p>
+                                <p class="text-xs text-gray-600">${item.creator}</p>
+                            </div>
+                        </div>
+                        
+                        <!-- 操作按钮 -->
+                        <div class="mt-3 flex justify-end gap-2" onclick="event.stopPropagation()">
+                             ${getActions(item.status, item.id)}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 获取操作按钮
+        function getActions(status, id) {
+            if (status === 'pending') {
+                return `
+                    <button onclick="rejectTransfer('${id}')" class="px-3 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-600 hover:bg-gray-50">拒绝</button>
+                    <button onclick="approveTransfer('${id}')" class="px-3 py-1.5 rounded-lg bg-orange-500 text-white text-xs hover:bg-orange-600 shadow-sm shadow-orange-200">审核通过</button>
+                `;
+            } else if (status === 'transit') {
+                return `
+                    <button onclick="confirmReceipt('${id}')" class="px-3 py-1.5 rounded-lg bg-blue-500 text-white text-xs hover:bg-blue-600 shadow-sm shadow-blue-200">确认收货</button>
+                `;
+            }
+            return `<button onclick="viewDetail('${id}')" class="px-3 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-600 hover:bg-gray-50">查看详情</button>`;
+        }
+
+        // 搜索功能
+        function initSearch() {
+            const input = document.getElementById('searchInput');
+            const clearBtn = document.getElementById('clearSearch');
+
+            input.addEventListener('input', (e) => {
+                searchQuery = e.target.value.trim();
+                if (searchQuery) {
+                    clearBtn.classList.remove('hidden');
+                } else {
+                    clearBtn.classList.add('hidden');
+                }
+                renderList();
+            });
+        }
+
+        function clearSearch() {
+            const input = document.getElementById('searchInput');
+            input.value = '';
+            searchQuery = '';
+            document.getElementById('clearSearch').classList.add('hidden');
+            renderList();
+        }
+
+        // 模拟操作
+        function viewDetail(id) {
+            window.location.href = 'diaobo-xiangqing.html?id=' + id;
+        }
+
+        function approveTransfer(id) {
+            if(confirm('确认审核通过该调拨单吗？')) {
+                const item = transfers.find(t => t.id === id);
+                if(item) {
+                    item.status = 'transit';
+                    renderList();
+                }
+            }
+        }
+
+        function rejectTransfer(id) {
+             if(confirm('确认拒绝该调拨单吗？')) {
+                const item = transfers.find(t => t.id === id);
+                if(item) {
+                    item.status = 'rejected';
+                    renderList();
+                }
+            }
+        }
+
+        function confirmReceipt(id) {
+            if(confirm('确认已收到货物吗？')) {
+                const item = transfers.find(t => t.id === id);
+                if(item) {
+                    item.status = 'completed';
+                    renderList();
+                }
+            }
+        }
+    </script>
+</body>
+</html>

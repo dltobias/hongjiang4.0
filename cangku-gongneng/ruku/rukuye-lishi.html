@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>入库历史 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .gradient-primary {
+            background: linear-gradient(135deg, #ff9f43 0%, #ff8c00 100%);
+        }
+        
+        .card {
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .hover-scale {
+            transition: all 0.2s ease;
+        }
+        .hover-scale:hover {
+            transform: scale(1.02);
+        }
+        .hover-scale:active {
+            transform: scale(0.98);
+        }
+        
+        /* 历史记录卡片样式 */
+        .history-card {
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .history-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .history-card.cancelled {
+            opacity: 0.6;
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+        }
+        
+        .history-card.cancelled::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 10px,
+                rgba(239, 68, 68, 0.1) 10px,
+                rgba(239, 68, 68, 0.1) 20px
+            );
+            pointer-events: none;
+        }
+        
+        /* 筛选按钮样式 */
+        .filter-btn {
+            transition: all 0.3s ease;
+            border: 2px solid #e5e7eb;
+        }
+        
+        .filter-btn.active {
+            background: linear-gradient(135deg, #ff9f43, #ff8c00);
+            color: white;
+            border-color: #ff9f43;
+        }
+        
+        .filter-btn:hover {
+            border-color: #ff9f43;
+            background-color: #fff7ed;
+        }
+        
+        .filter-btn.active:hover {
+            background: linear-gradient(135deg, #fb923c, #ea580c);
+        }
+        
+        /* 状态标签样式 */
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-success {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+        
+        .status-cancelled {
+            background-color: #fee2e2;
+            color: #dc2626;
+        }
+        
+        .status-pending {
+            background-color: #fef3c7;
+            color: #d97706;
+        }
+        
+        /* 滚动条美化 */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 4px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+        
+        /* 弹窗动画 */
+        @keyframes scaleIn {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        .animate-scale-in {
+            animation: scaleIn 0.3s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .animate-slide-up {
+            animation: slideUp 0.3s ease-out;
+        }
+        
+        /* 撤销按钮样式 */
+        .undo-btn {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+            animation: pulse-orange 2s infinite;
+        }
+        
+        .undo-btn:hover {
+            background: linear-gradient(135deg, #d97706, #b45309);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+        }
+        
+        .undo-btn:disabled {
+            background: #d1d5db;
+            color: #6b7280;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+            animation: none;
+        }
+        
+        /* 新的撤销按钮样式 */
+        .undo-btn-new {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 100px;
+        }
+        
+        .undo-btn-new:hover {
+            background: linear-gradient(135deg, #d97706, #b45309);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.35);
+        }
+        
+        .undo-btn-new:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+        }
+        
+        .undo-btn-new:disabled {
+            background: #d1d5db;
+            color: #6b7280;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        @keyframes pulse-orange {
+            0%, 100% { 
+                box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+            }
+            50% { 
+                box-shadow: 0 4px 16px rgba(245, 158, 11, 0.5);
+            }
+        }
+        
+        /* 统计卡片样式 */
+        .stats-card {
+            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .stats-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
+    <!-- 顶部状态栏 -->
+    <div class="gradient-primary px-4 py-5 shadow-xl">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <button onclick="window.location.href='rukuye-zhuye.html'" class="w-11 h-11 flex items-center justify-center rounded-full bg-white bg-opacity-20 hover:bg-opacity-30 transition-all duration-300 backdrop-blur-sm">
+                    <i class="fas fa-chevron-left text-white text-lg"></i>
+                </button>
+                <div>
+                    <div class="text-xl font-bold text-white tracking-wide">入库历史</div>
+                    <div class="text-sm text-white text-opacity-90 font-medium">查看和管理入库记录</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- 统计概览 -->
+    <div class="px-4 mt-5">
+        <div class="grid grid-cols-3 gap-3">
+            <div class="stats-card">
+                <div class="text-2xl font-bold text-orange-600" id="totalRecords">0</div>
+                <div class="text-sm text-gray-600 mt-1">总记录</div>
+            </div>
+            <div class="stats-card">
+                <div class="text-2xl font-bold text-green-600" id="successRecords">0</div>
+                <div class="text-sm text-gray-600 mt-1">成功</div>
+            </div>
+            <div class="stats-card">
+                <div class="text-2xl font-bold text-red-600" id="cancelledRecords">0</div>
+                <div class="text-sm text-gray-600 mt-1">已撤销</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 筛选器 -->
+    <div class="px-4 mt-5">
+        <div class="bg-white rounded-2xl shadow-sm">
+            <div class="p-4 cursor-pointer" onclick="toggleFilters()">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <i class="fas fa-filter text-orange-600"></i>
+                        <div class="text-lg font-semibold text-gray-800">筛选条件</div>
+                        <div class="text-sm text-gray-500" id="filterSummary">今天</div>
+                    </div>
+                    <i id="filterIcon" class="fas fa-chevron-down text-orange-600 transition-transform duration-300"></i>
+                </div>
+            </div>
+            <div id="filterContent" class="hidden px-4 pb-4">
+                <div class="flex items-center justify-end mb-4">
+                    <button onclick="clearFilters()" class="text-sm text-orange-600 hover:text-orange-800">
+                        <i class="fas fa-undo text-xs mr-1"></i>
+                        重置
+                    </button>
+                </div>
+            
+            <!-- 状态筛选 -->
+            <div class="mb-4">
+                <div class="text-sm font-medium text-gray-700 mb-2">状态</div>
+                <div class="flex space-x-2">
+                    <button class="filter-btn active px-3 py-2 rounded-lg text-sm font-medium" data-filter="all" onclick="filterByStatus('all')">
+                        全部
+                    </button>
+                    <button class="filter-btn px-3 py-2 rounded-lg text-sm font-medium" data-filter="success" onclick="filterByStatus('success')">
+                        成功
+                    </button>
+                    <button class="filter-btn px-3 py-2 rounded-lg text-sm font-medium" data-filter="cancelled" onclick="filterByStatus('cancelled')">
+                        已撤销
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 时间筛选 -->
+            <div class="mb-4">
+                <div class="text-sm font-medium text-gray-700 mb-2">时间范围</div>
+                <div class="flex flex-wrap gap-2 mb-3">
+                    <button class="filter-btn px-3 py-2 rounded-lg text-sm font-medium" data-time="all" onclick="filterByTime('all')">
+                        全部
+                    </button>
+                    <button class="filter-btn active px-3 py-2 rounded-lg text-sm font-medium" data-time="today" onclick="filterByTime('today')">
+                        今天
+                    </button>
+                    <button class="filter-btn px-3 py-2 rounded-lg text-sm font-medium" data-time="week" onclick="filterByTime('week')">
+                        本周
+                    </button>
+                    <button class="filter-btn px-3 py-2 rounded-lg text-sm font-medium" data-time="month" onclick="filterByTime('month')">
+                        本月
+                    </button>
+                    <button class="filter-btn px-3 py-2 rounded-lg text-sm font-medium" data-time="custom" onclick="showCustomDatePicker()">
+                        <i class="fas fa-calendar-alt text-xs mr-1"></i>
+                        自定义
+                    </button>
+                </div>
+                <!-- 自定义时间选择器 -->
+                <div id="customDatePicker" class="hidden bg-gray-50 p-3 rounded-lg border">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-xs text-gray-600 mb-1 block">开始日期</label>
+                            <input type="date" id="startDate" class="w-full p-2 border border-gray-300 rounded text-sm">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-600 mb-1 block">结束日期</label>
+                            <input type="date" id="endDate" class="w-full p-2 border border-gray-300 rounded text-sm">
+                        </div>
+                    </div>
+                    <div class="flex justify-end space-x-2 mt-3">
+                        <button onclick="cancelCustomDate()" class="px-3 py-1 text-sm text-gray-600 hover:text-gray-800">
+                            取消
+                        </button>
+                        <button onclick="applyCustomDate()" class="px-3 py-1 text-sm bg-orange-500 text-white rounded hover:bg-orange-600">
+                            应用
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 仓库筛选 -->
+            <div>
+                <div class="text-sm font-medium text-gray-700 mb-2">仓库</div>
+                <select class="w-full p-2 border border-gray-300 rounded-lg text-sm" id="warehouseFilter" onchange="filterByWarehouse()">
+                    <option value="all">全部仓库</option>
+                    <option value="warehouse1">主仓库 (A区)</option>
+                    <option value="warehouse2">二号仓库 (B区)</option>
+                    <option value="warehouse3">三号仓库 (C区)</option>
+                    <option value="warehouse4">四号仓库 (D区)</option>
+                    <option value="warehouse5">五号仓库 (E区)</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- 功能说明 -->
+    <div class="px-4 mt-5">
+        <div class="bg-orange-50 border border-orange-200 rounded-lg">
+            <div class="p-4 cursor-pointer" onclick="toggleUndoHelp()">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <i class="fas fa-info-circle text-orange-600"></i>
+                        <div class="text-sm font-medium text-orange-800">撤销功能说明</div>
+                    </div>
+                    <i id="undoHelpIcon" class="fas fa-chevron-down text-orange-600 transition-transform duration-300"></i>
+                </div>
+            </div>
+            <div id="undoHelpContent" class="hidden px-4 pb-4">
+                <ul class="list-disc list-inside space-y-1 text-xs text-orange-800 ml-6">
+                    <li>成功的入库记录在12小时内可以撤销</li>
+                    <li>点击记录右侧的"撤销"按钮进行撤销操作</li>
+                    <li>撤销后将从仓库中扣除相应数量的材料</li>
+                    <li>已撤销的记录无法再次撤销</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- 历史记录列表 -->
+    <div class="px-4 mt-5 pb-20">
+        <div class="space-y-4" id="historyList">
+            <!-- 历史记录将通过JS动态生成 -->
+        </div>
+    </div>
+
+
+
+    <!-- 加载中提示 -->
+    <div id="loadingIndicator" class="fixed inset-0 bg-white bg-opacity-80 flex items-center justify-center z-50 hidden">
+        <div class="text-center">
+            <div class="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p class="text-gray-600">加载中...</p>
+        </div>
+    </div>
+
+    <script>
+        // 加载历史记录数据
+        let historyRecords = loadHistoryRecords();
+        
+        // 从localStorage加载历史记录
+        function loadHistoryRecords() {
+            const savedRecords = JSON.parse(localStorage.getItem('inboundHistory') || '[]');
+            
+            // 如果没有保存的记录，使用模拟数据
+            if (savedRecords.length === 0) {
+                return [
+            {
+                id: 'IN' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + '999',
+                timestamp: new Date(Date.now() - 30 * 60 * 1000), // 30分钟前
+                warehouse: 'warehouse1',
+                warehouseName: '主仓库 (A区)',
+                operator: '当前用户',
+                status: 'success',
+                items: [
+                    { name: '高筋面粉', quantity: 5, unit: 'kg', image: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80' },
+                    { name: '黄油', quantity: 2, unit: 'kg', image: 'https://images.unsplash.com/photo-1589985270958-bf087be2a336?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80' }
+                ],
+                totalItems: 2,
+                canUndo: true,
+                undoDeadline: new Date(Date.now() + 11.5 * 60 * 60 * 1000) // 11.5小时后过期
+            },
+            {
+                id: 'IN20241201001',
+                timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2小时前
+                warehouse: 'warehouse1',
+                warehouseName: '主仓库 (A区)',
+                operator: '张三',
+                status: 'success',
+                items: [
+                    { name: '高筋面粉', quantity: 25, unit: 'kg', image: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80' },
+                    { name: '黄油', quantity: 10, unit: 'kg', image: 'https://images.unsplash.com/photo-1589985270958-bf087be2a336?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80' },
+                    { name: '白砂糖', quantity: 15, unit: 'kg', image: 'https://images.unsplash.com/photo-1516684669134-de6f7c473a2a?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80' }
+                ],
+                totalItems: 3,
+                canUndo: true,
+                undoDeadline: new Date(Date.now() + 10 * 60 * 60 * 1000) // 10小时后过期
+            },
+            {
+                id: 'IN20241201002',
+                timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000), // 1小时前
+                warehouse: 'warehouse2',
+                warehouseName: '二号仓库 (B区)',
+                operator: '李四',
+                status: 'success',
+                items: [
+                    { name: '低筋面粉', quantity: 20, unit: 'kg', image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80' },
+                    { name: '植物油', quantity: 8, unit: 'L', image: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80' }
+                ],
+                totalItems: 2,
+                canUndo: true,
+                undoDeadline: new Date(Date.now() + 11 * 60 * 60 * 1000) // 11小时后过期
+            },
+            {
+                id: 'IN20241130001',
+                timestamp: new Date('2024-11-30T16:45:00'),
+                warehouse: 'warehouse1',
+                warehouseName: '主仓库 (A区)',
+                operator: '王五',
+                status: 'cancelled',
+                items: [
+                    { name: '牛奶', quantity: 50, unit: 'L', image: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80' }
+                ],
+                totalItems: 1,
+                canUndo: false,
+                cancelledAt: new Date('2024-11-30T17:00:00'),
+                cancelReason: '数量输入错误'
+            },
+            {
+                id: 'IN20241130002',
+                timestamp: new Date('2024-11-30T09:20:00'),
+                warehouse: 'warehouse3',
+                warehouseName: '三号仓库 (C区)',
+                operator: '赵六',
+                status: 'success',
+                items: [
+                    { name: '鸡蛋', quantity: 100, unit: '个', image: 'https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80' },
+                    { name: '奶油', quantity: 5, unit: 'L', image: 'https://images.unsplash.com/photo-1628088062854-d1870b4553da?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80' },
+                    { name: '蜂蜜', quantity: 3, unit: 'kg', image: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80' }
+                ],
+                totalItems: 3,
+                canUndo: false,
+                undoDeadline: new Date('2024-11-30T21:20:00')
+            },
+            {
+                id: 'IN20241129001',
+                timestamp: new Date('2024-11-29T11:10:00'),
+                warehouse: 'warehouse5',
+                warehouseName: '五号仓库 (E区)',
+                operator: '孙七',
+                status: 'success',
+                items: [
+                    { name: '杏仁粉', quantity: 5, unit: 'kg', image: 'https://images.unsplash.com/photo-1599599810694-57a2ca8276a8?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80' },
+                    { name: '椰子油', quantity: 2, unit: 'kg', image: 'https://images.unsplash.com/photo-1605522324253-e8a0ffc4e78a?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80' }
+                ],
+                totalItems: 2,
+                canUndo: false,
+                undoDeadline: new Date('2024-11-29T23:10:00')
+            }
+        ];
+            }
+            
+            // 转换日期字符串为Date对象
+            return savedRecords.map(record => ({
+                ...record,
+                timestamp: new Date(record.timestamp),
+                undoDeadline: record.undoDeadline ? new Date(record.undoDeadline) : null,
+                cancelledAt: record.cancelledAt ? new Date(record.cancelledAt) : null
+            }));
+        }
+        
+        // 当前筛选条件
+        let currentFilters = {
+            status: 'all',
+            time: 'today',
+            warehouse: 'all'
+        };
+        
+        // 筛选器折叠状态
+        let isFilterExpanded = false;
+        
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function() {
+            showLoading();
+            
+            // 重新加载历史记录
+            historyRecords = loadHistoryRecords();
+            
+            // 调试信息：检查哪些记录可以撤销
+            console.log('历史记录:', historyRecords);
+            console.log('可撤销记录:', historyRecords.filter(r => r.canUndo && r.status === 'success'));
+            
+            updateUndoStatus();
+            updateFilterSummary();
+            renderStatistics();
+            renderHistoryList();
+            setTimeout(hideLoading, 500);
+        });
+        
+        // 更新撤销状态
+        function updateUndoStatus() {
+            const now = new Date();
+            historyRecords.forEach(record => {
+                if (record.status === 'success' && record.undoDeadline && now > record.undoDeadline) {
+                    record.canUndo = false;
+                }
+            });
+        }
+        
+        // 渲染统计数据
+        function renderStatistics() {
+            const total = historyRecords.length;
+            const success = historyRecords.filter(r => r.status === 'success').length;
+            const cancelled = historyRecords.filter(r => r.status === 'cancelled').length;
+            
+            document.getElementById('totalRecords').textContent = total;
+            document.getElementById('successRecords').textContent = success;
+            document.getElementById('cancelledRecords').textContent = cancelled;
+        }
+        
+        // 渲染历史记录列表
+        function renderHistoryList() {
+            const historyListContainer = document.getElementById('historyList');
+            historyListContainer.innerHTML = '';
+            
+            // 应用筛选
+            let filteredRecords = historyRecords;
+            
+            if (currentFilters.status !== 'all') {
+                filteredRecords = filteredRecords.filter(record => record.status === currentFilters.status);
+            }
+            
+            if (currentFilters.warehouse !== 'all') {
+                filteredRecords = filteredRecords.filter(record => record.warehouse === currentFilters.warehouse);
+            }
+            
+            if (currentFilters.time !== 'all') {
+                const now = new Date();
+                filteredRecords = filteredRecords.filter(record => {
+                    const recordDate = new Date(record.timestamp);
+                    
+                    switch (currentFilters.time) {
+                        case 'today':
+                            return recordDate.toDateString() === now.toDateString();
+                        case 'week':
+                            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                            return recordDate >= weekAgo;
+                        case 'month':
+                            const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                            return recordDate >= monthAgo;
+                        case 'custom':
+                            if (currentFilters.customStartDate && currentFilters.customEndDate) {
+                                return recordDate >= currentFilters.customStartDate && recordDate <= currentFilters.customEndDate;
+                            }
+                            return true;
+                        default:
+                            return true;
+                    }
+                });
+            }
+            
+            // 按时间倒序排列
+            filteredRecords.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            if (filteredRecords.length === 0) {
+                historyListContainer.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-12 text-center">
+                        <i class="fas fa-history text-gray-300 text-5xl mb-4"></i>
+                        <p class="text-gray-500 text-lg mb-2">暂无记录</p>
+                        <p class="text-gray-400 text-sm">没有符合条件的入库记录</p>
+                        <button onclick="clearFilters()" class="mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors">
+                            清除筛选
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            filteredRecords.forEach(record => {
+                const historyCard = document.createElement('div');
+                historyCard.className = `history-card bg-white rounded-xl p-4 shadow-sm border-0 ${record.status === 'cancelled' ? 'cancelled' : ''}`;
+                
+                const statusClass = record.status === 'success' ? 'status-success' : 
+                                  record.status === 'cancelled' ? 'status-cancelled' : 'status-pending';
+                
+                const statusText = record.status === 'success' ? '成功' : 
+                                 record.status === 'cancelled' ? '已撤销' : '处理中';
+                
+                // 计算撤销剩余时间
+                let undoTimeText = '';
+                if (record.canUndo && record.undoDeadline) {
+                    const now = new Date();
+                    const timeLeft = record.undoDeadline - now;
+                    if (timeLeft > 0) {
+                        const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60));
+                        const minutesLeft = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                        undoTimeText = `${hoursLeft}小时${minutesLeft}分钟后不可撤销`;
+                    }
+                }
+                
+                historyCard.innerHTML = `
+                    <div class="mb-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center space-x-3">
+                                <h3 class="text-lg font-bold text-gray-900">${record.id}</h3>
+                                <span class="status-badge ${statusClass}">${statusText}</span>
+                            </div>
+                            <button onclick="showRecordDetails('${record.id}')" class="text-orange-600 hover:text-orange-800 p-2 rounded-lg hover:bg-orange-50 transition-colors">
+                                <i class="fas fa-eye text-lg"></i>
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm text-gray-600">
+                            <div class="flex items-center space-x-2">
+                                <i class="fas fa-warehouse text-orange-600 w-4"></i>
+                                <span>${record.warehouseName}</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <i class="fas fa-user text-green-600 w-4"></i>
+                                <span>${record.operator}</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <i class="fas fa-clock text-orange-600 w-4"></i>
+                                <span>${formatDateTime(record.timestamp)}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    ${record.status === 'cancelled' ? `
+                        <div class="mb-3 p-2 bg-red-50 border border-red-200 rounded-lg">
+                            <div class="flex items-center space-x-2">
+                                <i class="fas fa-exclamation-triangle text-red-600"></i>
+                                <span class="text-sm text-red-800">
+                                    撤销时间: ${formatDateTime(record.cancelledAt)} | 
+                                    撤销原因: ${record.cancelReason}
+                                </span>
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="mb-4">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                            <i class="fas fa-box text-orange-600 mr-2"></i>
+                            入库材料
+                        </h4>
+                        <div class="space-y-3">
+                            ${record.items.slice(0, 3).map(item => `
+                                <div class="flex items-center space-x-3 p-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200 hover:shadow-sm transition-all">
+                                    <div class="relative">
+                                        <img src="${item.image}" alt="${item.name}" class="w-12 h-12 rounded-lg object-cover shadow-sm">
+                                        <div class="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-check text-white text-xs"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-sm font-semibold text-gray-800 truncate">${item.name}</div>
+                                        <div class="text-xs text-gray-600 mt-1">
+                                            <span class="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
+                                                <i class="fas fa-weight-hanging text-xs mr-1"></i>
+                                                ${item.quantity} ${item.unit}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                            ${record.items.length > 3 ? `
+                                <div class="text-center py-2">
+                                    <span class="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                                        还有 ${record.items.length - 3} 种材料...
+                                    </span>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center justify-between pt-4 border-t border-gray-200">
+                        <div class="flex items-center space-x-4">
+                            <div class="text-sm text-gray-600">
+                                <i class="fas fa-list-ul text-blue-600 mr-1"></i>
+                                共 ${record.totalItems} 种材料
+                            </div>
+                            ${undoTimeText ? `
+                                <div class="text-xs text-orange-600 flex items-center space-x-1 bg-orange-50 px-2 py-1 rounded-full">
+                                    <i class="fas fa-clock"></i>
+                                    <span>${undoTimeText}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                        ${record.canUndo && record.status === 'success' ? `
+                            <button class="undo-btn-new" onclick="showUndoConfirmation('${record.id}')">
+                                <i class="fas fa-undo mr-2"></i>
+                                撤销入库
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+                
+                historyListContainer.appendChild(historyCard);
+            });
+        }
+        
+        // 状态筛选
+        function filterByStatus(status) {
+            currentFilters.status = status;
+            
+            // 更新按钮状态
+            document.querySelectorAll('[data-filter]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-filter="${status}"]`).classList.add('active');
+            
+            updateFilterSummary();
+            renderHistoryList();
+        }
+        
+        // 时间筛选
+        function filterByTime(time) {
+            currentFilters.time = time;
+            
+            // 更新按钮状态
+            document.querySelectorAll('[data-time]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-time="${time}"]`).classList.add('active');
+            
+            updateFilterSummary();
+            renderHistoryList();
+        }
+        
+        // 仓库筛选
+        function filterByWarehouse() {
+            const warehouseFilter = document.getElementById('warehouseFilter');
+            currentFilters.warehouse = warehouseFilter.value;
+            updateFilterSummary();
+            renderHistoryList();
+        }
+        
+        // 清除筛选
+        function clearFilters() {
+            currentFilters = {
+                status: 'all',
+                time: 'today',
+                warehouse: 'all'
+            };
+            
+            // 重置按钮状态
+            document.querySelectorAll('[data-filter]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('[data-filter="all"]').classList.add('active');
+            
+            document.querySelectorAll('[data-time]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('[data-time="today"]').classList.add('active');
+            
+            document.getElementById('warehouseFilter').value = 'all';
+            
+            // 隐藏自定义时间选择器
+            const customDatePicker = document.getElementById('customDatePicker');
+            if (customDatePicker) {
+                customDatePicker.classList.add('hidden');
+            }
+            
+            updateFilterSummary();
+            renderHistoryList();
+        }
+        
+        // 显示撤销确认对话框
+        function showUndoConfirmation(recordId) {
+            const record = historyRecords.find(r => r.id === recordId);
+            if (!record || !record.canUndo) {
+                showToast('该记录不可撤销', 'error');
+                return;
+            }
+            
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+            modal.innerHTML = `
+                <div class="bg-white rounded-2xl p-6 w-full max-w-md animate-scale-in">
+                    <div class="text-center mb-6">
+                        <div class="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-orange-500 to-red-600 rounded-full flex items-center justify-center">
+                            <i class="fas fa-exclamation-triangle text-white text-2xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">确认撤销入库</h3>
+                        <p class="text-sm text-gray-600">您确定要撤销入库记录 ${recordId} 吗？</p>
+                    </div>
+                    
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                        <div class="flex items-start space-x-3">
+                            <i class="fas fa-info-circle text-yellow-600 mt-0.5"></i>
+                            <div class="text-sm text-yellow-800">
+                                <div class="font-medium mb-1">撤销后将会：</div>
+                                <ul class="list-disc list-inside space-y-1 text-xs">
+                                    <li>从仓库中扣除相应数量的材料</li>
+                                    <li>记录撤销操作和原因</li>
+                                    <li>无法再次撤销此操作</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">撤销原因</label>
+                        <select id="undoReason" class="w-full p-3 border border-gray-300 rounded-lg">
+                            <option value="">请选择撤销原因</option>
+                            <option value="数量输入错误">数量输入错误</option>
+                            <option value="材料选择错误">材料选择错误</option>
+                            <option value="仓库选择错误">仓库选择错误</option>
+                            <option value="重复入库">重复入库</option>
+                            <option value="其他原因">其他原因</option>
+                        </select>
+                    </div>
+                    
+                    <div class="flex space-x-3">
+                        <button onclick="confirmUndo('${recordId}')" class="flex-1 py-3 px-4 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 transition-colors">
+                            确认撤销
+                        </button>
+                        <button onclick="closeUndoModal()" class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-300 transition-colors">
+                            取消
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // 点击背景关闭
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeUndoModal();
+                }
+            });
+        }
+        
+        // 关闭撤销模态框
+        function closeUndoModal() {
+            const modal = document.querySelector('.fixed.inset-0.bg-black.bg-opacity-50');
+            if (modal) {
+                modal.remove();
+            }
+        }
+        
+        // 确认撤销
+        function confirmUndo(recordId) {
+            const reasonSelect = document.getElementById('undoReason');
+            const reason = reasonSelect.value;
+            
+            if (!reason) {
+                showToast('请选择撤销原因', 'warning');
+                return;
+            }
+            
+            showToast('正在处理撤销操作...', 'info');
+            
+            // 模拟撤销处理
+            setTimeout(() => {
+                const record = historyRecords.find(r => r.id === recordId);
+                if (record) {
+                    // 更新记录状态
+                    record.status = 'cancelled';
+                    record.canUndo = false;
+                    record.cancelledAt = new Date();
+                    record.cancelReason = reason;
+                    
+                    // 保存更新后的记录到localStorage
+                    saveHistoryRecords();
+                    
+                    // 通知入库页面更新库存（如果需要的话）
+                    // 这里可以添加实际的库存扣减逻辑
+                    
+                    closeUndoModal();
+                    renderStatistics();
+                    renderHistoryList();
+                    
+                    showToast('撤销操作完成', 'success');
+                } else {
+                    showToast('记录不存在', 'error');
+                }
+            }, 2000);
+        }
+        
+        // 保存历史记录到localStorage
+        function saveHistoryRecords() {
+            const recordsToSave = historyRecords.map(record => ({
+                ...record,
+                timestamp: record.timestamp.toISOString(),
+                undoDeadline: record.undoDeadline ? record.undoDeadline.toISOString() : null,
+                cancelledAt: record.cancelledAt ? record.cancelledAt.toISOString() : null
+            }));
+            
+            localStorage.setItem('inboundHistory', JSON.stringify(recordsToSave));
+        }
+        
+        // 显示记录详情
+        function showRecordDetails(recordId) {
+            const record = historyRecords.find(r => r.id === recordId);
+            if (!record) return;
+            
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-end justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white rounded-t-3xl w-full h-[85vh] max-h-[85vh] p-6 animate-slide-up flex flex-col">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-800">入库详情</h3>
+                        <button onclick="closeDetailsModal()" class="text-gray-500">
+                            <i class="fas fa-times text-lg"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="space-y-4 flex-1 overflow-y-auto">
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <span class="text-gray-600">入库单号:</span>
+                                    <span class="font-medium text-gray-800 ml-2">${record.id}</span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-600">操作员:</span>
+                                    <span class="font-medium text-gray-800 ml-2">${record.operator}</span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-600">入库时间:</span>
+                                    <span class="font-medium text-gray-800 ml-2">${formatDateTime(record.timestamp)}</span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-600">仓库:</span>
+                                    <span class="font-medium text-gray-800 ml-2">${record.warehouseName}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h4 class="font-semibold text-gray-800 mb-4 flex items-center">
+                                <i class="fas fa-box text-orange-600 mr-2"></i>
+                                入库材料 (${record.items.length})
+                            </h4>
+                            <div class="space-y-3">
+                                ${record.items.map(item => `
+                                    <div class="flex items-center space-x-4 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200 hover:shadow-md transition-all">
+                                        <div class="relative">
+                                            <img src="${item.image}" alt="${item.name}" class="w-16 h-16 rounded-xl object-cover shadow-md">
+                                            <div class="absolute -top-2 -right-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                                                <i class="fas fa-check text-white text-xs"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-1">
+                                            <div class="font-semibold text-gray-800 text-base mb-2">${item.name}</div>
+                                            <div class="flex items-center space-x-2">
+                                                <span class="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                                                    <i class="fas fa-weight-hanging text-xs mr-1"></i>
+                                                    ${item.quantity} ${item.unit}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        
+                        ${record.status === 'cancelled' ? `
+                            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                                <div class="flex items-center space-x-2 mb-2">
+                                    <i class="fas fa-exclamation-triangle text-red-600"></i>
+                                    <span class="font-medium text-red-800">撤销信息</span>
+                                </div>
+                                <div class="text-sm text-red-700 space-y-1">
+                                    <div>撤销时间: ${formatDateTime(record.cancelledAt)}</div>
+                                    <div>撤销原因: ${record.cancelReason}</div>
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                    
+                    <div class="mt-6 flex space-x-3">
+                        ${record.canUndo ? `
+                            <button onclick="showUndoConfirmation('${record.id}'); closeDetailsModal();" class="flex-1 py-3 px-4 bg-orange-500 text-white rounded-xl font-medium hover:bg-orange-600 transition-colors">
+                                撤销入库
+                            </button>
+                        ` : ''}
+                        <button onclick="closeDetailsModal()" class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-300 transition-colors">
+                            关闭
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+        
+        // 关闭详情模态框
+        function closeDetailsModal() {
+            const modal = document.querySelector('.fixed.inset-0.bg-black.bg-opacity-50');
+            if (modal) {
+                modal.remove();
+            }
+        }
+        
+        // 导出历史记录
+        function exportHistory() {
+            showToast('正在导出历史记录...', 'info');
+            
+            // 模拟导出处理
+            setTimeout(() => {
+                showToast('历史记录已导出到下载文件夹', 'success');
+            }, 2000);
+        }
+        
+        // 格式化日期时间
+        function formatDateTime(date) {
+            const d = new Date(date);
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const hours = String(d.getHours()).padStart(2, '0');
+            const minutes = String(d.getMinutes()).padStart(2, '0');
+            
+            return `${year}-${month}-${day} ${hours}:${minutes}`;
+        }
+        
+        // 显示加载指示器
+        function showLoading() {
+            document.getElementById('loadingIndicator').classList.remove('hidden');
+        }
+        
+        // 隐藏加载指示器
+        function hideLoading() {
+            document.getElementById('loadingIndicator').classList.add('hidden');
+        }
+        
+        // 切换撤销功能说明的显示/隐藏
+        function toggleUndoHelp() {
+            const content = document.getElementById('undoHelpContent');
+            const icon = document.getElementById('undoHelpIcon');
+            
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+            } else {
+                content.classList.add('hidden');
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+            }
+        }
+        
+        // 切换筛选器显示/隐藏
+        function toggleFilters() {
+            const content = document.getElementById('filterContent');
+            const icon = document.getElementById('filterIcon');
+            
+            isFilterExpanded = !isFilterExpanded;
+            
+            if (isFilterExpanded) {
+                content.classList.remove('hidden');
+                icon.classList.add('rotate-180');
+            } else {
+                content.classList.add('hidden');
+                icon.classList.remove('rotate-180');
+            }
+        }
+        
+        // 更新筛选器摘要显示
+        function updateFilterSummary() {
+            const summary = document.getElementById('filterSummary');
+            let summaryText = [];
+            
+            // 时间筛选摘要
+            if (currentFilters.time === 'today') {
+                summaryText.push('今天');
+            } else if (currentFilters.time === 'week') {
+                summaryText.push('本周');
+            } else if (currentFilters.time === 'month') {
+                summaryText.push('本月');
+            } else if (currentFilters.time === 'custom') {
+                summaryText.push('自定义时间');
+            }
+            
+            // 状态筛选摘要
+            if (currentFilters.status === 'success') {
+                summaryText.push('成功');
+            } else if (currentFilters.status === 'cancelled') {
+                summaryText.push('已撤销');
+            }
+            
+            // 仓库筛选摘要
+            if (currentFilters.warehouse !== 'all') {
+                const warehouseSelect = document.getElementById('warehouseFilter');
+                const selectedOption = warehouseSelect.options[warehouseSelect.selectedIndex];
+                summaryText.push(selectedOption.text);
+            }
+            
+            summary.textContent = summaryText.length > 0 ? summaryText.join(' · ') : '全部';
+        }
+        
+        // 显示自定义时间选择器
+        function showCustomDatePicker() {
+            const picker = document.getElementById('customDatePicker');
+            const customBtn = document.querySelector('[data-time="custom"]');
+            
+            // 更新按钮状态
+            document.querySelectorAll('[data-time]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            customBtn.classList.add('active');
+            
+            // 显示选择器
+            picker.classList.remove('hidden');
+            
+            // 设置默认日期（今天和一周前）
+            const today = new Date();
+            const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+            
+            document.getElementById('endDate').value = today.toISOString().split('T')[0];
+            document.getElementById('startDate').value = weekAgo.toISOString().split('T')[0];
+        }
+        
+        // 取消自定义时间选择
+        function cancelCustomDate() {
+            const picker = document.getElementById('customDatePicker');
+            picker.classList.add('hidden');
+            
+            // 恢复到"全部"状态
+            document.querySelectorAll('[data-time]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('[data-time="all"]').classList.add('active');
+            
+            currentFilters.time = 'all';
+            renderHistoryList();
+        }
+        
+        // 应用自定义时间范围
+        function applyCustomDate() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            
+            if (!startDate || !endDate) {
+                showToast('请选择开始和结束日期', 'warning');
+                return;
+            }
+            
+            if (new Date(startDate) > new Date(endDate)) {
+                showToast('开始日期不能晚于结束日期', 'warning');
+                return;
+            }
+            
+            // 隐藏选择器
+            document.getElementById('customDatePicker').classList.add('hidden');
+            
+            // 设置自定义筛选条件
+            currentFilters.time = 'custom';
+            currentFilters.customStartDate = new Date(startDate);
+            currentFilters.customEndDate = new Date(endDate + 'T23:59:59'); // 包含结束日期的整天
+            
+            renderHistoryList();
+            showToast(`已应用时间范围: ${startDate} 至 ${endDate}`, 'success');
+        }
+        
+        // Toast提示功能
+        function showToast(message, type = 'info', duration = 3000) {
+            const existingToast = document.querySelector('.toast');
+            if (existingToast) {
+                existingToast.remove();
+            }
+            
+            const toast = document.createElement('div');
+            toast.className = `toast fixed top-20 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg z-50 flex items-center space-x-2`;
+            
+            let bgColor, textColor, icon;
+            switch(type) {
+                case 'success':
+                    bgColor = 'bg-green-500';
+                    textColor = 'text-white';
+                    icon = 'fas fa-check-circle';
+                    break;
+                case 'error':
+                    bgColor = 'bg-red-500';
+                    textColor = 'text-white';
+                    icon = 'fas fa-exclamation-circle';
+                    break;
+                case 'warning':
+                    bgColor = 'bg-yellow-500';
+                    textColor = 'text-white';
+                    icon = 'fas fa-exclamation-triangle';
+                    break;
+                default:
+                    bgColor = 'bg-blue-500';
+                    textColor = 'text-white';
+                    icon = 'fas fa-info-circle';
+            }
+            
+            toast.classList.add(bgColor, textColor);
+            toast.innerHTML = `
+                <i class="${icon}"></i>
+                <span>${message}</span>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.remove();
+                }
+            }, duration);
+        }
+    </script>
+</body>
+</html>

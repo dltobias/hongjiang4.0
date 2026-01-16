@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多层级入库 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .gradient-primary { background: linear-gradient(135deg, #ff9f43 0%, #ff8c00 100%); }
+        .gradient-inventory { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .gradient-success { background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%); }
+        .gradient-warning { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); }
+        
+        .card { transition: all 0.3s ease; }
+        .card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); }
+        
+        .unit-conversion-display {
+            background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+            border: 1px solid #ff9f43;
+            border-radius: 12px;
+            padding: 12px;
+            margin: 8px 0;
+        }
+        
+        .mixed-unit-input {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 8px;
+            margin: 4px 0;
+        }
+        
+        .unit-selector {
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+        
+        .price-calculator {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: 1px solid #f59e0b;
+            border-radius: 12px;
+            padding: 12px;
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- 顶部导航 -->
+    <div class="bg-white shadow-sm border-b border-gray-200">
+        <div class="flex items-center justify-between p-4">
+            <div class="flex items-center space-x-3">
+                <button onclick="history.back()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
+                    <i class="fas fa-arrow-left text-gray-600"></i>
+                </button>
+                <div>
+                    <h1 class="text-lg font-semibold text-gray-800">多层级入库</h1>
+                    <p class="text-xs text-gray-500">支持复杂规格入库</p>
+                </div>
+            </div>
+            <button onclick="showHelp()" class="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center hover:bg-orange-200 transition-colors">
+                <i class="fas fa-question text-sm"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 主要内容 -->
+    <div class="p-4 space-y-4">
+        <!-- 材料选择 -->
+        <div class="card bg-white rounded-xl shadow-sm p-4">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-sm font-semibold text-gray-800">选择材料</h2>
+                <button onclick="scanBarcode()" class="text-xs text-orange-600 hover:text-orange-800">
+                    <i class="fas fa-qrcode mr-1"></i>扫码
+                </button>
+            </div>
+            <div class="relative">
+                <input type="text" id="materialSearch" placeholder="搜索材料名称..." 
+                       class="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                       oninput="searchMaterials(this.value)">
+                <div id="materialSearchResults" class="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg mt-1 max-h-48 overflow-y-auto hidden z-10">
+                    <!-- 搜索结果将在这里显示 -->
+                </div>
+            </div>
+            
+            <!-- 选中的材料信息 -->
+            <div id="selectedMaterialInfo" class="hidden mt-3 p-3 bg-orange-50 rounded-lg border border-orange-200">
+                <div class="flex items-center space-x-3">
+                    <div class="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-box text-gray-500"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h3 id="selectedMaterialName" class="font-medium text-gray-800"></h3>
+                        <p id="selectedMaterialSpec" class="text-xs text-gray-500"></p>
+                    </div>
+                </div>
+                
+                <!-- 多层级单位信息 -->
+                <div id="unitHierarchy" class="mt-3 p-2 bg-white rounded-lg border border-orange-200">
+                    <div class="text-xs text-gray-600 mb-2">单位层级关系</div>
+                    <div id="unitHierarchyDisplay" class="space-y-1">
+                        <!-- 单位层级将在这里显示 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 入库数量设置 -->
+        <div id="quantitySection" class="card bg-white rounded-xl shadow-sm p-4 hidden">
+            <h2 class="text-sm font-semibold text-gray-800 mb-3">入库数量</h2>
+            
+            <!-- 默认单位选择 -->
+            <div class="mb-4">
+                <label class="block text-xs text-gray-600 mb-2">默认单位（推荐采购单位）</label>
+                <select id="defaultUnit" class="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" onchange="updateDefaultUnit()">
+                    <!-- 单位选项将动态加载 -->
+                </select>
+            </div>
+
+            <!-- 快速输入 -->
+            <div class="mb-4">
+                <label class="block text-xs text-gray-600 mb-2">快速输入</label>
+                <div class="flex items-center space-x-2">
+                    <input type="number" id="quickQuantity" placeholder="数量" 
+                           class="flex-1 p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                           oninput="updateQuickQuantity()">
+                    <span id="quickUnitDisplay" class="text-sm text-gray-600 min-w-0">单位</span>
+                </div>
+                <div id="quickConversionDisplay" class="unit-conversion-display mt-2 hidden">
+                    <div class="text-xs text-orange-700">
+                        <i class="fas fa-calculator mr-1"></i>
+                        <span id="quickConversionText">换算结果</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 混合单位输入 -->
+            <div class="mb-4">
+                <div class="flex items-center justify-between mb-2">
+                    <label class="block text-xs text-gray-600">混合单位输入</label>
+                    <button onclick="toggleMixedInput()" class="text-xs text-orange-600 hover:text-orange-800">
+                        <i class="fas fa-plus mr-1"></i>添加单位
+                    </button>
+                </div>
+                <div id="mixedUnitInputs" class="space-y-2">
+                    <!-- 混合单位输入框将在这里显示 -->
+                </div>
+                <div id="mixedUnitTotal" class="unit-conversion-display hidden">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-orange-700">总计</span>
+                        <span id="mixedUnitTotalText" class="font-medium text-orange-800"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 单位换算表 -->
+            <div class="mb-4">
+                <button onclick="toggleConversionTable()" class="w-full text-left text-xs text-gray-600 hover:text-gray-800 flex items-center justify-between">
+                    <span>查看单位换算表</span>
+                    <i id="conversionTableIcon" class="fas fa-chevron-down"></i>
+                </button>
+                <div id="conversionTable" class="hidden mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div id="conversionTableContent">
+                        <!-- 换算表内容将在这里显示 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 价格设置 -->
+        <div id="priceSection" class="card bg-white rounded-xl shadow-sm p-4 hidden">
+            <h2 class="text-sm font-semibold text-gray-800 mb-3">采购价格</h2>
+            
+            <!-- 价格单位选择 -->
+            <div class="mb-4">
+                <label class="block text-xs text-gray-600 mb-2">价格单位</label>
+                <select id="priceUnit" class="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" onchange="updatePriceUnit()">
+                    <!-- 价格单位选项将动态加载 -->
+                </select>
+            </div>
+
+            <!-- 价格输入 -->
+            <div class="mb-4">
+                <label class="block text-xs text-gray-600 mb-2">单价</label>
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm text-gray-600">¥</span>
+                    <input type="number" id="unitPrice" placeholder="0.00" step="0.01"
+                           class="flex-1 p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                           oninput="updatePriceCalculation()">
+                    <span class="text-sm text-gray-600">/ <span id="priceUnitDisplay">单位</span></span>
+                </div>
+            </div>
+
+            <!-- 价格换算显示 -->
+            <div id="priceCalculation" class="price-calculator hidden">
+                <div class="text-xs text-amber-700 mb-2">
+                    <i class="fas fa-calculator mr-1"></i>价格换算
+                </div>
+                <div id="priceCalculationContent" class="space-y-1">
+                    <!-- 价格换算结果将在这里显示 -->
+                </div>
+            </div>
+
+            <!-- 历史价格参考 -->
+            <div id="priceHistory" class="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div class="text-xs text-gray-600 mb-2">历史价格参考</div>
+                <div id="priceHistoryContent" class="space-y-1">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-gray-500">上次入库</span>
+                        <span class="text-gray-700">¥120.00/箱</span>
+                    </div>
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-gray-500">平均价格</span>
+                        <span class="text-gray-700">¥118.50/箱</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 其他信息 -->
+        <div id="otherInfoSection" class="card bg-white rounded-xl shadow-sm p-4 hidden">
+            <h2 class="text-sm font-semibold text-gray-800 mb-3">其他信息</h2>
+            
+            <!-- 仓库选择 -->
+            <div class="mb-4">
+                <label class="block text-xs text-gray-600 mb-2">入库仓库</label>
+                <select id="warehouse" class="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                    <option value="main">主原料仓</option>
+                    <option value="finished">成品仓库</option>
+                    <option value="frozen">冷冻储存区</option>
+                    <option value="temp">临时仓库</option>
+                </select>
+            </div>
+
+            <!-- 入库时间 -->
+            <div class="mb-4">
+                <label class="block text-xs text-gray-600 mb-2">入库时间</label>
+                <input type="datetime-local" id="inboundTime" 
+                       class="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+            </div>
+
+            <!-- 供应商 -->
+            <div class="mb-4">
+                <label class="block text-xs text-gray-600 mb-2">供应商（可选）</label>
+                <input type="text" id="supplier" placeholder="供应商名称" 
+                       class="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+            </div>
+
+            <!-- 备注 -->
+            <div class="mb-4">
+                <label class="block text-xs text-gray-600 mb-2">备注（可选）</label>
+                <textarea id="remarks" placeholder="入库备注信息..." rows="2"
+                          class="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"></textarea>
+            </div>
+        </div>
+
+        <!-- 入库汇总 -->
+        <div id="summarySection" class="card bg-white rounded-xl shadow-sm p-4 hidden">
+            <h2 class="text-sm font-semibold text-gray-800 mb-3">入库汇总</h2>
+            
+            <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600">入库数量</span>
+                    <span id="summaryQuantity" class="font-medium text-gray-800">-</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600">单价</span>
+                    <span id="summaryUnitPrice" class="font-medium text-gray-800">-</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600">总价</span>
+                    <span id="summaryTotalPrice" class="font-medium text-orange-600">-</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600">基础单位成本</span>
+                    <span id="summaryBaseCost" class="font-medium text-green-600">-</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部操作按钮 -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
+        <div class="flex space-x-3">
+            <button onclick="saveAsDraft()" class="flex-1 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
+                <i class="fas fa-save mr-2"></i>保存草稿
+            </button>
+            <button onclick="confirmInbound()" class="flex-1 py-3 gradient-primary text-white rounded-lg font-medium hover:opacity-90 transition-opacity">
+                <i class="fas fa-check mr-2"></i>确认入库
+            </button>
+        </div>
+    </div>
+
+    <!-- 帮助弹窗 -->
+    <div id="helpModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-xl max-w-md w-full max-h-96 overflow-y-auto">
+            <div class="p-4 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-800">多层级入库帮助</h3>
+                    <button onclick="hideHelp()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
+                        <i class="fas fa-times text-gray-600"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-4 space-y-4">
+                <div>
+                    <h4 class="font-medium text-gray-800 mb-2">1. 默认单位选择</h4>
+                    <p class="text-sm text-gray-600">系统会优先选择采购单位（如"箱"），您可以切换到其他单位（如"罐"或"g"）。</p>
+                </div>
+                <div>
+                    <h4 class="font-medium text-gray-800 mb-2">2. 混合单位输入</h4>
+                    <p class="text-sm text-gray-600">支持"一箱零2罐"这样的复杂入库，系统会自动计算总数量。</p>
+                </div>
+                <div>
+                    <h4 class="font-medium text-gray-800 mb-2">3. 价格单位修改</h4>
+                    <p class="text-sm text-gray-600">可以设置不同单位的价格（如¥/箱、¥/罐），系统会自动换算到基础单位。</p>
+                </div>
+                <div>
+                    <h4 class="font-medium text-gray-800 mb-2">4. 实时换算</h4>
+                    <p class="text-sm text-gray-600">所有输入都会实时显示换算结果，帮助您确认入库信息。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟材料数据（包含多层级单位信息）
+        const materialsData = [
+            {
+                id: 1,
+                name: "淡奶油",
+                category: "乳制品",
+                units: [
+                    { name: "ml", level: 1, ratio: 1, isBase: true },
+                    { name: "罐", level: 2, ratio: 1000, purchaseUnit: false },
+                    { name: "箱", level: 3, ratio: 12000, purchaseUnit: true }
+                ],
+                defaultUnit: "箱",
+                priceHistory: [
+                    { date: "2024-01-10", price: 120.00, unit: "箱" },
+                    { date: "2024-01-05", price: 118.50, unit: "箱" }
+                ]
+            },
+            {
+                id: 2,
+                name: "高筋面粉",
+                category: "粉类",
+                units: [
+                    { name: "g", level: 1, ratio: 1, isBase: true },
+                    { name: "袋", level: 2, ratio: 500, purchaseUnit: false },
+                    { name: "箱", level: 3, ratio: 10000, purchaseUnit: true }
+                ],
+                defaultUnit: "箱",
+                priceHistory: [
+                    { date: "2024-01-08", price: 85.00, unit: "箱" },
+                    { date: "2024-01-03", price: 82.50, unit: "箱" }
+                ]
+            }
+        ];
+
+        let selectedMaterial = null;
+        let currentQuantityData = {};
+        let currentPriceData = {};
+
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function() {
+            // 设置默认入库时间
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('inboundTime').value = now.toISOString().slice(0, 16);
+        });
+
+        // 搜索材料
+        function searchMaterials(query) {
+            const resultsContainer = document.getElementById('materialSearchResults');
+            
+            if (!query.trim()) {
+                resultsContainer.classList.add('hidden');
+                return;
+            }
+
+            const filteredMaterials = materialsData.filter(material => 
+                material.name.toLowerCase().includes(query.toLowerCase()) ||
+                material.category.toLowerCase().includes(query.toLowerCase())
+            );
+
+            if (filteredMaterials.length === 0) {
+                resultsContainer.innerHTML = '<div class="p-3 text-center text-gray-500 text-sm">未找到相关材料</div>';
+                resultsContainer.classList.remove('hidden');
+                return;
+            }
+
+            resultsContainer.innerHTML = filteredMaterials.map(material => `
+                <div class="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0" 
+                     onclick="selectMaterial(${material.id})">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-box text-gray-500"></i>
+                        </div>
+                        <div>
+                            <div class="font-medium text-gray-800">${material.name}</div>
+                            <div class="text-xs text-gray-500">${material.category}</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            resultsContainer.classList.remove('hidden');
+        }
+
+        // 选择材料
+        function selectMaterial(materialId) {
+            selectedMaterial = materialsData.find(m => m.id === materialId);
+            
+            if (!selectedMaterial) return;
+
+            // 隐藏搜索结果
+            document.getElementById('materialSearchResults').classList.add('hidden');
+            
+            // 更新选中材料信息
+            document.getElementById('selectedMaterialName').textContent = selectedMaterial.name;
+            document.getElementById('selectedMaterialSpec').textContent = selectedMaterial.category;
+            
+            // 显示单位层级
+            displayUnitHierarchy();
+            
+            // 显示相关section
+            document.getElementById('selectedMaterialInfo').classList.remove('hidden');
+            document.getElementById('quantitySection').classList.remove('hidden');
+            document.getElementById('priceSection').classList.remove('hidden');
+            document.getElementById('otherInfoSection').classList.remove('hidden');
+            document.getElementById('summarySection').classList.remove('hidden');
+            
+            // 初始化单位选择器
+            initializeUnitSelectors();
+            
+            // 初始化价格历史
+            updatePriceHistory();
+        }
+
+        // 显示单位层级
+        function displayUnitHierarchy() {
+            if (!selectedMaterial) return;
+            
+            const container = document.getElementById('unitHierarchyDisplay');
+            const units = selectedMaterial.units.sort((a, b) => b.level - a.level);
+            
+            container.innerHTML = units.map((unit, index) => {
+                const nextUnit = units[index + 1];
+                let conversionText = '';
+                
+                if (nextUnit) {
+                    const ratio = unit.ratio / nextUnit.ratio;
+                    conversionText = `1${unit.name} = ${ratio}${nextUnit.name}`;
+                } else {
+                    conversionText = `基础单位：${unit.name}`;
+                }
+                
+                return `
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-gray-600">${unit.name}${unit.purchaseUnit ? ' (采购单位)' : ''}</span>
+                        <span class="text-orange-600">${conversionText}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 初始化单位选择器
+        function initializeUnitSelectors() {
+            if (!selectedMaterial) return;
+            
+            const defaultUnitSelect = document.getElementById('defaultUnit');
+            const priceUnitSelect = document.getElementById('priceUnit');
+            
+            // 清空选择器
+            defaultUnitSelect.innerHTML = '';
+            priceUnitSelect.innerHTML = '';
+            
+            // 按层级排序（从大到小）
+            const units = selectedMaterial.units.sort((a, b) => b.level - a.level);
+            
+            units.forEach(unit => {
+                const option1 = document.createElement('option');
+                option1.value = unit.name;
+                option1.textContent = `${unit.name}${unit.purchaseUnit ? ' (推荐)' : ''}`;
+                defaultUnitSelect.appendChild(option1);
+                
+                const option2 = document.createElement('option');
+                option2.value = unit.name;
+                option2.textContent = `¥/${unit.name}`;
+                priceUnitSelect.appendChild(option2);
+            });
+            
+            // 设置默认选择
+            const purchaseUnit = units.find(u => u.purchaseUnit);
+            if (purchaseUnit) {
+                defaultUnitSelect.value = purchaseUnit.name;
+                priceUnitSelect.value = purchaseUnit.name;
+            }
+            
+            // 更新显示
+            updateDefaultUnit();
+            updatePriceUnit();
+        }
+
+        // 更新默认单位
+        function updateDefaultUnit() {
+            const selectedUnit = document.getElementById('defaultUnit').value;
+            document.getElementById('quickUnitDisplay').textContent = selectedUnit;
+            updateQuickQuantity();
+        }
+
+        // 更新快速输入换算
+        function updateQuickQuantity() {
+            const quantity = parseFloat(document.getElementById('quickQuantity').value) || 0;
+            const unit = document.getElementById('defaultUnit').value;
+            
+            if (quantity > 0 && selectedMaterial) {
+                const conversionText = calculateConversion(quantity, unit);
+                document.getElementById('quickConversionText').textContent = conversionText;
+                document.getElementById('quickConversionDisplay').classList.remove('hidden');
+            } else {
+                document.getElementById('quickConversionDisplay').classList.add('hidden');
+            }
+            
+            updateSummary();
+        }
+
+        // 计算换算
+        function calculateConversion(quantity, fromUnit) {
+            if (!selectedMaterial) return '';
+            
+            const fromUnitData = selectedMaterial.units.find(u => u.name === fromUnit);
+            if (!fromUnitData) return '';
+            
+            const baseQuantity = quantity * fromUnitData.ratio;
+            const baseUnit = selectedMaterial.units.find(u => u.isBase);
+            
+            let conversionParts = [`${baseQuantity}${baseUnit.name}`];
+            
+            // 添加其他单位的换算
+            selectedMaterial.units.forEach(unit => {
+                if (unit.name !== fromUnit && !unit.isBase) {
+                    const convertedQuantity = baseQuantity / unit.ratio;
+                    if (convertedQuantity > 0 && convertedQuantity !== quantity) {
+                        conversionParts.push(`${convertedQuantity.toFixed(2)}${unit.name}`);
+                    }
+                }
+            });
+            
+            return conversionParts.join(' = ');
+        }
+
+        // 切换混合单位输入
+        function toggleMixedInput() {
+            const container = document.getElementById('mixedUnitInputs');
+            const units = selectedMaterial.units.sort((a, b) => b.level - a.level);
+            
+            if (container.children.length === 0) {
+                // 添加混合单位输入框
+                units.forEach(unit => {
+                    const inputDiv = document.createElement('div');
+                    inputDiv.className = 'mixed-unit-input';
+                    inputDiv.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <input type="number" placeholder="0" min="0" step="0.01"
+                                   class="flex-1 p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   onchange="updateMixedTotal()">
+                            <span class="unit-selector">${unit.name}</span>
+                            <button onclick="clearMixedInput(this)" class="w-6 h-6 rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition-colors">
+                                <i class="fas fa-times text-xs"></i>
+                            </button>
+                        </div>
+                    `;
+                    container.appendChild(inputDiv);
+                });
+            }
+            
+            updateMixedTotal();
+        }
+
+        // 更新混合单位总计
+        function updateMixedTotal() {
+            const inputs = document.querySelectorAll('#mixedUnitInputs input[type="number"]');
+            let totalBase = 0;
+            let hasValue = false;
+            
+            inputs.forEach((input, index) => {
+                const value = parseFloat(input.value) || 0;
+                if (value > 0) {
+                    hasValue = true;
+                    const unit = selectedMaterial.units.sort((a, b) => b.level - a.level)[index];
+                    totalBase += value * unit.ratio;
+                }
+            });
+            
+            if (hasValue) {
+                const baseUnit = selectedMaterial.units.find(u => u.isBase);
+                const conversionText = calculateConversionFromBase(totalBase);
+                document.getElementById('mixedUnitTotalText').textContent = conversionText;
+                document.getElementById('mixedUnitTotal').classList.remove('hidden');
+            } else {
+                document.getElementById('mixedUnitTotal').classList.add('hidden');
+            }
+            
+            updateSummary();
+        }
+
+        // 从基础单位计算换算
+        function calculateConversionFromBase(baseQuantity) {
+            if (!selectedMaterial) return '';
+            
+            const baseUnit = selectedMaterial.units.find(u => u.isBase);
+            let conversionParts = [`${baseQuantity}${baseUnit.name}`];
+            
+            selectedMaterial.units.forEach(unit => {
+                if (!unit.isBase) {
+                    const convertedQuantity = baseQuantity / unit.ratio;
+                    if (convertedQuantity >= 1) {
+                        conversionParts.push(`${convertedQuantity.toFixed(2)}${unit.name}`);
+                    }
+                }
+            });
+            
+            return conversionParts.join(' = ');
+        }
+
+        // 清除混合输入
+        function clearMixedInput(button) {
+            const input = button.parentElement.querySelector('input');
+            input.value = '';
+            updateMixedTotal();
+        }
+
+        // 更新价格单位
+        function updatePriceUnit() {
+            const selectedUnit = document.getElementById('priceUnit').value;
+            document.getElementById('priceUnitDisplay').textContent = selectedUnit;
+            updatePriceCalculation();
+        }
+
+        // 更新价格计算
+        function updatePriceCalculation() {
+            const price = parseFloat(document.getElementById('unitPrice').value) || 0;
+            const priceUnit = document.getElementById('priceUnit').value;
+            
+            if (price > 0 && selectedMaterial) {
+                const calculationContent = document.getElementById('priceCalculationContent');
+                const priceUnitData = selectedMaterial.units.find(u => u.name === priceUnit);
+                
+                if (priceUnitData) {
+                    let calculations = [];
+                    
+                    selectedMaterial.units.forEach(unit => {
+                        if (unit.name !== priceUnit) {
+                            const convertedPrice = price * (priceUnitData.ratio / unit.ratio);
+                            calculations.push(`
+                                <div class="flex items-center justify-between text-xs">
+                                    <span>¥/${unit.name}</span>
+                                    <span class="font-medium">¥${convertedPrice.toFixed(4)}</span>
+                                </div>
+                            `);
+                        }
+                    });
+                    
+                    calculationContent.innerHTML = calculations.join('');
+                    document.getElementById('priceCalculation').classList.remove('hidden');
+                } else {
+                    document.getElementById('priceCalculation').classList.add('hidden');
+                }
+            } else {
+                document.getElementById('priceCalculation').classList.add('hidden');
+            }
+            
+            updateSummary();
+        }
+
+        // 更新价格历史
+        function updatePriceHistory() {
+            if (!selectedMaterial || !selectedMaterial.priceHistory) return;
+            
+            const content = document.getElementById('priceHistoryContent');
+            content.innerHTML = selectedMaterial.priceHistory.map(record => `
+                <div class="flex items-center justify-between text-xs">
+                    <span class="text-gray-500">${record.date}</span>
+                    <span class="text-gray-700">¥${record.price.toFixed(2)}/${record.unit}</span>
+                </div>
+            `).join('');
+        }
+
+        // 切换换算表显示
+        function toggleConversionTable() {
+            const table = document.getElementById('conversionTable');
+            const icon = document.getElementById('conversionTableIcon');
+            
+            if (table.classList.contains('hidden')) {
+                table.classList.remove('hidden');
+                icon.className = 'fas fa-chevron-up';
+                updateConversionTable();
+            } else {
+                table.classList.add('hidden');
+                icon.className = 'fas fa-chevron-down';
+            }
+        }
+
+        // 更新换算表
+        function updateConversionTable() {
+            if (!selectedMaterial) return;
+            
+            const content = document.getElementById('conversionTableContent');
+            const units = selectedMaterial.units.sort((a, b) => b.level - a.level);
+            
+            let tableHTML = '<div class="text-xs text-gray-600 mb-2">单位换算关系</div>';
+            
+            units.forEach((unit, index) => {
+                const nextUnit = units[index + 1];
+                if (nextUnit) {
+                    const ratio = unit.ratio / nextUnit.ratio;
+                    tableHTML += `
+                        <div class="flex items-center justify-between py-1 border-b border-gray-200 last:border-b-0">
+                            <span class="text-gray-700">1 ${unit.name}</span>
+                            <span class="text-gray-500">=</span>
+                            <span class="text-gray-700">${ratio} ${nextUnit.name}</span>
+                        </div>
+                    `;
+                }
+            });
+            
+            content.innerHTML = tableHTML;
+        }
+
+        // 更新汇总
+        function updateSummary() {
+            if (!selectedMaterial) return;
+            
+            // 计算总数量
+            let totalQuantity = 0;
+            let quantityUnit = '';
+            
+            // 快速输入的数量
+            const quickQuantity = parseFloat(document.getElementById('quickQuantity').value) || 0;
+            const quickUnit = document.getElementById('defaultUnit').value;
+            
+            if (quickQuantity > 0) {
+                totalQuantity = quickQuantity;
+                quantityUnit = quickUnit;
+            }
+            
+            // 混合单位输入的数量
+            const mixedInputs = document.querySelectorAll('#mixedUnitInputs input[type="number"]');
+            let hasMixedInput = false;
+            let totalBase = 0;
+            
+            mixedInputs.forEach((input, index) => {
+                const value = parseFloat(input.value) || 0;
+                if (value > 0) {
+                    hasMixedInput = true;
+                    const unit = selectedMaterial.units.sort((a, b) => b.level - a.level)[index];
+                    totalBase += value * unit.ratio;
+                }
+            });
+            
+            if (hasMixedInput) {
+                const baseUnit = selectedMaterial.units.find(u => u.isBase);
+                totalQuantity = totalBase;
+                quantityUnit = baseUnit.name;
+            }
+            
+            // 计算价格
+            const unitPrice = parseFloat(document.getElementById('unitPrice').value) || 0;
+            const priceUnit = document.getElementById('priceUnit').value;
+            
+            // 更新显示
+            document.getElementById('summaryQuantity').textContent = 
+                totalQuantity > 0 ? `${totalQuantity} ${quantityUnit}` : '-';
+            
+            document.getElementById('summaryUnitPrice').textContent = 
+                unitPrice > 0 ? `¥${unitPrice.toFixed(2)}/${priceUnit}` : '-';
+            
+            if (totalQuantity > 0 && unitPrice > 0) {
+                // 计算总价（需要换算单位）
+                const quantityUnitData = selectedMaterial.units.find(u => u.name === quantityUnit);
+                const priceUnitData = selectedMaterial.units.find(u => u.name === priceUnit);
+                
+                if (quantityUnitData && priceUnitData) {
+                    const baseQuantity = totalQuantity * quantityUnitData.ratio;
+                    const pricePerBase = unitPrice / priceUnitData.ratio;
+                    const totalPrice = baseQuantity * pricePerBase;
+                    
+                    document.getElementById('summaryTotalPrice').textContent = `¥${totalPrice.toFixed(2)}`;
+                    
+                    // 计算基础单位成本
+                    const baseUnit = selectedMaterial.units.find(u => u.isBase);
+                    document.getElementById('summaryBaseCost').textContent = 
+                        `¥${pricePerBase.toFixed(4)}/${baseUnit.name}`;
+                } else {
+                    document.getElementById('summaryTotalPrice').textContent = '-';
+                    document.getElementById('summaryBaseCost').textContent = '-';
+                }
+            } else {
+                document.getElementById('summaryTotalPrice').textContent = '-';
+                document.getElementById('summaryBaseCost').textContent = '-';
+            }
+        }
+
+        // 扫描条形码
+        function scanBarcode() {
+            // 模拟扫描结果
+            const mockBarcodes = {
+                '1234567890': 1, // 淡奶油
+                '0987654321': 2  // 高筋面粉
+            };
+            
+            // 模拟扫描
+            setTimeout(() => {
+                const barcode = '1234567890'; // 模拟扫描结果
+                const materialId = mockBarcodes[barcode];
+                
+                if (materialId) {
+                    selectMaterial(materialId);
+                    showToast('扫描成功！', 'success');
+                } else {
+                    showToast('未找到对应材料', 'error');
+                }
+            }, 1000);
+        }
+
+        // 显示帮助
+        function showHelp() {
+            document.getElementById('helpModal').classList.remove('hidden');
+        }
+
+        // 隐藏帮助
+        function hideHelp() {
+            document.getElementById('helpModal').classList.add('hidden');
+        }
+
+        // 保存草稿
+        function saveAsDraft() {
+            if (!selectedMaterial) {
+                showToast('请先选择材料', 'error');
+                return;
+            }
+            
+            const draftData = {
+                material: selectedMaterial,
+                timestamp: new Date().toISOString(),
+                // 收集所有输入数据
+            };
+            
+            // 保存到localStorage
+            localStorage.setItem('inboundDraft', JSON.stringify(draftData));
+            showToast('草稿已保存', 'success');
+        }
+
+        // 确认入库
+        function confirmInbound() {
+            if (!selectedMaterial) {
+                showToast('请先选择材料', 'error');
+                return;
+            }
+            
+            // 验证必填信息
+            const quickQuantity = parseFloat(document.getElementById('quickQuantity').value) || 0;
+            const mixedInputs = document.querySelectorAll('#mixedUnitInputs input[type="number"]');
+            let hasMixedQuantity = false;
+            
+            mixedInputs.forEach(input => {
+                if (parseFloat(input.value) > 0) {
+                    hasMixedQuantity = true;
+                }
+            });
+            
+            if (quickQuantity === 0 && !hasMixedQuantity) {
+                showToast('请输入入库数量', 'error');
+                return;
+            }
+            
+            const unitPrice = parseFloat(document.getElementById('unitPrice').value) || 0;
+            if (unitPrice === 0) {
+                showToast('请输入采购价格', 'error');
+                return;
+            }
+            
+            // 收集入库数据
+            const inboundData = {
+                materialId: selectedMaterial.id,
+                materialName: selectedMaterial.name,
+                // ... 其他数据
+            };
+            
+            // 模拟提交
+            setTimeout(() => {
+                showToast('入库成功！', 'success');
+                // 跳转到入库历史或返回上一页
+                setTimeout(() => {
+                    history.back();
+                }, 1500);
+            }, 1000);
+        }
+
+        // 显示消息提示
+        function showToast(message, type = 'info') {
+            // 创建toast元素
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 right-4 px-4 py-2 rounded-lg text-white text-sm font-medium z-50 ${
+                type === 'success' ? 'bg-green-500' : 
+                type === 'error' ? 'bg-red-500' : 'bg-orange-500'
+            }`;
+            toast.textContent = message;
+            
+            document.body.appendChild(toast);
+            
+            // 3秒后移除
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 3000);
+        }
+    </script>
+</body>
+</html> 

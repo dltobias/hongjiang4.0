@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>库存预警 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Cookpad Design System */
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+            --text-main: #333333;
+            --text-sub: #8b8b8b;
+            --bg-light: #f7f7f5;
+            --bg-white: #ffffff;
+            --danger-red: #ef4444;
+            --warning-yellow: #f59e0b;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-main);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* 滚动条美化 */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 3px;
+        }
+
+        /* 卡片样式 */
+        .card {
+            background: var(--bg-white);
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border: 1px solid rgba(0,0,0,0.02);
+            transition: all 0.2s ease;
+        }
+        
+        .card:active {
+            transform: scale(0.98);
+        }
+
+        /* 筛选卡片样式 */
+        .filter-card {
+            background: white;
+            border-radius: 12px;
+            padding: 12px;
+            border: 1px solid #f3f4f6;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .filter-card:active {
+            transform: scale(0.96);
+        }
+
+        .filter-card.active {
+            border-color: var(--primary-orange);
+            background-color: #fff7ed;
+            box-shadow: 0 0 0 1px var(--primary-orange);
+        }
+        
+        .filter-card.active .text-gray-500,
+        .filter-card.active .text-gray-800 {
+            color: var(--primary-dark);
+        }
+
+        /* 特定类型的激活状态 */
+        .filter-card[data-type="low"].active {
+            border-color: var(--danger-red);
+            background-color: #fef2f2;
+            box-shadow: 0 0 0 1px var(--danger-red);
+        }
+        
+        .filter-card[data-type="expiring"].active {
+            border-color: var(--warning-yellow);
+            background-color: #fffbeb;
+            box-shadow: 0 0 0 1px var(--warning-yellow);
+        }
+
+        /* 进度条 */
+        .progress-bar {
+            height: 6px;
+            border-radius: 3px;
+            background-color: #f3f4f6;
+            overflow: hidden;
+        }
+        
+        .progress-value {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        /* 动画 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        
+        /* 状态标签 */
+        .status-tag {
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .status-low {
+            background-color: #fef2f2;
+            color: #ef4444;
+            border: 1px solid #fee2e2;
+        }
+        
+        .status-expiring {
+            background-color: #fffbeb;
+            color: #f59e0b;
+            border: 1px solid #fef3c7;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 h-screen flex flex-col overflow-hidden">
+    
+    <!-- 顶部导航栏 -->
+    <div class="bg-white px-4 py-3 shadow-sm border-b border-gray-100 z-30 flex-shrink-0">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <button onclick="history.back()" class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div>
+                    <div class="text-lg font-bold text-gray-800 tracking-wide">库存预警</div>
+                    <div class="text-xs text-gray-500 font-medium mt-0.5">实时监控库存健康状态</div>
+                </div>
+            </div>
+            <button onclick="refreshData()" class="w-9 h-9 flex items-center justify-center rounded-full bg-orange-50 text-orange-500 hover:bg-orange-100 transition-all">
+                <i class="fas fa-sync-alt text-sm"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 统一筛选区域 -->
+    <div class="px-4 pt-4 pb-2 flex-shrink-0">
+        <div class="grid grid-cols-3 gap-3">
+            <!-- 全部 -->
+            <div class="filter-card active flex flex-col items-center justify-center py-3" data-type="all" onclick="switchFilter(this, 'all')">
+                <div class="text-xs text-gray-500 mb-1">全部预警</div>
+                <div class="text-xl font-bold text-gray-800">8</div>
+            </div>
+            <!-- 库存不足 -->
+            <div class="filter-card flex flex-col items-center justify-center py-3" data-type="low" onclick="switchFilter(this, 'low')">
+                <div class="text-xs text-red-500 mb-1 flex items-center gap-1"><i class="fas fa-arrow-down"></i> 库存不足</div>
+                <div class="text-xl font-bold text-red-600">5</div>
+            </div>
+            <!-- 即将过期 -->
+            <div class="filter-card flex flex-col items-center justify-center py-3" data-type="expiring" onclick="switchFilter(this, 'expiring')">
+                <div class="text-xs text-yellow-600 mb-1 flex items-center gap-1"><i class="fas fa-clock"></i> 即将过期</div>
+                <div class="text-xl font-bold text-yellow-600">3</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 预警列表 -->
+    <div class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3 bg-gray-50" id="warningList">
+        <!-- 列表内容将通过JS动态生成 -->
+    </div>
+
+    <script>
+        // 模拟数据
+        const warnings = [
+            {
+                id: 1,
+                type: 'low',
+                name: '低筋面粉',
+                image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80',
+                current: 5,
+                min: 20,
+                unit: 'kg',
+                location: '主仓库 A-01',
+                supplier: '金龙鱼面粉厂'
+            },
+            {
+                id: 2,
+                type: 'low',
+                name: '无盐黄油',
+                image: 'https://images.unsplash.com/photo-1589985270958-bf087be2a336?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80',
+                current: 2,
+                min: 10,
+                unit: 'kg',
+                location: '冷藏库 C-03',
+                supplier: '安佳乳业'
+            },
+            {
+                id: 3,
+                type: 'expiring',
+                name: '全脂牛奶',
+                image: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80',
+                expiry: '2023-12-25',
+                daysLeft: 5,
+                stock: 50,
+                unit: '盒',
+                location: '冷藏库 C-01'
+            },
+            {
+                id: 4,
+                type: 'low',
+                name: '白砂糖',
+                image: 'https://images.unsplash.com/photo-1516684669134-de6f7c473a2a?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80',
+                current: 8,
+                min: 30,
+                unit: 'kg',
+                location: '主仓库 A-05',
+                supplier: '太古糖业'
+            },
+            {
+                id: 5,
+                type: 'expiring',
+                name: '淡奶油',
+                image: 'https://images.unsplash.com/photo-1628088062854-d1870b4553da?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80',
+                expiry: '2023-12-28',
+                daysLeft: 8,
+                stock: 12,
+                unit: 'L',
+                location: '冷藏库 C-02'
+            },
+            {
+                id: 6,
+                type: 'low',
+                name: '巧克力豆',
+                image: 'https://images.unsplash.com/photo-1548907040-4baa42d10919?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80',
+                current: 1.5,
+                min: 5,
+                unit: 'kg',
+                location: '主仓库 B-02',
+                supplier: '法芙娜'
+            },
+            {
+                id: 7,
+                type: 'low',
+                name: '抹茶粉',
+                image: 'https://images.unsplash.com/photo-1515688594390-b649af70d282?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80',
+                current: 0.2,
+                min: 1,
+                unit: 'kg',
+                location: '主仓库 B-05',
+                supplier: '宇治茶'
+            },
+            {
+                id: 8,
+                type: 'expiring',
+                name: '奶油芝士',
+                image: 'https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80',
+                expiry: '2024-01-05',
+                daysLeft: 16,
+                stock: 8,
+                unit: 'kg',
+                location: '冷藏库 C-04'
+            }
+        ];
+
+        let currentFilter = 'all';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderList();
+        });
+
+        function switchFilter(card, filter) {
+            document.querySelectorAll('.filter-card').forEach(c => c.classList.remove('active'));
+            card.classList.add('active');
+            currentFilter = filter;
+            renderList();
+        }
+
+        function renderList() {
+            const container = document.getElementById('warningList');
+            let filtered = warnings;
+            
+            if (currentFilter !== 'all') {
+                filtered = warnings.filter(item => item.type === currentFilter);
+            }
+            
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-64 text-center">
+                        <div class="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mb-4">
+                            <i class="fas fa-check text-green-500 text-2xl"></i>
+                        </div>
+                        <p class="text-gray-500 text-sm font-medium">暂无${currentFilter === 'all' ? '' : (currentFilter === 'low' ? '库存不足' : '过期')}预警</p>
+                        <p class="text-gray-400 text-xs mt-1">库存状态良好</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = filtered.map(item => {
+                if (item.type === 'low') {
+                    const percentage = Math.min((item.current / item.min) * 100, 100);
+                    return `
+                        <div class="card p-4 animate-fade-in flex gap-4">
+                            <div class="w-20 h-20 rounded-xl bg-gray-100 flex-shrink-0 overflow-hidden border border-gray-100">
+                                <img src="${item.image}" class="w-full h-full object-cover">
+                            </div>
+                            <div class="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h4 class="font-bold text-gray-800 text-sm truncate">${item.name}</h4>
+                                        <p class="text-[10px] text-gray-400 mt-0.5"><i class="fas fa-map-marker-alt mr-1"></i>${item.location}</p>
+                                    </div>
+                                    <span class="status-tag status-low">
+                                        <i class="fas fa-arrow-down text-[8px]"></i> 库存不足
+                                    </span>
+                                </div>
+                                
+                                <div class="mt-2">
+                                    <div class="flex justify-between text-xs mb-1">
+                                        <span class="text-gray-500">当前: <span class="font-bold text-red-500">${item.current}</span> ${item.unit}</span>
+                                        <span class="text-gray-400">安全: ${item.min} ${item.unit}</span>
+                                    </div>
+                                    <div class="progress-bar">
+                                        <div class="progress-value bg-red-500" style="width: ${percentage}%"></div>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex justify-end mt-3">
+                                    <button class="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-bold hover:bg-red-100 transition-colors" onclick="quickRestock(${item.id})">
+                                        立即补货
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div class="card p-4 animate-fade-in flex gap-4">
+                            <div class="w-20 h-20 rounded-xl bg-gray-100 flex-shrink-0 overflow-hidden border border-gray-100">
+                                <img src="${item.image}" class="w-full h-full object-cover">
+                            </div>
+                            <div class="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h4 class="font-bold text-gray-800 text-sm truncate">${item.name}</h4>
+                                        <p class="text-[10px] text-gray-400 mt-0.5"><i class="fas fa-map-marker-alt mr-1"></i>${item.location}</p>
+                                    </div>
+                                    <span class="status-tag status-expiring">
+                                        <i class="fas fa-clock text-[8px]"></i> 剩 ${item.daysLeft} 天
+                                    </span>
+                                </div>
+                                
+                                <div class="mt-2 flex items-center justify-between bg-gray-50 p-2 rounded-lg">
+                                    <div>
+                                        <p class="text-[10px] text-gray-400">过期时间</p>
+                                        <p class="text-xs font-medium text-gray-700">${item.expiry}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-[10px] text-gray-400">当前库存</p>
+                                        <p class="text-xs font-medium text-gray-700">${item.stock} ${item.unit}</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex justify-end mt-2 gap-2">
+                                    <button class="px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-50" onclick="markAsProcessed(${item.id})">
+                                        已处理
+                                    </button>
+                                    <button class="px-3 py-1.5 bg-yellow-50 text-yellow-700 rounded-lg text-xs font-bold hover:bg-yellow-100 transition-colors" onclick="createLoss(${item.id})">
+                                        报损处理
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }).join('');
+        }
+
+        function refreshData() {
+            const btn = document.querySelector('.fa-sync-alt');
+            btn.classList.add('fa-spin');
+            setTimeout(() => {
+                btn.classList.remove('fa-spin');
+                renderList();
+            }, 1000);
+        }
+
+        function quickRestock(id) {
+            alert('已跳转至采购补货页面 (ID: ' + id + ')');
+            // window.location.href = '../caigou/caigou-xinjian.html?id=' + id;
+        }
+
+        function createLoss(id) {
+            alert('已跳转至报损申请页面 (ID: ' + id + ')');
+            // window.location.href = '../yunying/baosun-xinjian.html?id=' + id;
+        }
+        
+        function markAsProcessed(id) {
+            if(confirm('确认标记为已处理？')) {
+                const index = warnings.findIndex(w => w.id === id);
+                if (index > -1) {
+                    warnings.splice(index, 1);
+                    renderList();
+                }
+            }
+        }
+    </script>
+</body>
+</html>

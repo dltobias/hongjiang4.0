@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编辑仓库 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .gradient-primary {
+            background: linear-gradient(135deg, #ff9f43 0%, #ff8c00 100%);
+        }
+        
+        .form-section {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 16px;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #f9fafb;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #ff9f43;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(255, 159, 67, 0.1);
+        }
+        
+        .form-select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            font-size: 16px;
+            background: #f9fafb;
+            transition: all 0.3s ease;
+        }
+        
+        .form-select:focus {
+            outline: none;
+            border-color: #ff9f43;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(255, 159, 67, 0.1);
+        }
+        
+        .form-textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            font-size: 16px;
+            background: #f9fafb;
+            transition: all 0.3s ease;
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .form-textarea:focus {
+            outline: none;
+            border-color: #ff9f43;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(255, 159, 67, 0.1);
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 24px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .toggle-slider {
+            background-color: #ff9f43;
+        }
+        
+        input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+        
+        .save-button {
+            background: linear-gradient(135deg, #ff9f43 0%, #ff8c00 100%);
+            color: white;
+            font-weight: 600;
+            padding: 16px 32px;
+            border-radius: 12px;
+            border: none;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        
+        .save-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(255, 140, 0, 0.3);
+        }
+        
+        .save-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .cancel-button {
+            background: #f3f4f6;
+            color: #374151;
+            font-weight: 600;
+            padding: 16px 32px;
+            border-radius: 12px;
+            border: none;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        
+        .cancel-button:hover {
+            background: #e5e7eb;
+        }
+        
+        .required {
+            color: #ef4444;
+        }
+        
+        .error-message {
+            color: #ef4444;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+        
+        .success-message {
+            color: #10b981;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- 顶部导航栏 -->
+    <div class="bg-white px-4 py-3 shadow-sm border-b border-gray-100 sticky top-0 z-30">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <button onclick="goBack()" class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div>
+                    <div class="text-lg font-bold text-gray-800 tracking-wide">编辑仓库</div>
+                    <div class="text-xs text-gray-500 font-medium mt-0.5">修改仓库信息</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 表单内容 -->
+    <div class="px-4 py-4 pb-24">
+        <form id="warehouseForm">
+            <!-- 基本信息 -->
+            <div class="form-section p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">基本信息</h3>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="form-label" for="warehouseName">
+                            仓库名称 <span class="required">*</span>
+                        </label>
+                        <input type="text" id="warehouseName" class="form-input" placeholder="请输入仓库名称" required>
+                        <div id="nameError" class="error-message hidden">仓库名称不能为空</div>
+                    </div>
+                    
+                    <div>
+                        <label class="form-label" for="warehouseCode">
+                            仓库编号 <span class="required">*</span>
+                        </label>
+                        <input type="text" id="warehouseCode" class="form-input" placeholder="请输入仓库编号" required>
+                        <div id="codeError" class="error-message hidden">仓库编号不能为空</div>
+                    </div>
+                    
+                    <div>
+                        <label class="form-label" for="warehouseType">
+                            仓库类型 <span class="required">*</span>
+                        </label>
+                        <select id="warehouseType" class="form-select" required>
+                            <option value="">请选择仓库类型</option>
+                            <option value="raw">🏭 原料仓</option>
+                            <option value="product">📦 成品仓</option>
+                            <option value="frozen">❄️ 冷冻仓</option>
+                            <option value="normal">🏠 常温仓</option>
+                            <option value="damaged">⚠️ 报损仓</option>
+                        </select>
+                        <div id="typeError" class="error-message hidden">请选择仓库类型</div>
+                    </div>
+                    
+                    <div>
+                        <label class="form-label" for="warehouseLocation">
+                            仓库位置 <span class="required">*</span>
+                        </label>
+                        <input type="text" id="warehouseLocation" class="form-input" placeholder="请输入仓库位置" required>
+                        <div id="locationError" class="error-message hidden">仓库位置不能为空</div>
+                    </div>
+                    
+                    <div>
+                        <label class="form-label" for="warehouseDescription">
+                            仓库描述
+                        </label>
+                        <textarea id="warehouseDescription" class="form-textarea" placeholder="请输入仓库描述信息"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 高级设置 -->
+            <div class="form-section p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">高级设置</h3>
+                
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <label class="form-label mb-0">启用仓库</label>
+                            <p class="text-sm text-gray-500">启用后该仓库可以正常使用</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="warehouseEnabled" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <label class="form-label mb-0">库存预警</label>
+                            <p class="text-sm text-gray-500">开启后会监控库存状态并发送预警</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="alertEnabled" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="flex space-x-3 mt-6">
+                <button type="button" onclick="goBack()" class="cancel-button">
+                    <i class="fas fa-times mr-2"></i>取消
+                </button>
+                <button type="submit" class="save-button">
+                    <i class="fas fa-save mr-2"></i>保存修改
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // 仓库数据
+        const warehousesData = {
+            1: {
+                id: 1,
+                name: '主原料仓',
+                code: 'WH001',
+                type: 'raw',
+                typeName: '原料仓',
+                enabled: true,
+                alertCount: 3,
+                itemCount: 45,
+                utilization: 78,
+                location: 'A区1层',
+                description: '存放面粉、糖等基础原料',
+                createTime: '2023-08-15',
+                updateTime: '2023-11-28',
+                totalValue: '¥45,280',
+                lowStockCount: 5,
+                enableAlert: true,
+                remark: '主要存放烘焙基础原料，温度控制在18-22℃'
+            },
+            2: {
+                id: 2,
+                name: '成品仓库',
+                code: 'WH002',
+                type: 'product',
+                typeName: '成品仓',
+                enabled: true,
+                alertCount: 0,
+                itemCount: 28,
+                utilization: 45,
+                location: 'B区2层',
+                description: '存放已完成的烘焙产品',
+                createTime: '2023-08-20',
+                updateTime: '2023-11-27',
+                totalValue: '¥32,150',
+                lowStockCount: 2,
+                enableAlert: true,
+                remark: '成品存放区域，保持干燥通风'
+            },
+            3: {
+                id: 3,
+                name: '冷冻储存区',
+                code: 'WH003',
+                type: 'frozen',
+                typeName: '冷冻仓',
+                enabled: true,
+                alertCount: 1,
+                itemCount: 15,
+                utilization: 65,
+                location: 'C区地下1层',
+                description: '冷冻保存易腐原料',
+                createTime: '2023-09-01',
+                updateTime: '2023-11-26',
+                totalValue: '¥18,900',
+                lowStockCount: 3,
+                enableAlert: true,
+                remark: '冷冻保存区域，温度保持在-18℃以下'
+            }
+        };
+
+        let currentWarehouseId = 1;
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 从URL参数获取仓库ID
+            const urlParams = new URLSearchParams(window.location.search);
+            const warehouseId = urlParams.get('id');
+            if (warehouseId && warehousesData[warehouseId]) {
+                currentWarehouseId = parseInt(warehouseId);
+            }
+            
+            loadWarehouseData();
+            bindEvents();
+        });
+
+        // 加载仓库数据
+        function loadWarehouseData() {
+            const warehouse = warehousesData[currentWarehouseId];
+            if (!warehouse) {
+                showToast('仓库信息不存在', 'error');
+                return;
+            }
+
+            // 填充表单数据
+            document.getElementById('warehouseName').value = warehouse.name;
+            document.getElementById('warehouseCode').value = warehouse.code;
+            document.getElementById('warehouseType').value = warehouse.type;
+            document.getElementById('warehouseLocation').value = warehouse.location;
+            document.getElementById('warehouseDescription').value = warehouse.description;
+            document.getElementById('warehouseEnabled').checked = warehouse.enabled;
+            document.getElementById('alertEnabled').checked = warehouse.enableAlert;
+        }
+
+        // 绑定事件
+        function bindEvents() {
+            const form = document.getElementById('warehouseForm');
+            
+            // 表单提交事件
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveWarehouse();
+            });
+
+            // 实时验证
+            const requiredFields = ['warehouseName', 'warehouseCode', 'warehouseType', 'warehouseLocation'];
+            requiredFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                field.addEventListener('blur', function() {
+                    validateField(fieldId);
+                });
+                field.addEventListener('input', function() {
+                    clearError(fieldId);
+                });
+            });
+        }
+
+        // 验证字段
+        function validateField(fieldId) {
+            const field = document.getElementById(fieldId);
+            const errorElement = document.getElementById(fieldId.replace('warehouse', '').toLowerCase() + 'Error');
+            
+            if (!field.value.trim()) {
+                errorElement.classList.remove('hidden');
+                field.classList.add('border-red-500');
+                return false;
+            } else {
+                errorElement.classList.add('hidden');
+                field.classList.remove('border-red-500');
+                return true;
+            }
+        }
+
+        // 清除错误
+        function clearError(fieldId) {
+            const field = document.getElementById(fieldId);
+            const errorElement = document.getElementById(fieldId.replace('warehouse', '').toLowerCase() + 'Error');
+            
+            if (field.value.trim()) {
+                errorElement.classList.add('hidden');
+                field.classList.remove('border-red-500');
+            }
+        }
+
+        // 验证表单
+        function validateForm() {
+            const requiredFields = ['warehouseName', 'warehouseCode', 'warehouseType', 'warehouseLocation'];
+            let isValid = true;
+            
+            requiredFields.forEach(fieldId => {
+                if (!validateField(fieldId)) {
+                    isValid = false;
+                }
+            });
+            
+            return isValid;
+        }
+
+        // 保存仓库
+        function saveWarehouse() {
+            if (!validateForm()) {
+                showToast('请填写完整信息', 'error');
+                return;
+            }
+
+            const saveButton = document.querySelector('.save-button');
+            saveButton.disabled = true;
+            saveButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>保存中...';
+
+            // 获取表单数据
+            const formData = {
+                name: document.getElementById('warehouseName').value.trim(),
+                code: document.getElementById('warehouseCode').value.trim(),
+                type: document.getElementById('warehouseType').value,
+                location: document.getElementById('warehouseLocation').value.trim(),
+                description: document.getElementById('warehouseDescription').value.trim(),
+                enabled: document.getElementById('warehouseEnabled').checked,
+                enableAlert: document.getElementById('alertEnabled').checked
+            };
+
+            // 模拟保存过程
+            setTimeout(() => {
+                showToast('仓库信息已保存', 'success');
+                
+                // 延迟返回详情页
+                setTimeout(() => {
+                    window.location.href = `cangku-xiangqing.html?id=${currentWarehouseId}`;
+                }, 1500);
+            }, 1000);
+        }
+
+        // 返回上一页
+        function goBack() {
+            window.location.href = `cangku-xiangqing.html?id=${currentWarehouseId}`;
+        }
+
+        // 显示提示消息
+        function showToast(message, type = 'info') {
+            const existingToast = document.querySelector('.toast');
+            if (existingToast) {
+                existingToast.remove();
+            }
+            
+            const toast = document.createElement('div');
+            toast.className = 'toast fixed top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-lg text-white text-sm z-50 transition-opacity duration-300 opacity-0';
+            
+            switch(type) {
+                case 'success':
+                    toast.classList.add('bg-green-600');
+                    break;
+                case 'error':
+                    toast.classList.add('bg-red-600');
+                    break;
+                case 'warning':
+                    toast.classList.add('bg-yellow-600');
+                    break;
+                default:
+                    toast.classList.add('bg-orange-600');
+            }
+            
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.add('opacity-90');
+            }, 10);
+            
+            setTimeout(() => {
+                toast.classList.remove('opacity-90');
+                toast.classList.add('opacity-0');
+                
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 2000);
+        }
+    </script>
+</body>
+</html> 

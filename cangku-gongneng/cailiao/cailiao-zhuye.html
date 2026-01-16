@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>材料管理 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Cookpad Design System */
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+            --text-main: #333333;
+            --text-sub: #8b8b8b;
+            --bg-light: #f7f7f5;
+            --bg-white: #ffffff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-main);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* 滚动条美化 */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 3px;
+        }
+
+        /* 搜索栏样式 */
+        .search-header {
+            background-color: #ffffff;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        
+        .search-input-wrapper {
+            background-color: #f3f3f3;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        .search-input-wrapper:focus-within {
+            background-color: #ffffff;
+            box-shadow: 0 0 0 2px var(--primary-orange) inset;
+        }
+
+        /* 分类栏样式 */
+        .category-sidebar {
+            width: 90px;
+            background-color: #ffffff;
+            border-right: 1px solid #f0f0f0;
+        }
+        
+        .category-item {
+            transition: all 0.2s ease;
+            margin: 4px 8px;
+            border-radius: 8px;
+            border: 1px solid transparent;
+        }
+        
+        .category-item:hover {
+            background-color: #f7f7f5;
+        }
+        
+        .category-item.active {
+            background-color: #fff7ed;
+            border-color: #ffedd5;
+            color: var(--primary-dark);
+        }
+        
+        .category-item.active .text-gray-800,
+        .category-item.active .text-gray-700 {
+            color: var(--primary-dark) !important;
+            font-weight: 600;
+        }
+        
+        .category-item.active i {
+            color: var(--primary-dark) !important;
+        }
+
+        .category-item.active .bg-gray-50 {
+            background-color: #ffedd5 !important;
+        }
+        
+        /* 材料卡片样式 */
+        .material-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            border: 1px solid #f0f0f0;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .material-card:active {
+            transform: scale(0.98);
+        }
+
+        /* 悬浮按钮 (FAB) */
+        .create-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+        .create-btn:hover { filter: brightness(1.06); }
+        .create-btn:active { transform: scale(0.95); }
+
+        .create-fab {
+            box-shadow: 0 8px 25px rgba(255, 140, 0, 0.25);
+            transition: box-shadow 0.3s ease, transform 0.2s ease, filter 0.2s ease;
+        }
+        .create-fab:hover { box-shadow: 0 12px 35px rgba(255, 140, 0, 0.35); }
+        .create-fab:active { box-shadow: 0 4px 15px rgba(255, 140, 0, 0.20); }
+
+        /* Unified Orange Theme Helpers */
+        .text-orange-600 { color: #ea580c; }
+        .bg-orange-50 { background-color: #fff7ed; }
+        .bg-orange-100 { background-color: #ffedd5; }
+        
+        /* 材料图片样式 */
+        .material-image {
+            transition: all 0.3s ease;
+        }
+        
+        .material-card:hover .material-image {
+            transform: scale(1.05);
+        }
+
+        /* 标签样式 */
+        .category-tag {
+            transition: all 0.3s ease;
+            z-index: 10;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .category-tag:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* 材料卡片右上角分类标签样式 */
+        .material-card .category-tag {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            border-top-right-radius: 12px;
+            border-bottom-left-radius: 12px;
+            border-top-left-radius: 0;
+            border-bottom-right-radius: 0;
+            min-width: fit-content;
+            white-space: nowrap;
+            padding: 6px 10px;
+            font-size: 11px;
+        }
+        
+        /* 改进分类标签配色 - 保持原有逻辑但适配新风格 */
+        .category-tag.flour-tag { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #92400e; border-color: rgba(245, 158, 11, 0.3); }
+        .category-tag.oil-tag { background: linear-gradient(135deg, #10b981, #059669); color: #065f46; border-color: rgba(16, 185, 129, 0.3); }
+        .category-tag.sugar-tag { background: linear-gradient(135deg, #f472b6, #ec4899); color: #9d174d; border-color: rgba(244, 114, 182, 0.3); }
+        .category-tag.dairy-tag { background: linear-gradient(135deg, #60a5fa, #3b82f6); color: #1e40af; border-color: rgba(96, 165, 250, 0.3); }
+        .category-tag.egg-tag { background: linear-gradient(135deg, #fb923c, #f97316); color: #9a3412; border-color: rgba(251, 146, 60, 0.3); }
+        .category-tag.fruit-tag { background: linear-gradient(135deg, #ef4444, #dc2626); color: #991b1b; border-color: rgba(239, 68, 68, 0.3); }
+        .category-tag.nut-tag { background: linear-gradient(135deg, #84cc16, #65a30d); color: #365314; border-color: rgba(132, 204, 22, 0.3); }
+        .category-tag.other-tag { background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: #4c1d95; border-color: rgba(139, 92, 246, 0.3); }
+
+        /* 加载中提示 */
+        #loadingIndicator {
+            background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(4px);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="flex flex-col h-screen overflow-hidden">
+    <!-- 顶部状态栏 - Cookpad 风格 -->
+    <div class="bg-white px-4 py-4 shadow-sm border-b border-gray-100 z-30 flex-shrink-0">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <a href="../erp-zhuye-canku.html" class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+                <div>
+                    <div class="text-xl font-bold text-gray-800 tracking-wide">材料管理</div>
+                    <div class="text-xs text-gray-500 font-medium mt-0.5">共 <span id="totalMaterialCount" class="font-bold text-orange-600">36</span> 种材料</div>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="showBatchImportSheet()" class="bg-orange-50 hover:bg-orange-100 text-orange-600 px-3 py-2 rounded-lg transition-all">
+                    <i class="fas fa-file-import text-xs mr-1"></i>
+                    <span class="text-xs font-bold">批量导入</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 搜索栏 -->
+    <div class="px-4 mt-3 mb-2 flex-shrink-0">
+        <div class="relative search-input-wrapper">
+            <input type="text" placeholder="搜索材料名称..." 
+                   class="w-full bg-transparent rounded-xl px-4 py-2.5 pl-10 text-sm text-gray-700 focus:outline-none placeholder-gray-500"
+                   id="searchInput">
+            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            <button class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-orange-500 hidden w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-100 transition-all duration-200" 
+                    id="clearSearch" 
+                    onclick="clearSearchInput()">
+                <i class="fas fa-times text-xs"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 主内容区域 - 左右两栏布局 -->
+    <div class="flex main-content mt-2 flex-1 overflow-hidden">
+        <!-- 左侧分类栏 -->
+        <div class="category-sidebar border-r border-gray-100 h-full custom-scrollbar bg-white flex flex-col">
+            <div class="py-1 flex-1 overflow-y-auto custom-scrollbar" id="categorySidebar">
+                <!-- 分类项将通过JS动态生成 -->
+            </div>
+            
+            <!-- 分类设置按钮 -->
+            <div class="border-t border-gray-100 py-3 px-2 flex-shrink-0">
+                <a href="cailiao-category-mobile.html" class="block text-center w-full hover:bg-gray-50 rounded-lg py-2 transition-all duration-200 group">
+                    <div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center mx-auto mb-1 group-hover:bg-orange-50 transition-colors">
+                        <i class="fas fa-cog text-gray-400 text-xs group-hover:text-orange-500"></i>
+                    </div>
+                    <div class="text-xs font-medium text-gray-500 group-hover:text-orange-600">设置</div>
+                </a>
+            </div>
+        </div>
+        
+        <!-- 右侧材料列表 -->
+        <div class="flex-1 px-4 h-full overflow-y-auto custom-scrollbar pb-24" id="materialList">
+            <!-- 材料卡片将通过JS动态生成 -->
+        </div>
+    </div>
+    </div>
+    
+    <!-- 悬浮添加按钮 -->
+    <div class="fixed bottom-8 right-6 z-40">
+        <a href="cailiao-xinjianye.html" class="create-btn create-fab bg-gradient-to-r from-orange-400 to-orange-600 text-white shadow-lg shadow-orange-200">
+            <i class="fas fa-plus text-xl"></i>
+        </a>
+    </div>
+
+
+
+    <!-- 加载中提示 -->
+    <div id="loadingIndicator" class="fixed inset-0 bg-white bg-opacity-80 flex items-center justify-center z-50 hidden">
+        <div class="text-center">
+            <div class="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p class="text-gray-600">加载中...</p>
+        </div>
+    </div>
+
+    <script>
+        // 模拟材料分类数据
+        const categories = [
+            { id: 'all', name: '全部', count: 36, icon: 'fa-th', color: 'blue', image: 'https://images.unsplash.com/photo-1586985289688-ca3cf47d3e6e?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80' },
+            { id: 'flour', name: '粉类', count: 8, icon: 'fa-wheat-awn', color: 'amber', image: 'https://images.unsplash.com/photo-1603566541830-a1f7a7982a1c?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80' },
+            { id: 'oil', name: '油脂类', count: 6, icon: 'fa-oil-can', color: 'yellow', image: 'https://images.unsplash.com/photo-1589985270958-bf087be2a336?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80' },
+            { id: 'sugar', name: '糖类', count: 5, icon: 'fa-candy-cane', color: 'pink', image: 'https://images.unsplash.com/photo-1581096288496-7c5bc3e7d8fb?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80' },
+            { id: 'dairy', name: '乳制品', count: 4, icon: 'fa-cheese', color: 'green', image: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80' },
+            { id: 'egg', name: '蛋类', count: 2, icon: 'fa-egg', color: 'orange', image: 'https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80' },
+            { id: 'fruit', name: '水果类', count: 5, icon: 'fa-apple-whole', color: 'red', image: 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80' },
+            { id: 'nut', name: '坚果类', count: 3, icon: 'fa-seedling', color: 'lime', image: 'https://images.unsplash.com/photo-1599599810694-57a2ca8276a8?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80' },
+            { id: 'other', name: '其他', count: 3, icon: 'fa-mortar-pestle', color: 'purple', image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80' }
+        ];
+        
+        // 模拟材料数据
+        const materials = [
+            { 
+                id: 1, 
+                name: '高筋面粉', 
+                category: 'flour', 
+                image: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                stock: 2500,
+                unit: 'g',
+                lowStock: 500,
+                status: 'normal' // normal, low, out
+            },
+            { 
+                id: 2, 
+                name: '中筋面粉', 
+                category: 'flour', 
+                image: 'https://images.unsplash.com/photo-1628088062854-d1870b4553da?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                stock: 1800,
+                unit: 'g',
+                lowStock: 500,
+                status: 'normal'
+            },
+            { 
+                id: 3, 
+                name: '低筋面粉', 
+                category: 'flour', 
+                image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                stock: 300,
+                unit: 'g',
+                lowStock: 500,
+                status: 'low'
+            },
+            { 
+                id: 4, 
+                name: '全麦面粉', 
+                category: 'flour', 
+                image: 'https://images.unsplash.com/photo-1595535373192-fc8935bacd89?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                stock: 1200,
+                unit: 'g',
+                lowStock: 500,
+                status: 'normal'
+            },
+            { 
+                id: 5, 
+                name: '黑麦面粉', 
+                category: 'flour', 
+                image: 'https://images.unsplash.com/photo-1576618148400-f54bed99fcfd?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                stock: 0,
+                unit: 'g',
+                lowStock: 500,
+                status: 'out'
+            },
+            { 
+                id: 6, 
+                name: '杏仁粉', 
+                category: 'flour', 
+                image: 'https://images.unsplash.com/photo-1599599810694-57a2ca8276a8?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                stock: 800,
+                unit: 'g',
+                lowStock: 200,
+                status: 'normal'
+            },
+            { 
+                id: 7, 
+                name: '燕麦粉', 
+                category: 'flour', 
+                image: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                stock: 600,
+                unit: 'g',
+                lowStock: 300,
+                status: 'normal'
+            },
+            { 
+                id: 8, 
+                name: '玉米粉', 
+                category: 'flour', 
+                image: 'https://images.unsplash.com/photo-1551754655-cd27e38d2076?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                stock: 150,
+                unit: 'g',
+                lowStock: 300,
+                status: 'low'
+            },
+            { 
+                id: 9, 
+                name: '黄油', 
+                category: 'oil', 
+                image: 'https://images.unsplash.com/photo-1589985270958-bf087be2a336?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                stock: 1500,
+                unit: 'g',
+                lowStock: 300,
+                status: 'normal'
+            },
+            { 
+                id: 10, 
+                name: '植物油', 
+                category: 'oil', 
+                image: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                stock: 2000,
+                unit: 'ml',
+                lowStock: 500,
+                status: 'normal'
+            },
+            { 
+                id: 11, 
+                name: '橄榄油', 
+                category: 'oil', 
+                image: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                stock: 800,
+                unit: 'ml',
+                lowStock: 200,
+                status: 'normal'
+            },
+            { 
+                id: 12, 
+                name: '椰子油', 
+                category: 'oil', 
+                image: 'https://images.unsplash.com/photo-1605522324253-e8a0ffc4e78a?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                stock: 100,
+                unit: 'g',
+                lowStock: 200,
+                status: 'low'
+            },
+            { 
+                id: 13, 
+                name: '猪油', 
+                category: 'oil', 
+                image: 'https://images.unsplash.com/photo-1589985270958-bf087be2a336?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                stock: 500,
+                unit: 'g',
+                lowStock: 100,
+                status: 'normal'
+            },
+            { 
+                id: 14, 
+                name: '起酥油', 
+                category: 'oil', 
+                image: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                stock: 1200,
+                unit: 'g',
+                lowStock: 300,
+                status: 'normal'
+            },
+            { 
+                id: 15, 
+                name: '白砂糖', 
+                category: 'sugar', 
+                image: 'https://images.unsplash.com/photo-1516684669134-de6f7c473a2a?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                stock: 3000,
+                unit: 'g',
+                lowStock: 500,
+                status: 'normal'
+            },
+            { 
+                id: 16, 
+                name: '红糖', 
+                category: 'sugar', 
+                image: 'https://images.unsplash.com/photo-1571115764595-644a1f56a55c?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                stock: 800,
+                unit: 'g',
+                lowStock: 200,
+                status: 'normal'
+            },
+            { 
+                id: 17, 
+                name: '蜂蜜', 
+                category: 'sugar', 
+                image: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                stock: 1200,
+                unit: 'ml',
+                lowStock: 300,
+                status: 'normal'
+            },
+            { 
+                id: 18, 
+                name: '枫糖浆', 
+                category: 'sugar', 
+                image: 'https://images.unsplash.com/photo-1571115764595-644a1f56a55c?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                stock: 400,
+                unit: 'ml',
+                lowStock: 200,
+                status: 'normal'
+            },
+            { 
+                id: 19, 
+                name: '糖粉', 
+                category: 'sugar', 
+                image: 'https://images.unsplash.com/photo-1516684669134-de6f7c473a2a?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                stock: 600,
+                unit: 'g',
+                lowStock: 200,
+                status: 'normal'
+            },
+            { 
+                id: 20, 
+                name: '牛奶', 
+                category: 'dairy', 
+                image: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                stock: 1500,
+                unit: 'ml',
+                lowStock: 500,
+                status: 'normal'
+            },
+            { 
+                id: 21, 
+                name: '奶油', 
+                category: 'dairy', 
+                image: 'https://images.unsplash.com/photo-1628088062854-d1870b4553da?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                stock: 800,
+                unit: 'ml',
+                lowStock: 200,
+                status: 'normal'
+            },
+            { 
+                id: 22, 
+                name: '酸奶', 
+                category: 'dairy', 
+                image: 'https://images.unsplash.com/photo-1571212515416-fac8c2b1e279?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                stock: 200,
+                unit: 'ml',
+                lowStock: 300,
+                status: 'low'
+            },
+            { 
+                id: 23, 
+                name: '奶酪', 
+                category: 'dairy', 
+                image: 'https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                stock: 500,
+                unit: 'g',
+                lowStock: 100,
+                status: 'normal'
+            },
+            { 
+                id: 24, 
+                name: '鸡蛋', 
+                category: 'egg', 
+                image: 'https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                stock: 24,
+                unit: '个',
+                lowStock: 6,
+                status: 'normal'
+            },
+            { 
+                id: 25, 
+                name: '蛋黄', 
+                category: 'egg', 
+                image: 'https://images.unsplash.com/photo-1587486913049-53fc88980cfc?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                stock: 12,
+                unit: '个',
+                lowStock: 5,
+                status: 'normal'
+            },
+            { 
+                id: 26, 
+                name: '蓝莓', 
+                category: 'fruit', 
+                image: 'https://images.unsplash.com/photo-1498557850523-fd3d118b962e?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                stock: 300,
+                unit: 'g',
+                lowStock: 100,
+                status: 'normal'
+            },
+            { 
+                id: 27, 
+                name: '草莓', 
+                category: 'fruit', 
+                image: 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                stock: 400,
+                unit: 'g',
+                lowStock: 150,
+                status: 'normal'
+            },
+            { 
+                id: 28, 
+                name: '香蕉', 
+                category: 'fruit', 
+                image: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                stock: 800,
+                unit: 'g',
+                lowStock: 200,
+                status: 'normal'
+            },
+            { 
+                id: 29, 
+                name: '柠檬', 
+                category: 'fruit', 
+                image: 'https://images.unsplash.com/photo-1590502593747-42a996133562?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                stock: 6,
+                unit: '个',
+                lowStock: 3,
+                status: 'normal'
+            },
+            { 
+                id: 30, 
+                name: '苹果', 
+                category: 'fruit', 
+                image: 'https://images.unsplash.com/photo-1570913149827-d2ac84ab3f9a?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                stock: 1200,
+                unit: 'g',
+                lowStock: 300,
+                status: 'normal'
+            },
+            { 
+                id: 31, 
+                name: '核桃', 
+                category: 'nut', 
+                image: 'https://images.unsplash.com/photo-1553909489-cd47e0ef937f?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                stock: 400,
+                unit: 'g',
+                lowStock: 100,
+                status: 'normal'
+            },
+            { 
+                id: 32, 
+                name: '杏仁', 
+                category: 'nut', 
+                image: 'https://images.unsplash.com/photo-1599599810694-57a2ca8276a8?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                stock: 350,
+                unit: 'g',
+                lowStock: 100,
+                status: 'normal'
+            },
+            { 
+                id: 33, 
+                name: '腰果', 
+                category: 'nut', 
+                image: 'https://images.unsplash.com/photo-1508747703725-719777637510?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                stock: 80,
+                unit: 'g',
+                lowStock: 100,
+                status: 'low'
+            },
+            { 
+                id: 34, 
+                name: '香草精', 
+                category: 'other', 
+                image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                stock: 200,
+                unit: 'ml',
+                lowStock: 50,
+                status: 'normal'
+            },
+            { 
+                id: 35, 
+                name: '泡打粉', 
+                category: 'other', 
+                image: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                stock: 150,
+                unit: 'g',
+                lowStock: 50,
+                status: 'normal'
+            },
+            { 
+                id: 36, 
+                name: '盐', 
+                category: 'other', 
+                image: 'https://images.unsplash.com/photo-1516684669134-de6f7c473a2a?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                stock: 500,
+                unit: 'g',
+                lowStock: 100,
+                status: 'normal'
+            }
+        ];
+        
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function() {
+            // 显示加载指示器
+            showLoading();
+            
+            // 渲染分类栏
+            renderCategories();
+            
+            // 渲染材料列表（默认显示全部）
+            renderMaterials('all');
+            
+            // 绑定搜索事件
+            initSearchFunction();
+            
+            // 隐藏加载指示器
+            setTimeout(hideLoading, 500);
+        });
+        
+        // 渲染分类栏
+        function renderCategories() {
+            const sidebar = document.getElementById('categorySidebar');
+            sidebar.innerHTML = '';
+            
+            // 添加"全部"分类
+            const allElement = document.createElement('div');
+            allElement.className = 'category-item active px-2 py-3 text-center cursor-pointer group';
+            allElement.setAttribute('data-category', 'all');
+            allElement.onclick = function() { selectCategory('all', this); };
+            
+            allElement.innerHTML = `
+                <div class="w-9 h-9 rounded-xl bg-orange-100 flex items-center justify-center mx-auto mb-1.5 transition-colors">
+                    <i class="fas fa-th text-orange-600 text-sm"></i>
+                </div>
+                <div class="text-xs font-medium text-gray-700">全部</div>
+                <div class="text-[10px] text-gray-600 font-medium mt-0.5">${materials.length}</div>
+            `;
+            sidebar.appendChild(allElement);
+            
+            // 添加其他分类
+            categories.forEach(category => {
+                if (category.id === 'all') return;
+                
+                const categoryElement = document.createElement('div');
+                categoryElement.className = 'category-item px-2 py-3 text-center cursor-pointer group';
+                categoryElement.setAttribute('data-category', category.id);
+                categoryElement.onclick = function() { selectCategory(category.id, this); };
+                
+                categoryElement.innerHTML = `
+                    <div class="w-9 h-9 rounded-xl bg-gray-50 flex items-center justify-center mx-auto mb-1.5 transition-colors group-hover:bg-orange-50">
+                        <i class="fas ${category.icon} text-gray-400 text-sm group-hover:text-orange-500"></i>
+                    </div>
+                    <div class="text-xs font-medium text-gray-700">${category.name}</div>
+                    <div class="text-[10px] text-gray-400 mt-0.5">${category.count}</div>
+                `;
+                
+                sidebar.appendChild(categoryElement);
+            });
+        }
+
+        // 选择分类
+        function selectCategory(categoryId, element) {
+            // 更新活动状态
+            document.querySelectorAll('.category-item').forEach(item => {
+                item.classList.remove('active');
+                // Reset icons for non-active items
+                const iconContainer = item.querySelector('div:first-child');
+                const icon = item.querySelector('i');
+                const count = item.querySelector('div:last-child');
+                
+                if (item.dataset.category !== 'all') {
+                    iconContainer.className = 'w-9 h-9 rounded-xl bg-gray-50 flex items-center justify-center mx-auto mb-1.5 transition-colors group-hover:bg-orange-50';
+                    icon.className = `fas ${categories.find(c => c.id === item.dataset.category).icon} text-gray-400 text-sm group-hover:text-orange-500`;
+                    count.className = 'text-[10px] text-gray-400 mt-0.5';
+                } else {
+                    iconContainer.className = 'w-9 h-9 rounded-xl bg-gray-50 flex items-center justify-center mx-auto mb-1.5 transition-colors';
+                    icon.className = 'fas fa-th text-gray-400 text-sm';
+                    count.className = 'text-[10px] text-gray-400 mt-0.5';
+                }
+            });
+            
+            element.classList.add('active');
+            
+            // Set active style
+            const iconContainer = element.querySelector('div:first-child');
+            const icon = element.querySelector('i');
+            const count = element.querySelector('div:last-child');
+            
+            iconContainer.className = 'w-9 h-9 rounded-xl bg-orange-100 flex items-center justify-center mx-auto mb-1.5 transition-colors';
+            if (categoryId === 'all') {
+                icon.className = 'fas fa-th text-orange-600 text-sm';
+            } else {
+                const cat = categories.find(c => c.id === categoryId);
+                icon.className = `fas ${cat.icon} text-orange-600 text-sm`;
+            }
+            count.className = 'text-[10px] text-gray-600 font-medium mt-0.5';
+            
+            // 渲染对应分类的材料
+            renderMaterials(categoryId);
+        }
+        
+        // 渲染材料列表
+        function renderMaterials(categoryId, searchQuery = '') {
+            const materialListContainer = document.getElementById('materialList');
+            
+            // 清空现有内容
+            materialListContainer.innerHTML = '';
+            
+            // 过滤材料
+            let filteredMaterials = materials;
+            
+            if (categoryId !== 'all') {
+                filteredMaterials = materials.filter(material => material.category === categoryId);
+            }
+            
+            if (searchQuery) {
+                const query = searchQuery.toLowerCase();
+                filteredMaterials = filteredMaterials.filter(material => 
+                    material.name.toLowerCase().includes(query)
+                );
+            }
+            
+            // 检查是否有结果
+            if (filteredMaterials.length === 0) {
+                materialListContainer.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full text-center p-6">
+                        <i class="fas fa-search text-gray-300 text-5xl mb-4"></i>
+                        <p class="text-gray-500">未找到符合条件的材料</p>
+                        ${searchQuery ? `<p class="text-sm text-gray-400 mt-2">搜索词：${searchQuery}</p>` : ''}
+                        <button onclick="clearSearchInput()" class="mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg shadow-md hover:bg-orange-600 transition-colors">
+                            清除搜索
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            // 渲染材料卡片
+            filteredMaterials.forEach(material => {
+                const categoryData = categories.find(cat => cat.id === material.category);
+                const materialCard = document.createElement('div');
+                
+                // 根据库存状态设置卡片样式
+                let stockStatusText = '';
+                let stockColor = '';
+                
+                if (material.status === 'out') {
+                    stockStatusText = '缺货';
+                    stockColor = 'text-red-600';
+                } else if (material.status === 'low') {
+                    stockStatusText = '库存不足';
+                    stockColor = 'text-orange-600';
+                } else {
+                    stockStatusText = '充足';
+                    stockColor = 'text-green-600';
+                }
+                
+                materialCard.className = `bg-white rounded-xl p-3 shadow-sm border border-gray-200 transition-all hover:shadow-md hover:transform hover:translate-y-[-2px] material-card group relative mb-3`;
+                
+                materialCard.innerHTML = `
+                    <!-- 右上角分类标签组 -->
+                    <div class="absolute top-0 right-0 z-10 flex flex-col items-end">
+                        <button class="category-tag bg-white/95 backdrop-blur-sm text-gray-500 px-3 py-1 rounded-bl-xl text-[11px] font-bold border-b border-l border-gray-100 shadow-sm transition-all hover:bg-orange-50 hover:text-orange-600" 
+                                data-category="${material.category}">
+                            ${categoryData.name}
+                        </button>
+                    </div>
+
+                    <div class="flex items-center space-x-3 mt-1">
+                        <img src="${material.image}" 
+                             class="w-12 h-12 rounded-lg object-cover border-2 border-gray-200" alt="${material.name}">
+                        <div class="flex-1 pr-12">
+                            <div class="flex items-center gap-1.5 mb-0.5">
+                                <div class="text-sm font-semibold text-gray-800">${material.name}</div>
+                            </div>
+                            <div class="flex items-center space-x-2 mt-1">
+                                <div class="flex items-center space-x-1">
+                                    <span class="text-sm font-bold ${stockColor}">${material.stock}</span>
+                                    <span class="text-xs font-medium text-gray-500">${material.unit}</span>
+                                </div>
+                                <span class="text-[10px] font-medium px-1.5 py-0.5 rounded-md leading-none ${
+                                    material.status === 'out' ? 'bg-red-50 text-red-600 border border-red-100' :
+                                    material.status === 'low' ? 'bg-orange-50 text-orange-600 border border-orange-100' :
+                                    'bg-green-50 text-green-600 border border-green-100'
+                                }">${stockStatusText}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // 绑定卡片点击事件（跳转到详情页）
+                materialCard.addEventListener('click', function(e) {
+                    // 如果点击的是分类标签，则显示分类切换弹窗
+                    if (e.target.classList.contains('category-tag') || e.target.closest('.category-tag')) {
+                        e.stopPropagation();
+                        // Get the button element
+                        const btn = e.target.classList.contains('category-tag') ? e.target : e.target.closest('.category-tag');
+                        // Normally we would show a modal here, but for now just filter sidebar or do nothing
+                        // If we want to simulate selecting the category in sidebar:
+                        const catId = btn.dataset.category;
+                        const sidebarItem = document.querySelector(`.category-item[data-category="${catId}"]`);
+                        if (sidebarItem) sidebarItem.click();
+                    } else {
+                        // 跳转到详情页
+                        window.location.href = `cailiao-detail-mobile.html?id=${material.id}`;
+                    }
+                });
+                
+                materialListContainer.appendChild(materialCard);
+            });
+        }
+        
+        // 初始化搜索功能
+        function initSearchFunction() {
+            const searchInput = document.getElementById('searchInput');
+            const clearButton = document.getElementById('clearSearch');
+            
+            searchInput.addEventListener('input', function() {
+                const query = this.value.trim();
+                
+                // 显示/隐藏清除按钮
+                if (query) {
+                    clearButton.classList.remove('hidden');
+                } else {
+                    clearButton.classList.add('hidden');
+                }
+                
+                // 获取当前选中的分类
+                const activeCategory = document.querySelector('.category-item.active');
+                const categoryId = activeCategory ? activeCategory.getAttribute('data-category') : 'all';
+                
+                // 渲染搜索结果
+                renderMaterials(categoryId, query);
+            });
+        }
+        
+        // 清除搜索
+        function clearSearchInput() {
+            const searchInput = document.getElementById('searchInput');
+            const clearButton = document.getElementById('clearSearch');
+            
+            searchInput.value = '';
+            clearButton.classList.add('hidden');
+            
+            // 获取当前选中的分类
+            const activeCategory = document.querySelector('.category-item.active');
+            const categoryId = activeCategory ? activeCategory.getAttribute('data-category') : 'all';
+            
+            // 重新渲染材料列表
+            renderMaterials(categoryId);
+        }
+        
+        // 显示加载指示器
+        function showLoading() {
+            document.getElementById('loadingIndicator').classList.remove('hidden');
+        }
+        
+        // 隐藏加载指示器
+        function hideLoading() {
+            document.getElementById('loadingIndicator').classList.add('hidden');
+        }
+
+        // 显示批量导入面板
+        function showBatchImportSheet() {
+            // 创建批量导入弹窗
+            const importModal = document.createElement('div');
+            importModal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            importModal.innerHTML = `
+                <div class="bg-white rounded-lg p-6 mx-4 w-full max-w-md">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-800">批量导入材料</h3>
+                        <button onclick="hideBatchImportSheet(this)" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="space-y-3">
+                        <button onclick="uploadLocalFile()" class="w-full p-4 bg-orange-50 border border-orange-200 rounded-xl text-left hover:bg-orange-100 transition-colors">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-file-upload text-white"></i>
+                                </div>
+                                <div>
+                                    <div class="font-medium text-gray-800">上传本地文件导入</div>
+                                    <div class="text-sm text-gray-600">支持Excel(.xlsx)和CSV(.csv)格式</div>
+                                </div>
+                            </div>
+                        </button>
+                        <button onclick="showMaterialLibrary()" class="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl text-left hover:bg-gray-100 transition-colors">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-gray-500 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-database text-white"></i>
+                                </div>
+                                <div>
+                                    <div class="font-medium text-gray-800">从系统材料资源库导入</div>
+                                    <div class="text-sm text-gray-600">烘焙行业常用材料清单</div>
+                                </div>
+                            </div>
+                        </button>
+                    </div>
+                    <div class="mt-4 p-3 bg-yellow-50 rounded-lg">
+                        <div class="text-xs text-yellow-600 mb-1">📋 模板下载</div>
+                        <a href="#" onclick="downloadTemplate()" class="text-xs text-orange-600 hover:text-orange-800">点击下载Excel导入模板</a>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(importModal);
+            
+            // 点击背景关闭
+            importModal.addEventListener('click', function(e) {
+                if (e.target === importModal) {
+                    hideBatchImportSheet(importModal);
+                }
+            });
+        }
+
+        // 隐藏批量导入面板
+        function hideBatchImportSheet(modal) {
+            if (modal) {
+                modal.remove();
+            } else {
+                const existingModal = document.querySelector('.fixed.inset-0.bg-black.bg-opacity-50');
+                if (existingModal) {
+                    existingModal.remove();
+                }
+            }
+        }
+
+        // 上传本地文件
+        function uploadLocalFile() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.xlsx,.xls,.csv';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    showToast(`正在处理文件：${file.name}`, 'info');
+                    // 这里可以添加文件处理逻辑
+                    setTimeout(() => {
+                        showToast('文件上传成功！', 'success');
+                        hideBatchImportSheet();
+                        // 刷新材料列表
+                        location.reload();
+                    }, 2000);
+                }
+            };
+            input.click();
+        }
+
+        // 显示材料资源库
+        function showMaterialLibrary() {
+            hideBatchImportSheet();
+            showToast('材料资源库功能开发中...', 'info');
+        }
+
+        // 下载模板
+        function downloadTemplate() {
+            showToast('正在下载Excel模板...', 'info');
+            // 这里可以添加实际的模板下载逻辑
+        }
+
+        // 显示分类切换弹窗
+        function showCategoryChangeModal(materialId, materialName, currentCategory) {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+            
+            // 过滤掉"全部"分类，只显示实际分类
+            const availableCategories = categories.filter(cat => cat.id !== 'all');
+            
+            modal.innerHTML = `
+                <div class="bg-white rounded-2xl p-6 w-full max-w-sm animate-scale-in">
+                    <div class="text-center mb-6">
+                        <div class="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full flex items-center justify-center shadow-lg shadow-orange-100">
+                            <i class="fas fa-tags text-white text-2xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">更改材料分类</h3>
+                        <p class="text-sm text-gray-600">${materialName}</p>
+                    </div>
+                    
+                    <div class="space-y-2 max-h-64 overflow-y-auto custom-scrollbar pr-2">
+                        ${availableCategories.map(category => `
+                            <button onclick="changeMaterialCategory('${materialId}', '${category.id}', '${materialName}')" 
+                                    class="w-full p-3 rounded-xl border-2 transition-all hover:bg-orange-50 hover:border-orange-200 group ${
+                                        category.id === currentCategory 
+                                            ? 'border-orange-500 bg-orange-50' 
+                                            : 'border-gray-100 bg-white'
+                                    }">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center group-hover:bg-white transition-colors">
+                                        <i class="fas ${category.icon} ${category.id === currentCategory ? 'text-orange-500' : 'text-gray-400 group-hover:text-orange-500'}"></i>
+                                    </div>
+                                    <div class="flex-1 text-left">
+                                        <div class="font-medium ${category.id === currentCategory ? 'text-orange-700' : 'text-gray-700'}">${category.name}</div>
+                                        <div class="text-sm text-gray-500">${category.count} 种材料</div>
+                                    </div>
+                                    ${category.id === currentCategory ? '<i class="fas fa-check text-orange-500"></i>' : ''}
+                                </div>
+                            </button>
+                        `).join('')}
+                    </div>
+                    
+                    <div class="mt-6 flex space-x-3">
+                        <button onclick="closeCategoryChangeModal()" class="flex-1 py-3 px-4 bg-gray-100 text-gray-600 rounded-xl font-medium hover:bg-gray-200 transition-colors">
+                            取消
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // 点击背景关闭
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeCategoryChangeModal();
+                }
+            });
+        }
+        
+        // 关闭分类切换弹窗
+        function closeCategoryChangeModal() {
+            const modal = document.querySelector('.fixed.inset-0.bg-black.bg-opacity-50');
+            if (modal) {
+                modal.remove();
+            }
+        }
+        
+        // 更改材料分类
+        function changeMaterialCategory(materialId, newCategoryId, materialName) {
+            // 找到对应的材料并更新分类
+            const material = materials.find(m => m.id == materialId);
+            if (material) {
+                const oldCategory = material.category;
+                material.category = newCategoryId;
+                
+                // 更新分类计数
+                const oldCategoryData = categories.find(cat => cat.id === oldCategory);
+                const newCategoryData = categories.find(cat => cat.id === newCategoryId);
+                
+                if (oldCategoryData) oldCategoryData.count--;
+                if (newCategoryData) newCategoryData.count++;
+                
+                // 更新"全部"分类的计数
+                const allCategory = categories.find(cat => cat.id === 'all');
+                if (allCategory) {
+                    allCategory.count = materials.length;
+                }
+                
+                // 重新渲染分类栏
+                renderCategories();
+                
+                // 获取当前选中的分类
+                const activeCategory = document.querySelector('.category-item.active');
+                const currentCategoryId = activeCategory ? activeCategory.getAttribute('data-category') : 'all';
+                
+                // 重新渲染材料列表
+                renderMaterials(currentCategoryId);
+                
+                // 关闭弹窗
+                closeCategoryChangeModal();
+                
+                // 显示成功提示
+                showToast(`"${materialName}" 已移动到 "${newCategoryData.name}" 分类`, 'success');
+            }
+        }
+
+        // Toast提示功能
+        function showToast(message, type = 'info', duration = 3000) {
+            const existingToast = document.querySelector('.toast');
+            if (existingToast) {
+                existingToast.remove();
+            }
+            
+            const toast = document.createElement('div');
+            toast.className = `toast fixed top-20 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg z-50 flex items-center space-x-2`;
+            
+            let bgColor, textColor, icon;
+            switch(type) {
+                case 'success':
+                    bgColor = 'bg-green-500';
+                    textColor = 'text-white';
+                    icon = 'fas fa-check-circle';
+                    break;
+                case 'error':
+                    bgColor = 'bg-red-500';
+                    textColor = 'text-white';
+                    icon = 'fas fa-exclamation-circle';
+                    break;
+                case 'warning':
+                    bgColor = 'bg-yellow-500';
+                    textColor = 'text-white';
+                    icon = 'fas fa-exclamation-triangle';
+                    break;
+                default:
+                    bgColor = 'bg-gray-800';
+                    textColor = 'text-white';
+                    icon = 'fas fa-info-circle';
+            }
+            
+            toast.classList.add(bgColor, textColor);
+            toast.innerHTML = `
+                <i class="${icon}"></i>
+                <span>${message}</span>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.remove();
+                }
+            }, duration);
+        }
+    </script>
+</body>
+</html>

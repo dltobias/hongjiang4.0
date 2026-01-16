@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>仓库新建 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Cookpad Design System */
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+            --text-main: #333333;
+            --text-sub: #8b8b8b;
+            --bg-light: #f7f7f5;
+            --bg-white: #ffffff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-main);
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        /* 开关样式 */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #e5e7eb;
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        input:checked + .toggle-slider {
+            background: linear-gradient(135deg, #ff9f43 0%, #ff8c00 100%);
+        }
+        
+        input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+        }
+        
+        /* 输入框聚焦效果 */
+        .form-input:focus {
+            outline: none;
+            border-color: #ff9f43;
+            box-shadow: 0 0 0 3px rgba(255, 159, 67, 0.1);
+        }
+        
+        /* 说明浮层样式 */
+        .tooltip {
+            position: relative;
+        }
+        
+        .tooltip-content {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1f2937;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease;
+            z-index: 1000;
+            max-width: 200px;
+            white-space: normal;
+            line-height: 1.4;
+            margin-bottom: 8px;
+        }
+        
+        .tooltip-content::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: #1f2937;
+        }
+        
+        .tooltip:hover .tooltip-content {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        /* 说明浮层样式 */
+        .btn-primary {
+            background: linear-gradient(135deg, #ff9f43 0%, #ff8c00 100%);
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(255, 140, 0, 0.2);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(255, 140, 0, 0.3);
+        }
+        
+        .btn-primary:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(255, 140, 0, 0.2);
+        }
+        
+        .btn-secondary {
+            background-color: #f3f4f6;
+            color: #4b5563;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #e5e7eb;
+        }
+        
+        /* 字符计数器样式 */
+        .char-counter {
+            font-size: 12px;
+            color: #9ca3af;
+            text-align: right;
+            margin-top: 4px;
+        }
+        
+        /* 表单容器样式 */
+        .form-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            border: 1px solid #f0f0f0;
+        }
+        
+        /* 成功提示样式 */
+        .success-toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #10b981;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            display: flex;
+            align-items: center;
+        }
+        
+        .success-toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(10px);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- 顶部导航栏 -->
+    <div class="bg-white px-4 py-3 shadow-sm border-b border-gray-100 sticky top-0 z-30">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <button onclick="goBack()" class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div>
+                    <div class="text-lg font-bold text-gray-800 tracking-wide">仓库新建</div>
+                    <div class="text-xs text-gray-500 font-medium mt-0.5">创建和配置仓库信息</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主表单区域 -->
+    <div class="px-4 mt-6 pb-24">
+        <form id="warehouseForm" class="form-container p-6 space-y-6">
+            <!-- 仓库名称 -->
+            <div>
+                <div class="flex items-center space-x-2 mb-3">
+                    <label for="warehouseName" class="text-sm font-semibold text-gray-800">
+                        仓库名称 <span class="text-red-500">*</span>
+                    </label>
+                    <div class="tooltip">
+                        <i class="fas fa-question-circle text-gray-400 text-sm cursor-help"></i>
+                        <div class="tooltip-content">
+                            例如：原料仓、成品仓、冷藏仓，用于区分仓库功能
+                        </div>
+                    </div>
+                </div>
+                <input 
+                    type="text" 
+                    id="warehouseName" 
+                    name="warehouseName"
+                    class="form-input w-full px-4 py-3 border border-gray-200 rounded-xl transition-all duration-300"
+                    placeholder="请输入仓库名称"
+                    maxlength="20"
+                    required
+                >
+                <div class="char-counter">
+                    <span id="nameCharCount">0</span>/20
+                </div>
+            </div>
+
+            <!-- 仓库编号 -->
+            <div>
+                <div class="flex items-center space-x-2 mb-3">
+                    <label for="warehouseCode" class="text-sm font-semibold text-gray-800">仓库编号</label>
+                    <div class="tooltip">
+                        <i class="fas fa-question-circle text-gray-400 text-sm cursor-help"></i>
+                        <div class="tooltip-content">
+                            用于扫码识别或内部调拨用，可为空
+                        </div>
+                    </div>
+                </div>
+                <div class="flex space-x-3">
+                    <input 
+                        type="text" 
+                        id="warehouseCode" 
+                        name="warehouseCode"
+                        class="form-input flex-1 px-4 py-3 border border-gray-200 rounded-xl transition-all duration-300"
+                        placeholder="可手动输入或自动生成"
+                        maxlength="10"
+                    >
+                    <button 
+                        type="button" 
+                        onclick="generateWarehouseCode()"
+                        class="px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-colors flex items-center space-x-2"
+                    >
+                        <i class="fas fa-magic text-sm"></i>
+                        <span class="text-sm">生成</span>
+                    </button>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">格式建议：WH001、CK-01 等</p>
+            </div>
+
+            <!-- 仓库类型 -->
+            <div>
+                <div class="flex items-center space-x-2 mb-3">
+                    <label for="warehouseType" class="text-sm font-semibold text-gray-800">
+                        仓库类型 <span class="text-red-500">*</span>
+                    </label>
+                    <div class="tooltip">
+                        <i class="fas fa-question-circle text-gray-400 text-sm cursor-help"></i>
+                        <div class="tooltip-content">
+                            类型将影响库存统计与权限设置
+                        </div>
+                    </div>
+                </div>
+                <div class="relative">
+                    <select 
+                        id="warehouseType" 
+                        name="warehouseType"
+                        class="form-input w-full px-4 py-3 border border-gray-200 rounded-xl appearance-none bg-white transition-all duration-300"
+                        required
+                    >
+                        <option value="">请选择仓库类型</option>
+                        <option value="raw">🏭 原料仓</option>
+                        <option value="product">📦 成品仓</option>
+                        <option value="frozen">❄️ 冷冻仓</option>
+                        <option value="damaged">⚠️ 报损仓</option>
+                        <option value="normal">🏠 常温仓</option>
+                    </select>
+                    <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
+                        <i class="fas fa-chevron-down text-gray-400"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 启用仓库 -->
+            <div>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <label class="text-sm font-semibold text-gray-800">启用仓库</label>
+                        <div class="tooltip">
+                            <i class="fas fa-question-circle text-gray-400 text-sm cursor-help"></i>
+                            <div class="tooltip-content">
+                                启用后该仓库可以正常使用，禁用后将暂停所有操作
+                            </div>
+                        </div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="enableWarehouse" name="enableWarehouse" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">新建仓库默认启用，可随时在设置中修改</p>
+            </div>
+
+            <!-- 启用库存预警 -->
+            <div>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <label class="text-sm font-semibold text-gray-800">启用库存预警</label>
+                        <div class="tooltip">
+                            <i class="fas fa-question-circle text-gray-400 text-sm cursor-help"></i>
+                            <div class="tooltip-content">
+                                开启后，该仓库中的材料将参与库存预警计算
+                            </div>
+                        </div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="enableAlert" name="enableAlert" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">建议开启，可及时提醒库存不足</p>
+            </div>
+
+            <!-- 仓库备注 -->
+            <div>
+                <div class="flex items-center space-x-2 mb-3">
+                    <label for="warehouseRemark" class="text-sm font-semibold text-gray-800">仓库备注</label>
+                    <div class="tooltip">
+                        <i class="fas fa-question-circle text-gray-400 text-sm cursor-help"></i>
+                        <div class="tooltip-content">
+                            可填写仓库位置、特殊要求等说明信息
+                        </div>
+                    </div>
+                </div>
+                <textarea 
+                    id="warehouseRemark" 
+                    name="warehouseRemark"
+                    class="form-input w-full px-4 py-3 border border-gray-200 rounded-xl resize-none transition-all duration-300"
+                    placeholder="请输入仓库说明（选填）"
+                    rows="3"
+                    maxlength="200"
+                ></textarea>
+                <div class="char-counter">
+                    <span id="remarkCharCount">0</span>/200
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- 固定底部保存按钮 -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-4">
+        <button 
+            type="submit" 
+            form="warehouseForm"
+            class="btn-primary w-full py-4 text-white font-semibold rounded-xl flex items-center justify-center space-x-2"
+            id="saveButton"
+        >
+            <i class="fas fa-save"></i>
+            <span>确认新建</span>
+        </button>
+    </div>
+
+    <!-- 成功提示 -->
+    <div id="successToast" class="success-toast">
+        <i class="fas fa-check-circle mr-2"></i>
+        <span>仓库创建成功！可在材料管理中为该仓库添加原料</span>
+    </div>
+
+    <script>
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeForm();
+            bindEvents();
+        });
+
+        // 初始化表单
+        function initializeForm() {
+            // 字符计数器
+            updateCharCount('warehouseName', 'nameCharCount');
+            updateCharCount('warehouseRemark', 'remarkCharCount');
+        }
+
+        // 绑定事件
+        function bindEvents() {
+            // 字符计数
+            document.getElementById('warehouseName').addEventListener('input', function() {
+                updateCharCount('warehouseName', 'nameCharCount');
+            });
+
+            document.getElementById('warehouseRemark').addEventListener('input', function() {
+                updateCharCount('warehouseRemark', 'remarkCharCount');
+            });
+
+            // 表单提交
+            document.getElementById('warehouseForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveWarehouse();
+            });
+        }
+
+        // 更新字符计数
+        function updateCharCount(inputId, counterId) {
+            const input = document.getElementById(inputId);
+            const counter = document.getElementById(counterId);
+            counter.textContent = input.value.length;
+        }
+
+        // 生成仓库编号
+        function generateWarehouseCode() {
+            const prefix = 'WH';
+            const timestamp = Date.now().toString().slice(-6);
+            const code = prefix + timestamp;
+            document.getElementById('warehouseCode').value = code;
+        }
+
+        // 保存仓库
+        function saveWarehouse() {
+            const form = document.getElementById('warehouseForm');
+            const formData = new FormData(form);
+            
+            // 验证必填字段
+            const warehouseName = formData.get('warehouseName');
+            const warehouseType = formData.get('warehouseType');
+            const enableWarehouse = formData.get('enableWarehouse') === 'on';
+            const enableAlert = formData.get('enableAlert') === 'on';
+            
+            if (!warehouseName.trim()) {
+                showError('请填写仓库名称');
+                return;
+            }
+            
+            if (!warehouseType) {
+                showError('请选择仓库类型');
+                return;
+            }
+
+            // 显示保存中状态
+            const saveButton = document.getElementById('saveButton');
+            const originalText = saveButton.innerHTML;
+            saveButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>保存中...';
+            saveButton.disabled = true;
+
+            // 模拟保存过程
+            setTimeout(() => {
+                // 重置按钮状态
+                saveButton.innerHTML = originalText;
+                saveButton.disabled = false;
+
+                // 显示成功提示
+                showSuccessToast();
+
+                // 延迟返回上一页
+                setTimeout(() => {
+                    window.location.href = 'cangku-liebiao.html';
+                }, 2000);
+            }, 1500);
+        }
+
+        // 显示错误提示
+        function showError(message) {
+            alert(message); // 简单的错误提示，可以后续优化为更美观的提示框
+        }
+
+        // 显示成功提示
+        function showSuccessToast() {
+            const toast = document.getElementById('successToast');
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // 返回上一页
+        function goBack() {
+            window.location.href = 'cangku-liebiao.html';
+        }
+
+        // 防止意外离开页面
+        window.addEventListener('beforeunload', function(e) {
+            const form = document.getElementById('warehouseForm');
+            const formData = new FormData(form);
+            const hasContent = formData.get('warehouseName') || formData.get('warehouseCode') || formData.get('warehouseRemark');
+            
+            if (hasContent) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+    </script>
+</body>
+</html> 

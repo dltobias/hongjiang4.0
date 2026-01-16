@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>库存查询 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Cookpad Design System */
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+            --text-main: #333333;
+            --text-sub: #8b8b8b;
+            --bg-light: #f7f7f5;
+            --bg-white: #ffffff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-main);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* 滚动条美化 */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 3px;
+        }
+
+        /* 卡片样式 */
+        .card {
+            background: var(--bg-white);
+            border-radius: 12px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            border: 1px solid #f0f0f0;
+            transition: all 0.2s;
+        }
+        
+        .card:active {
+            transform: scale(0.98);
+        }
+
+        /* 侧边栏样式 */
+        .category-sidebar {
+            width: 80px;
+            background-color: #ffffff;
+            border-right: 1px solid #f0f0f0;
+        }
+        
+        .category-item {
+            transition: all 0.2s ease;
+            margin: 4px 8px;
+            border-radius: 8px;
+            border: 1px solid transparent;
+        }
+        
+        .category-item:hover {
+            background-color: #f7f7f5;
+        }
+        
+        .category-item.active {
+            background-color: #fff7ed;
+            border-color: #ffedd5;
+            color: var(--primary-dark);
+        }
+        
+        .category-item.active .category-icon-container {
+            background-color: #ffedd5 !important;
+        }
+        
+        .category-item.active i {
+            color: var(--primary-dark) !important;
+        }
+        
+        .category-item.active .category-name {
+            color: var(--primary-dark) !important;
+            font-weight: 600;
+        }
+
+        /* 统计卡片样式 */
+        .stats-card {
+            background: #ffffff;
+            border: 1px solid #f0f0f0;
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+        }
+        
+        .stats-card.active {
+            border-color: var(--primary-orange);
+            background-color: #fff7ed;
+        }
+
+        /* 下拉选择框 */
+        .custom-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+        }
+
+        /* 动画 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        
+        @keyframes scaleIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .animate-scale-in {
+            animation: scaleIn 0.2s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 h-screen flex flex-col overflow-hidden">
+    <!-- 顶部导航栏 - Cookpad 风格 -->
+    <div class="bg-white px-4 py-3 shadow-sm border-b border-gray-100 z-30 flex-shrink-0">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <button onclick="window.location.href='../erp-zhuye-canku.html'" class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div>
+                    <div class="text-lg font-bold text-gray-800 tracking-wide">库存查询</div>
+                    <div class="text-xs text-gray-500 font-medium mt-0.5">实时库存状态查询</div>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="showScanModal()" class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 hover:bg-orange-50 hover:text-orange-600 transition-all text-gray-500">
+                    <i class="fas fa-qrcode text-sm"></i>
+                </button>
+                <button onclick="exportData()" class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 hover:bg-orange-50 hover:text-orange-600 transition-all text-gray-500">
+                    <i class="fas fa-download text-sm"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 工具栏 -->
+    <div class="bg-white border-b border-gray-100 flex-shrink-0 z-20">
+        <div class="px-4 py-3">
+            <div class="flex items-center gap-3">
+                <!-- 仓库选择 -->
+                <div class="flex-1 relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-warehouse text-gray-400 text-xs"></i>
+                    </div>
+                    <select id="warehouseSelect" class="custom-select w-full bg-gray-50 border border-gray-200 rounded-xl pl-9 pr-8 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-100 focus:border-orange-300 transition-all">
+                        <option value="warehouse1">主仓库 (A区)</option>
+                        <option value="warehouse2">二号仓库 (B区)</option>
+                        <option value="warehouse3">三号仓库 (C区)</option>
+                        <option value="warehouse4">四号仓库 (D区)</option>
+                        <option value="warehouse5">五号仓库 (E区)</option>
+                    </select>
+                </div>
+                
+                <!-- 搜索和扫描按钮组 -->
+                <div class="flex items-center gap-2">
+                    <button id="searchToggleBtn" onclick="toggleSearchBox()" class="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center hover:bg-orange-50 hover:text-orange-600 transition-all border border-gray-200 text-gray-500">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 展开的搜索框 -->
+            <div id="expandedSearchBox" class="mt-3 hidden animate-fade-in">
+                <div class="relative">
+                    <input type="text" placeholder="搜索材料名称..." 
+                           class="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-10 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-100 focus:border-orange-300 transition-all"
+                           id="searchInput" oninput="searchMaterials()">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-search text-gray-400"></i>
+                    </div>
+                    <button class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 hidden" 
+                            id="clearSearch" 
+                            onclick="clearSearchInput()">
+                        <i class="fas fa-times-circle text-sm"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主内容区域 - 优化布局 -->
+    <div class="flex flex-1 overflow-hidden">
+        <!-- 左侧分类栏 -->
+        <div class="category-sidebar h-full overflow-y-auto custom-scrollbar flex flex-col py-2">
+            <div id="categorySidebar">
+                <!-- 分类项将通过JS动态生成 -->
+            </div>
+        </div>
+        
+        <!-- 右侧区域 (Scrollable) -->
+        <div class="flex-1 h-full overflow-y-auto custom-scrollbar bg-gray-50">
+            <!-- 智能筛选器和统计面板 -->
+            <div class="px-4 py-3 bg-white border-b border-gray-100 mb-3">
+                <!-- 统计数据行 -->
+                <div class="grid grid-cols-3 gap-3 mb-4">
+                    <!-- 总材料数 -->
+                    <div class="stats-card cursor-pointer group hover:border-orange-200 hover:bg-orange-50" onclick="clearFilters()">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs text-gray-500">总材料</p>
+                                <p class="text-sm font-bold text-gray-800" id="totalMaterials">25</p>
+                            </div>
+                            <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-white group-hover:text-orange-500 transition-colors">
+                                <i class="fas fa-boxes text-xs text-gray-400 group-hover:text-orange-500"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 库存总值 -->
+                    <div class="stats-card cursor-pointer group hover:border-orange-200 hover:bg-orange-50">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs text-gray-500">库存总值</p>
+                                <p class="text-sm font-bold text-gray-800" id="totalValue">¥0</p>
+                            </div>
+                            <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-white group-hover:text-orange-500 transition-colors">
+                                <i class="fas fa-yen-sign text-xs text-gray-400 group-hover:text-orange-500"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 即将过期 -->
+                    <div class="stats-card cursor-pointer group hover:border-orange-200 hover:bg-orange-50" onclick="quickFilter('expiring')" id="expiringCard">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs text-gray-500">即将过期</p>
+                                <p class="text-sm font-bold text-gray-800" id="expiringCount">0</p>
+                            </div>
+                            <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-white group-hover:text-orange-500 transition-colors">
+                                <i class="fas fa-clock text-xs text-gray-400 group-hover:text-orange-500"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 低库存数 -->
+                    <div class="stats-card cursor-pointer group hover:border-orange-200 hover:bg-orange-50" onclick="quickFilter('low')" id="lowStockCard">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs text-gray-500">低库存</p>
+                                <p class="text-sm font-bold text-gray-800" id="lowStockCount">3</p>
+                            </div>
+                            <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-white group-hover:text-orange-500 transition-colors">
+                                <i class="fas fa-exclamation-triangle text-xs text-gray-400 group-hover:text-orange-500"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 缺货数 -->
+                    <div class="stats-card cursor-pointer group hover:border-orange-200 hover:bg-orange-50" onclick="quickFilter('out')" id="outStockCard">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs text-gray-500">缺货</p>
+                                <p class="text-sm font-bold text-gray-800" id="outOfStockCount">1</p>
+                            </div>
+                            <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-white group-hover:text-orange-500 transition-colors">
+                                <i class="fas fa-times-circle text-xs text-gray-400 group-hover:text-orange-500"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 库存健康度 -->
+                    <div class="stats-card cursor-pointer group hover:border-orange-200 hover:bg-orange-50" onclick="quickFilter('normal')" id="healthCard">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs text-gray-500">健康度</p>
+                                <p class="text-sm font-bold text-gray-800" id="stockHealth">85%</p>
+                            </div>
+                            <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-white group-hover:text-orange-500 transition-colors">
+                                <i class="fas fa-heart text-xs text-gray-400 group-hover:text-orange-500"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 排序和操作行 -->
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm font-medium text-gray-500">排序:</span>
+                        <div class="relative">
+                            <select id="sortSelect" onchange="sortMaterials()" class="custom-select bg-gray-50 border border-gray-200 rounded-lg pl-3 pr-8 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-orange-200">
+                                <option value="name-asc">名称 A-Z</option>
+                                <option value="name-desc">名称 Z-A</option>
+                                <option value="stock-asc">库存 ↑</option>
+                                <option value="stock-desc">库存 ↓</option>
+                                <option value="update-desc">最新更新</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-2">
+                        <button onclick="clearFilters()" class="px-3 py-1.5 text-xs bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 hover:text-orange-500 transition-colors border border-gray-200">
+                            <i class="fas fa-refresh mr-1"></i>清除筛选
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧材料列表 -->
+            <div class="p-3" id="materialList">
+                <!-- 材料卡片将通过JS动态生成 -->
+            </div>
+        </div>
+    </div>
+    
+
+
+    <!-- 加载中提示 -->
+    <div id="loadingIndicator" class="fixed inset-0 bg-white bg-opacity-80 flex items-center justify-center z-50 hidden">
+        <div class="text-center">
+            <div class="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p class="text-gray-600">加载中...</p>
+        </div>
+    </div>
+
+    <!-- 扫码查询弹窗 -->
+    <div id="scanModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl p-6 m-4 max-w-sm w-full animate-scale-in">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-camera text-white text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">扫码查询</h3>
+                <p class="text-gray-600 mb-6">扫描材料条码或二维码快速查询库存信息</p>
+                <div class="flex space-x-3">
+                    <button onclick="closeScanModal()" class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                        取消
+                    </button>
+                    <button onclick="startScan()" class="flex-1 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all">
+                        开始扫描
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 材料详情弹窗 -->
+    <div id="materialDetailModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl m-4 max-w-md w-full max-h-[90vh] overflow-y-auto animate-scale-in">
+            <div class="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 rounded-t-2xl">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-800">材料详情</h3>
+                    <button onclick="closeMaterialDetail()" class="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors">
+                        <i class="fas fa-times text-gray-600"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-6">
+                <!-- 材料基本信息 -->
+                <div class="text-center mb-6">
+                    <div class="w-24 h-24 mx-auto mb-4 rounded-2xl overflow-hidden bg-gray-100">
+                        <img id="detailImage" src="" alt="" class="w-full h-full object-cover">
+                    </div>
+                    <h4 id="detailName" class="text-xl font-bold text-gray-800 mb-2"></h4>
+                    <p id="detailCategory" class="text-sm text-gray-500 mb-4"></p>
+                    
+                    <!-- 库存状态 -->
+                    <div class="flex items-center justify-center space-x-4 mb-6">
+                        <div class="text-center">
+                            <p class="text-2xl font-bold text-gray-800" id="detailStock"></p>
+                            <p class="text-xs text-gray-500">当前库存</p>
+                        </div>
+                        <div class="w-px h-8 bg-gray-200"></div>
+                        <div class="text-center">
+                            <span id="detailStatus" class="px-3 py-1 rounded-full text-xs font-medium"></span>
+                            <p class="text-xs text-gray-500 mt-1">库存状态</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 详细信息 -->
+                <div class="space-y-4">
+                    <div class="bg-gray-50 rounded-xl p-4">
+                        <h5 class="font-medium text-gray-800 mb-3">库存信息</h5>
+                        <div class="grid grid-cols-2 gap-3 text-sm">
+                            <div>
+                                <span class="text-gray-500">最低库存:</span>
+                                <span id="detailLowStock" class="font-medium text-gray-800 ml-2"></span>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">存放位置:</span>
+                                <span id="detailLocation" class="font-medium text-gray-800 ml-2"></span>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">最后更新:</span>
+                                <span id="detailLastUpdate" class="font-medium text-gray-800 ml-2"></span>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">供应商:</span>
+                                <span id="detailSupplier" class="font-medium text-gray-800 ml-2"></span>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">过期时间:</span>
+                                <span id="detailExpiry" class="font-medium text-gray-800 ml-2"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 库存历史图表 -->
+                    <div class="bg-gray-50 rounded-xl p-4">
+                        <h5 class="font-medium text-gray-800 mb-3">库存趋势</h5>
+                        <div class="h-32 bg-white rounded-lg flex items-center justify-center">
+                            <div class="text-center text-gray-500">
+                                <i class="fas fa-chart-line text-2xl mb-2"></i>
+                                <p class="text-sm">图表功能开发中...</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 最近采购信息 -->
+                    <div class="bg-gray-50 rounded-xl p-4">
+                        <h5 class="font-medium text-gray-800 mb-3">最近采购</h5>
+                        <div id="recentPurchases" class="space-y-2">
+                            <!-- 采购记录将通过JS动态生成 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+    <script>
+        // 材料数据和分类数据（与入库主页保持一致）
+        const categories = [
+            { id: 'all', name: '全部', count: 36, icon: 'fa-th', color: 'blue' },
+            { id: 'flour', name: '粉类', count: 8, icon: 'fa-wheat-awn', color: 'amber' },
+            { id: 'oil', name: '油脂类', count: 6, icon: 'fa-oil-can', color: 'yellow' },
+            { id: 'sugar', name: '糖类', count: 5, icon: 'fa-candy-cane', color: 'pink' },
+            { id: 'dairy', name: '乳制品', count: 4, icon: 'fa-cheese', color: 'green' },
+            { id: 'egg', name: '蛋类', count: 2, icon: 'fa-egg', color: 'orange' },
+            { id: 'fruit', name: '水果类', count: 5, icon: 'fa-apple-whole', color: 'red' },
+            { id: 'nut', name: '坚果类', count: 3, icon: 'fa-seedling', color: 'lime' },
+            { id: 'other', name: '其他', count: 3, icon: 'fa-mortar-pestle', color: 'purple' }
+        ];
+        
+        const materials = [
+            { id: 1, name: '高筋面粉', category: 'flour', image: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', stock: 2500, unit: 'g', lowStock: 500, status: 'normal', price: 0.015, expiryDate: '2026-06-15' },
+            { id: 2, name: '中筋面粉', category: 'flour', image: 'https://images.unsplash.com/photo-1628088062854-d1870b4553da?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', stock: 1800, unit: 'g', lowStock: 500, status: 'normal', price: 0.012, expiryDate: '2026-05-20' },
+            { id: 3, name: '低筋面粉', category: 'flour', image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', stock: 300, unit: 'g', lowStock: 500, status: 'low', price: 0.018, expiryDate: '2025-12-25' },
+            { id: 4, name: '全麦面粉', category: 'flour', image: 'https://images.unsplash.com/photo-1595535373192-fc8935bacd89?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', stock: 1200, unit: 'g', lowStock: 500, status: 'normal', price: 0.02, expiryDate: '2026-02-10' },
+            { id: 5, name: '黑麦面粉', category: 'flour', image: 'https://images.unsplash.com/photo-1576618148400-f54bed99fcfd?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', stock: 0, unit: 'g', lowStock: 500, status: 'out', price: 0.025, expiryDate: '2026-08-01' },
+            { id: 6, name: '杏仁粉', category: 'flour', image: 'https://images.unsplash.com/photo-1599599810694-57a2ca8276a8?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', stock: 800, unit: 'g', lowStock: 200, status: 'normal', price: 0.12, expiryDate: '2026-03-15' },
+            { id: 7, name: '燕麦粉', category: 'flour', image: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', stock: 600, unit: 'g', lowStock: 300, status: 'normal', price: 0.03, expiryDate: '2025-12-30' },
+            { id: 8, name: '玉米粉', category: 'flour', image: 'https://images.unsplash.com/photo-1551754655-cd27e38d2076?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', stock: 150, unit: 'g', lowStock: 300, status: 'low', price: 0.01, expiryDate: '2026-07-20' },
+            { id: 9, name: '黄油', category: 'oil', image: 'https://images.unsplash.com/photo-1589985270958-bf087be2a336?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', stock: 1500, unit: 'g', lowStock: 300, status: 'normal', price: 0.08, expiryDate: '2026-01-15' },
+            { id: 10, name: '植物油', category: 'oil', image: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', stock: 2000, unit: 'ml', lowStock: 500, status: 'normal', price: 0.015, expiryDate: '2026-10-10' },
+            { id: 11, name: '橄榄油', category: 'oil', image: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', stock: 800, unit: 'ml', lowStock: 200, status: 'normal', price: 0.06, expiryDate: '2026-04-05' },
+            { id: 12, name: '椰子油', category: 'oil', image: 'https://images.unsplash.com/photo-1605522324253-e8a0ffc4e78a?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', stock: 100, unit: 'g', lowStock: 200, status: 'low', price: 0.05, expiryDate: '2025-12-18' },
+            { id: 13, name: '猪油', category: 'oil', image: 'https://images.unsplash.com/photo-1589985270958-bf087be2a336?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', stock: 500, unit: 'g', lowStock: 100, status: 'normal', price: 0.02, expiryDate: '2026-02-28' },
+            { id: 14, name: '起酥油', category: 'oil', image: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', stock: 1200, unit: 'g', lowStock: 300, status: 'normal', price: 0.025, expiryDate: '2026-05-15' },
+            { id: 15, name: '白砂糖', category: 'sugar', image: 'https://images.unsplash.com/photo-1516684669134-de6f7c473a2a?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', stock: 3000, unit: 'g', lowStock: 500, status: 'normal', price: 0.008, expiryDate: '2027-01-01' },
+            { id: 16, name: '红糖', category: 'sugar', image: 'https://images.unsplash.com/photo-1571115764595-644a1f56a55c?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', stock: 800, unit: 'g', lowStock: 200, status: 'normal', price: 0.012, expiryDate: '2026-12-12' },
+            { id: 17, name: '蜂蜜', category: 'sugar', image: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', stock: 1200, unit: 'ml', lowStock: 300, status: 'normal', price: 0.08, expiryDate: '2027-06-01' },
+            { id: 18, name: '枫糖浆', category: 'sugar', image: 'https://images.unsplash.com/photo-1571115764595-644a1f56a55c?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', stock: 400, unit: 'ml', lowStock: 200, status: 'normal', price: 0.15, expiryDate: '2026-09-09' },
+            { id: 19, name: '糖粉', category: 'sugar', image: 'https://images.unsplash.com/photo-1516684669134-de6f7c473a2a?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', stock: 600, unit: 'g', lowStock: 200, status: 'normal', price: 0.015, expiryDate: '2026-11-11' },
+            { id: 20, name: '牛奶', category: 'dairy', image: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', stock: 1500, unit: 'ml', lowStock: 500, status: 'normal', price: 0.012, expiryDate: '2025-12-20' },
+            { id: 21, name: '奶油', category: 'dairy', image: 'https://images.unsplash.com/photo-1628088062854-d1870b4553da?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', stock: 800, unit: 'ml', lowStock: 200, status: 'normal', price: 0.045, expiryDate: '2026-01-05' },
+            { id: 22, name: '酸奶', category: 'dairy', image: 'https://images.unsplash.com/photo-1571212515416-fac8c2b1e279?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', stock: 200, unit: 'ml', lowStock: 300, status: 'low', price: 0.02, expiryDate: '2025-12-16' },
+            { id: 23, name: '奶酪', category: 'dairy', image: 'https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', stock: 500, unit: 'g', lowStock: 100, status: 'normal', price: 0.09, expiryDate: '2026-02-20' },
+            { id: 24, name: '鸡蛋', category: 'egg', image: 'https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', stock: 24, unit: '个', lowStock: 6, status: 'normal', price: 1.2, expiryDate: '2025-12-28' },
+            { id: 25, name: '蛋黄', category: 'egg', image: 'https://images.unsplash.com/photo-1587486913049-53fc88980cfc?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', stock: 12, unit: '个', lowStock: 5, status: 'normal', price: 0.8, expiryDate: '2025-12-25' }
+        ];
+        
+        // 全局变量
+        let currentCategory = 'all';
+        let currentStockFilter = 'all';
+        let currentWarehouse = 'warehouse1';
+        let searchQuery = '';
+        let currentSort = 'name-asc';
+        let filterHistory = [];
+        let quickFilterActive = null;
+        
+        // 模拟的额外数据
+        const materialExtendedData = {
+            1: { location: 'A区-1层-3号', supplier: '金龙面粉厂', lastUpdate: '2024-01-15', purchases: [
+                {date: '2024-01-15', quantity: 5000, price: 4.5},
+                {date: '2024-01-10', quantity: 5000, price: 4.2}, 
+                {date: '2023-12-20', quantity: 3000, price: 4.1},
+                {date: '2023-12-01', quantity: 4000, price: 3.9}
+            ]},
+            2: { location: 'A区-1层-4号', supplier: '金龙面粉厂', lastUpdate: '2024-01-14', purchases: [
+                {date: '2024-01-14', quantity: 4000, price: 3.6},
+                {date: '2024-01-08', quantity: 4000, price: 3.8}, 
+                {date: '2023-12-18', quantity: 2500, price: 3.9},
+                {date: '2023-11-28', quantity: 3000, price: 4.0}
+            ]},
+            3: { location: 'A区-1层-5号', supplier: '金龙面粉厂', lastUpdate: '2024-01-13', purchases: [
+                {date: '2024-01-13', quantity: 2000, price: 4.8},
+                {date: '2024-01-05', quantity: 2000, price: 4.5}, 
+                {date: '2023-12-15', quantity: 1500, price: 4.4},
+                {date: '2023-11-20', quantity: 1800, price: 4.2}
+            ]},
+            9: { location: 'B区-1层-1号', supplier: '法国黄油公司', lastUpdate: '2024-01-16', purchases: [
+                {date: '2024-01-16', quantity: 2000, price: 29.8},
+                {date: '2024-01-12', quantity: 2000, price: 28.5}, 
+                {date: '2023-12-25', quantity: 1500, price: 28.0},
+                {date: '2023-12-10', quantity: 1800, price: 27.5}
+            ]},
+            15: { location: 'C区-1层-1号', supplier: '甜蜜糖业', lastUpdate: '2024-01-17', purchases: [
+                {date: '2024-01-17', quantity: 5000, price: 5.9},
+                {date: '2024-01-14', quantity: 5000, price: 6.2}, 
+                {date: '2023-12-30', quantity: 4000, price: 6.1},
+                {date: '2023-12-15', quantity: 4500, price: 6.3}
+            ]},
+            20: { location: 'D区-冷藏-1号', supplier: '新鲜牧场', lastUpdate: '2024-01-18', purchases: [
+                {date: '2024-01-18', quantity: 2000, price: 8.8},
+                {date: '2024-01-16', quantity: 2000, price: 8.5}, 
+                {date: '2024-01-10', quantity: 1800, price: 8.4},
+                {date: '2024-01-05', quantity: 2200, price: 8.2}
+            ]}
+        };
+        
+        // 为没有扩展数据的材料提供默认值
+        materials.forEach(material => {
+            if (!materialExtendedData[material.id]) {
+                materialExtendedData[material.id] = {
+                    location: `${String.fromCharCode(65 + Math.floor(Math.random() * 4))}区-${Math.floor(Math.random() * 3) + 1}层-${Math.floor(Math.random() * 10) + 1}号`,
+                    supplier: '默认供应商',
+                    lastUpdate: '2024-01-10',
+                    purchases: [{date: '2024-01-01', quantity: 1000, price: 10.0}]
+                };
+            }
+        });
+        
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            renderCategories();
+            renderMaterials();
+            updateCategoryCounts();
+            updateStatistics();
+        });
+        
+        // 更新统计面板
+        function updateStatistics() {
+            const filteredMaterials = getFilteredMaterials();
+            const totalMaterials = filteredMaterials.length;
+            const lowStockMaterials = filteredMaterials.filter(m => m.status === 'low').length;
+            const outOfStockMaterials = filteredMaterials.filter(m => m.status === 'out').length;
+            
+            // 计算库存总值
+            const totalValue = filteredMaterials.reduce((sum, m) => sum + (m.stock * (m.price || 0)), 0);
+            
+            // 计算即将过期 (30天内)
+            const today = new Date('2025-12-13');
+            const thirtyDaysFromNow = new Date(today);
+            thirtyDaysFromNow.setDate(today.getDate() + 30);
+            
+            const expiringMaterials = filteredMaterials.filter(m => {
+                if (!m.expiryDate) return false;
+                const expiry = new Date(m.expiryDate);
+                return expiry >= today && expiry <= thirtyDaysFromNow;
+            }).length;
+
+            // 计算库存健康度
+            const normalMaterials = filteredMaterials.filter(m => m.status === 'normal').length;
+            const healthScore = totalMaterials > 0 ? Math.round((normalMaterials / totalMaterials) * 100) : 0;
+            
+            // 更新显示
+            document.getElementById('totalMaterials').textContent = totalMaterials;
+            document.getElementById('lowStockCount').textContent = lowStockMaterials;
+            document.getElementById('outOfStockCount').textContent = outOfStockMaterials;
+            document.getElementById('stockHealth').textContent = healthScore + '%';
+            
+            // 更新新增功能显示
+            document.getElementById('totalValue').textContent = '¥' + totalValue.toLocaleString('zh-CN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('expiringCount').textContent = expiringMaterials;
+            
+            // 更新健康度颜色
+            const healthElement = document.getElementById('stockHealth');
+            if (healthScore >= 80) {
+                healthElement.className = 'text-sm font-bold text-green-600';
+            } else if (healthScore >= 60) {
+                healthElement.className = 'text-sm font-bold text-orange-500';
+            } else {
+                healthElement.className = 'text-sm font-bold text-red-600';
+            }
+        }
+        
+        // 渲染分类栏
+        function renderCategories() {
+            const sidebar = document.getElementById('categorySidebar');
+            
+            // Generate All Category
+            let html = `
+                <div class="category-item ${currentCategory === 'all' ? 'active' : ''} px-2 py-3 text-center cursor-pointer group" 
+                     data-category="all" 
+                     onclick="filterByCategory('all')">
+                    <div class="category-icon-container w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center mx-auto mb-1.5 transition-colors group-hover:bg-gray-100">
+                        <i class="fas fa-th text-gray-400 text-sm group-hover:text-gray-600 transition-colors"></i>
+                    </div>
+                    <div class="category-name text-xs font-medium text-gray-600 group-hover:text-gray-800 transition-colors">全部</div>
+                    <div class="text-[10px] text-gray-400 mt-0.5">${categories.find(c => c.id === 'all')?.count || 0}</div>
+                </div>
+            `;
+            
+            categories.forEach(category => {
+                if (category.id === 'all') return;
+                html += `
+                <div class="category-item ${currentCategory === category.id ? 'active' : ''} px-2 py-3 text-center cursor-pointer group" 
+                     data-category="${category.id}" 
+                     onclick="filterByCategory('${category.id}')">
+                    <div class="category-icon-container w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center mx-auto mb-1.5 transition-colors group-hover:bg-gray-100">
+                        <i class="fas ${category.icon} text-gray-400 text-sm group-hover:text-gray-600 transition-colors"></i>
+                    </div>
+                    <div class="category-name text-xs font-medium text-gray-600 group-hover:text-gray-800 transition-colors">${category.name}</div>
+                    <div class="text-[10px] text-gray-400 mt-0.5">${category.count}</div>
+                </div>
+                `;
+            });
+            
+            sidebar.innerHTML = html;
+        }
+        
+        // 渲染材料列表
+        function renderMaterials() {
+            const materialList = document.getElementById('materialList');
+            const filteredMaterials = getFilteredMaterials();
+            
+            if (filteredMaterials.length === 0) {
+                materialList.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full text-center p-6">
+                        <i class="fas fa-search text-gray-300 text-5xl mb-4"></i>
+                        <p class="text-gray-500">未找到符合条件的材料</p>
+                        <p class="text-sm text-gray-400 mt-2">请尝试调整搜索条件或筛选器</p>
+                    </div>
+                `;
+                updateStatistics();
+                return;
+            }
+            
+            materialList.innerHTML = filteredMaterials.map(material => {
+                const statusConfig = {
+                    normal: { color: 'text-green-600', bg: 'bg-green-100', text: '正常', border: 'border-green-100' },
+                    low: { color: 'text-orange-600', bg: 'bg-orange-100', text: '偏低', border: 'border-orange-100' },
+                    out: { color: 'text-red-600', bg: 'bg-red-100', text: '缺货', border: 'border-red-100' }
+                };
+                
+                const status = statusConfig[material.status] || statusConfig.normal;
+                
+                return `
+                    <div class="card p-3 mb-3 animate-fade-in relative cursor-pointer hover:shadow-md transition-shadow" onclick="showMaterialDetail(${material.id})">
+                        <div class="flex gap-3 items-center">
+                            <!-- 图片 -->
+                            <div class="w-14 h-14 rounded-lg bg-gray-100 flex-shrink-0 overflow-hidden border border-gray-100">
+                                <img src="${material.image}" alt="${material.name}" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/56x56/e5e7eb/9ca3af?text=IMG'">
+                            </div>
+                            
+                            <!-- 信息 -->
+                            <div class="flex-1 min-w-0">
+                                <div class="flex justify-between items-start mb-1">
+                                    <h3 class="text-sm font-bold text-gray-800 truncate pr-2">${material.name}</h3>
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded border ${status.color} ${status.bg} ${status.border}">
+                                        ${status.text}
+                                    </span>
+                                </div>
+                                
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-2 text-xs text-gray-500">
+                                        <span>${getCategoryName(material.category)}</span>
+                                        <span class="text-gray-300">|</span>
+                                        <span>位置: ${materialExtendedData[material.id]?.location.split('-')[0] || '未知'}</span>
+                                    </div>
+                                    <div class="text-sm font-bold text-gray-800">
+                                        ${material.stock} <span class="text-xs font-normal text-gray-500">${material.unit}</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-2 pt-2 border-t border-gray-50 flex justify-between items-center">
+                                    <div class="text-xs text-gray-400">
+                                        单价: ¥${material.price}
+                                    </div>
+                                    ${material.expiryDate ? getExpiryTag(material.expiryDate) : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            updateStatistics();
+        }
+
+        // 获取过期标签
+        function getExpiryTag(dateStr) {
+            const today = new Date('2025-12-13');
+            const expiry = new Date(dateStr);
+            const thirtyDaysFromNow = new Date(today);
+            thirtyDaysFromNow.setDate(today.getDate() + 30);
+            
+            if (expiry < today) {
+                return `<span class="text-[10px] text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>已过期</span>`;
+            } else if (expiry <= thirtyDaysFromNow) {
+                const daysLeft = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
+                return `<span class="text-[10px] text-orange-500 flex items-center"><i class="fas fa-clock mr-1"></i>剩 ${daysLeft} 天</span>`;
+            }
+            return `<span class="text-[10px] text-gray-400">${dateStr} 到期</span>`;
+        }
+        
+        // 获取过滤后的材料
+        function getFilteredMaterials() {
+            return materials.filter(material => {
+                // 分类筛选
+                if (currentCategory !== 'all' && material.category !== currentCategory) {
+                    return false;
+                }
+                
+                // 库存状态筛选
+                if (currentStockFilter !== 'all') {
+                    if (currentStockFilter === 'expiring') {
+                        const today = new Date('2025-12-13');
+                        const thirtyDaysFromNow = new Date(today);
+                        thirtyDaysFromNow.setDate(today.getDate() + 30);
+                        if (!material.expiryDate) return false;
+                        const expiry = new Date(material.expiryDate);
+                        if (expiry < today || expiry > thirtyDaysFromNow) return false;
+                    } else if (material.status !== currentStockFilter) {
+                        return false;
+                    }
+                }
+                
+                // 搜索筛选
+                if (searchQuery && !material.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+                    return false;
+                }
+                
+                return true;
+            });
+        }
+        
+        // 分类筛选
+        function filterByCategory(categoryId) {
+            currentCategory = categoryId;
+            
+            // 更新分类栏激活状态
+            document.querySelectorAll('.category-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.getAttribute('data-category') === categoryId) {
+                    item.classList.add('active');
+                }
+            });
+            
+            renderMaterials();
+        }
+        
+        // 库存状态筛选
+        function filterByStock(status) {
+            currentStockFilter = status;
+            renderMaterials();
+        }
+        
+        // 搜索功能
+        function toggleSearchBox() {
+            const searchBox = document.getElementById('expandedSearchBox');
+            const isHidden = searchBox.classList.contains('hidden');
+            
+            if (isHidden) {
+                searchBox.classList.remove('hidden');
+                document.getElementById('searchInput').focus();
+            } else {
+                searchBox.classList.add('hidden');
+                clearSearchInput();
+            }
+        }
+        
+        function searchMaterials() {
+            const input = document.getElementById('searchInput');
+            const clearBtn = document.getElementById('clearSearch');
+            
+            searchQuery = input.value.trim();
+            
+            if (searchQuery) {
+                clearBtn.classList.remove('hidden');
+            } else {
+                clearBtn.classList.add('hidden');
+            }
+            
+            renderMaterials();
+        }
+        
+        function clearSearchInput() {
+            const input = document.getElementById('searchInput');
+            const clearBtn = document.getElementById('clearSearch');
+            
+            input.value = '';
+            searchQuery = '';
+            clearBtn.classList.add('hidden');
+            renderMaterials();
+        }
+        
+
+        
+        // 更新分类计数
+        function updateCategoryCounts() {
+            categories.forEach(category => {
+                if (category.id === 'all') {
+                    category.count = materials.length;
+                } else {
+                    category.count = materials.filter(m => m.category === category.id).length;
+                }
+            });
+        }
+        
+        // 扫码查询
+        function showScanModal() {
+            document.getElementById('scanModal').classList.remove('hidden');
+        }
+        
+        function closeScanModal() {
+            document.getElementById('scanModal').classList.add('hidden');
+        }
+        
+        function startScan() {
+            alert('扫码功能开发中...');
+            closeScanModal();
+        }
+        
+
+        
+        // 获取分类名称
+        function getCategoryName(categoryId) {
+            const category = categories.find(c => c.id === categoryId);
+            return category ? category.name : '未知分类';
+        }
+        
+        // 显示材料详情
+        function showMaterialDetail(materialId) {
+            const material = materials.find(m => m.id === materialId);
+            if (!material) return;
+            
+            const extendedData = materialExtendedData[materialId];
+            
+            // 填充详情信息
+            document.getElementById('detailImage').src = material.image;
+            document.getElementById('detailName').textContent = material.name;
+            document.getElementById('detailCategory').textContent = getCategoryName(material.category);
+            document.getElementById('detailStock').textContent = `${material.stock} ${material.unit}`;
+            document.getElementById('detailLowStock').textContent = `${material.lowStock} ${material.unit}`;
+            document.getElementById('detailLocation').textContent = extendedData.location;
+            document.getElementById('detailLastUpdate').textContent = extendedData.lastUpdate;
+            document.getElementById('detailSupplier').textContent = extendedData.supplier;
+            document.getElementById('detailExpiry').textContent = material.expiryDate || '未设置';
+            
+            // Highlight if expiring soon
+            const expiryElement = document.getElementById('detailExpiry');
+            if (material.expiryDate) {
+                const today = new Date('2025-12-13');
+                const expiry = new Date(material.expiryDate);
+                const thirtyDaysFromNow = new Date(today);
+                thirtyDaysFromNow.setDate(today.getDate() + 30);
+                
+                if (expiry >= today && expiry <= thirtyDaysFromNow) {
+                    expiryElement.className = 'font-bold text-red-600 ml-2';
+                    expiryElement.textContent += ' (即将过期)';
+                } else if (expiry < today) {
+                    expiryElement.className = 'font-bold text-red-800 ml-2';
+                    expiryElement.textContent += ' (已过期)';
+                } else {
+                    expiryElement.className = 'font-medium text-gray-800 ml-2';
+                }
+            }
+            
+            // 设置状态标签
+            const statusElement = document.getElementById('detailStatus');
+            const statusConfig = {
+                normal: { color: 'bg-green-100 text-green-700', text: '库存正常' },
+                low: { color: 'bg-yellow-100 text-yellow-700', text: '库存偏低' },
+                out: { color: 'bg-red-100 text-red-700', text: '库存缺货' }
+            };
+            const status = statusConfig[material.status];
+            statusElement.className = `px-3 py-1 rounded-full text-xs font-medium ${status.color}`;
+            statusElement.textContent = status.text;
+            
+            // 填充采购记录
+            const purchasesContainer = document.getElementById('recentPurchases');
+            purchasesContainer.innerHTML = '';
+            
+            if (extendedData.purchases.length === 0) {
+                purchasesContainer.innerHTML = '<div class="text-center text-gray-500 text-sm py-4">暂无采购记录</div>';
+            } else {
+                extendedData.purchases.forEach((purchase, index) => {
+                    const purchaseElement = document.createElement('div');
+                    purchaseElement.className = 'bg-white rounded-lg p-3 border border-gray-100';
+                    
+                    let priceChangeHtml = '';
+                    if (index < extendedData.purchases.length - 1) {
+                        const previousPrice = extendedData.purchases[index + 1].price;
+                        const currentPrice = purchase.price;
+                        const priceChange = currentPrice - previousPrice;
+                        const priceChangePercent = ((priceChange / previousPrice) * 100).toFixed(1);
+                        
+                        if (priceChange > 0) {
+                            priceChangeHtml = `
+                                <div class="flex items-center space-x-1 mt-1">
+                                    <i class="fas fa-arrow-up text-red-500 text-xs"></i>
+                                    <span class="text-red-500 text-xs font-medium">+¥${priceChange.toFixed(2)} (+${priceChangePercent}%)</span>
+                                    <span class="text-gray-400 text-xs">比上次贵了</span>
+                                </div>
+                            `;
+                        } else if (priceChange < 0) {
+                            priceChangeHtml = `
+                                <div class="flex items-center space-x-1 mt-1">
+                                    <i class="fas fa-arrow-down text-green-500 text-xs"></i>
+                                    <span class="text-green-500 text-xs font-medium">¥${Math.abs(priceChange).toFixed(2)} (${priceChangePercent}%)</span>
+                                    <span class="text-gray-400 text-xs">比上次便宜了</span>
+                                </div>
+                            `;
+                        } else {
+                            priceChangeHtml = `
+                                <div class="flex items-center space-x-1 mt-1">
+                                    <i class="fas fa-minus text-gray-400 text-xs"></i>
+                                    <span class="text-gray-400 text-xs">价格无变化</span>
+                                </div>
+                            `;
+                        }
+                    }
+                    
+                    purchaseElement.innerHTML = `
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-2 mb-1">
+                                    <span class="text-gray-600 text-sm">${purchase.date}</span>
+                                    <span class="px-2 py-1 bg-blue-50 text-blue-600 text-xs rounded-full">${index === 0 ? '最新' : '历史'}</span>
+                                </div>
+                                <div class="text-gray-800 font-medium">${purchase.quantity} ${material.unit}</div>
+                                ${priceChangeHtml}
+                            </div>
+                            <div class="text-right">
+                                <div class="text-lg font-bold text-gray-800">¥${purchase.price}</div>
+                                <div class="text-xs text-gray-500">单价</div>
+                            </div>
+                        </div>
+                    `;
+                    purchasesContainer.appendChild(purchaseElement);
+                });
+            }
+            
+            // 显示弹窗
+            document.getElementById('materialDetailModal').classList.remove('hidden');
+        }
+        
+        // 关闭材料详情
+        function closeMaterialDetail() {
+            document.getElementById('materialDetailModal').classList.add('hidden');
+        }
+        
+        // 快速筛选
+        function quickFilter(type) {
+            // 重置所有卡片状态
+            document.querySelectorAll('.stats-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            
+            if (quickFilterActive === type) {
+                // 如果点击的是当前激活的筛选，则取消筛选
+                quickFilterActive = null;
+                currentStockFilter = 'all';
+            } else {
+                // 激活新的筛选
+                quickFilterActive = type;
+                currentStockFilter = type;
+                
+                // 高亮当前卡片
+                const cardMap = {
+                    'low': 'lowStockCard',
+                    'out': 'outStockCard',
+                    'normal': 'healthCard',
+                    'expiring': 'expiringCard'
+                };
+                if (cardMap[type]) {
+                    const card = document.getElementById(cardMap[type]);
+                    card.classList.add('active');
+                }
+            }
+            
+            renderMaterials();
+            updateStatistics();
+        }
+        
+        // 清除筛选
+        function clearFilters() {
+            quickFilterActive = null;
+            currentStockFilter = 'all';
+            currentCategory = 'all';
+            searchQuery = '';
+            
+            // 重置UI状态
+            document.querySelectorAll('.stats-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            
+            document.getElementById('searchInput').value = '';
+            document.getElementById('clearSearch').classList.add('hidden');
+            
+            // 重新渲染
+            renderCategories();
+            renderMaterials();
+            updateStatistics();
+        }
+        
+        // 排序材料
+        function sortMaterials() {
+            const sortValue = document.getElementById('sortSelect').value;
+            currentSort = sortValue;
+            
+            materials.sort((a, b) => {
+                switch (sortValue) {
+                    case 'name-asc':
+                        return a.name.localeCompare(b.name);
+                    case 'name-desc':
+                        return b.name.localeCompare(a.name);
+                    case 'stock-asc':
+                        return a.stock - b.stock;
+                    case 'stock-desc':
+                        return b.stock - a.stock;
+                    case 'update-desc':
+                        const dateA = new Date(materialExtendedData[a.id]?.lastUpdate || '2024-01-01');
+                        const dateB = new Date(materialExtendedData[b.id]?.lastUpdate || '2024-01-01');
+                        return dateB - dateA;
+                    default:
+                        return 0;
+                }
+            });
+            
+            renderMaterials();
+        }
+        
+        // 导出数据
+        function exportData() {
+            const filteredMaterials = getFilteredMaterials();
+            console.log('导出当前视图:', filteredMaterials);
+            alert(`导出 ${filteredMaterials.length} 个材料的数据`);
+        }
+        
+        // 点击弹窗外部关闭
+        document.addEventListener('click', function(e) {
+            if (e.target.id === 'scanModal') {
+                closeScanModal();
+            }
+            if (e.target.id === 'materialDetailModal') {
+                closeMaterialDetail();
+            }
+        });
+    </script>
+</body>
+</html>
