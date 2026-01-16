@@ -1,0 +1,2177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>配方详情</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config = { darkMode: 'class' }</script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* 强制刷新暗黑模式的辅助类 */
+        .dark-force-refresh {}
+        
+        /* 全局样式 */
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.08);
+            border: 1px solid #E2E8F0;
+        }
+        .dark .card {
+            background: #1E293B;
+            box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.25);
+            border: 1px solid #334155;
+        }
+        .bottom-bar {
+            box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.05), 0 -2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+        .dark .bottom-bar {
+            box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.2), 0 -2px 4px -1px rgba(0, 0, 0, 0.1);
+        }
+        /* Tab样式 */
+        .tab-btn {
+            position: relative;
+        }
+        .tab-active {
+            color: #3B82F6;
+        }
+        .dark .tab-active {
+            color: #60A5FA;
+        }
+        .tab-inactive {
+            color: #64748B;
+        }
+        .dark .tab-inactive {
+            color: #94A3B8;
+        }
+        .tab-bg-active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 25%;
+            width: 50%;
+            height: 3px;
+            background: #3B82F6;
+            border-radius: 3px 3px 0 0;
+        }
+        .dark .tab-bg-active::after {
+            background: #60A5FA;
+        }
+        
+        /* 步骤图片展开/收起样式 */
+        .step-images {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .step-images.expanded {
+            grid-template-columns: 1fr;
+        }
+        
+        .step-images.expanded img {
+            aspect-ratio: 1/1;
+            width: 100%;
+            height: auto;
+        }
+
+        /* 基础主题样式 */
+        html, body { 
+            background: #F8FAFC; 
+            transition: all 0.3s ease;
+        }
+        .dark html, .dark body { 
+            background: #0F172A; 
+        }
+        
+        /* 卡片样式 */
+        .card { 
+            border-radius: 20px; 
+            box-shadow: 0 4px 20px 0 rgba(0,0,0,0.08); 
+            background: #FFFFFF; 
+            border: 1px solid #E2E8F0; 
+            transition: all 0.3s ease;
+        }
+        .dark .card { 
+            background: #1E293B; 
+            box-shadow: 0 4px 20px 0 rgba(0,0,0,0.25); 
+            border: 1px solid #334155; 
+        }
+
+        /* 主题切换按钮 */
+        #themeToggleBtn {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: white;
+            border: 1px solid #E2E8F0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .dark #themeToggleBtn {
+            background: #334155;
+            border-color: #475569;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        #themeToggleBtn:hover {
+            transform: scale(1.1) rotate(180deg);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+        .dark #themeToggleBtn:hover {
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        /* 文本颜色 */
+        .text-primary {
+            color: #1E293B;
+            transition: color 0.3s ease;
+        }
+        .dark .text-primary {
+            color: #F1F5F9;
+        }
+        
+        /* 输入框样式 */
+        input, textarea {
+            transition: all 0.3s ease;
+        }
+        .dark input, .dark textarea {
+            background: #1E293B;
+            color: #F1F5F9;
+            border-color: #475569;
+        }
+        
+        /* 按钮样式 */
+        .btn-primary {
+            transition: all 0.3s ease;
+        }
+        .dark .btn-primary {
+            background: #3B82F6;
+            color: #F1F5F9;
+        }
+        .input-shadow:focus { 
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); 
+            border-color: #3B82F6; 
+        }
+        .tab-active { color: #3B82F6 !important; }
+        .tab-inactive { color: #64748B !important; }
+        .tab-bg-active { 
+            background: #EFF6FF !important; 
+            border: 1px solid #BFDBFE; 
+        }
+        .tab-bg-inactive { 
+            background: #FFFFFF !important; 
+            border: 1px solid #E2E8F0; 
+        }
+        .dark .tab-bg-active { 
+            background: #1E3A8A !important; 
+            border: 1px solid #3B82F6; 
+        }
+        .dark .tab-bg-inactive { 
+            background: #1E293B !important; 
+            border: 1px solid #334155; 
+        }
+        .transition-all { 
+            transition: all 0.2s cubic-bezier(.4,0,.2,1); 
+        }
+
+        /* 步骤卡片样式 */
+        .step-card {
+            transition: all 0.3s ease;
+        }
+        .dark .step-card {
+            background: #1E293B;
+            border-color: #334155;
+        }
+
+        /* 图片展示区域 */
+        .image-grid {
+            transition: all 0.3s ease;
+        }
+        .dark .image-grid {
+            background: #1E293B;
+            border-color: #334155;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-[#F8FAFC] dark:bg-[#0F172A] text-[#1E293B] dark:text-slate-100">
+    <div class="max-w-md mx-auto min-h-screen flex flex-col bg-[#F8FAFC] dark:bg-[#0F172A]">
+        <!-- 顶部导航 -->
+        <div class="sticky top-0 z-50 bg-white dark:bg-[#1E293B] flex items-center justify-between px-4 py-3 card rounded-b-2xl border-b border-slate-200 dark:border-slate-600">
+            <button class="text-[#64748B] dark:text-slate-300 hover:bg-[#F1F5F9] dark:hover:bg-[#334155] active:scale-95 transition rounded-full p-2" onclick="checkExitConfirmation()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <span class="text-lg font-bold flex-1 text-center text-[#1E293B] dark:text-slate-100 tracking-wide">经典白吐司</span>
+            <div class="flex gap-2 items-center">
+                <button class="text-[#64748B] dark:text-slate-400 hover:text-[#3B82F6] dark:hover:text-[#60A5FA] active:scale-90 transition text-lg" onclick="toggleMoreMenu()" title="更多操作">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                <div id="moreMenuDropdown" class="absolute right-4 top-12 bg-white dark:bg-[#334155] rounded-xl shadow-2xl border border-slate-200 dark:border-slate-600 p-2 z-20 hidden min-w-[160px]">
+                    <button class="w-full text-left px-3 py-2 rounded-lg hover:bg-[#F1F5F9] dark:hover:bg-[#475569] text-[#1E293B] dark:text-slate-100 text-sm flex items-center transition" onclick="publishToResources()">
+                        <i class="fas fa-upload mr-3 text-[#3B82F6] dark:text-[#60A5FA]"></i>发布到资源
+                    </button>
+                        <button class="w-full text-left px-3 py-2 rounded-lg hover:bg-[#F1F5F9] dark:hover:bg-[#475569] text-[#1E293B] dark:text-slate-100 text-sm flex items-center transition" onclick="editRecipe()">
+                        <i class="fas fa-edit mr-3 text-[#3B82F6] dark:text-[#60A5FA]"></i>编辑配方
+                        </button>
+                    <button class="w-full text-left px-3 py-2 rounded-lg hover:bg-[#F1F5F9] dark:hover:bg-[#475569] text-[#1E293B] dark:text-slate-100 text-sm flex items-center transition" onclick="duplicateRecipe()">
+                        <i class="fas fa-copy mr-3 text-[#3B82F6] dark:text-[#60A5FA]"></i>复制配方
+                        </button>
+                    <button class="w-full text-left px-3 py-2 rounded-lg hover:bg-[#F1F5F9] dark:hover:bg-[#475569] text-[#1E293B] dark:text-slate-100 text-sm flex items-center transition" onclick="printRecipe()">
+                        <i class="fas fa-print mr-3 text-[#3B82F6] dark:text-[#60A5FA]"></i>打印配方
+                    </button>
+                        <button class="w-full text-left px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 text-sm flex items-center transition mt-1" onclick="deleteRecipe()">
+                            <i class="fas fa-trash mr-3"></i>删除配方
+                        </button>
+                </div>
+                <!-- 主题切换按钮 -->
+                <button id="themeToggleBtn" class="ml-2 text-xl hover:bg-[#F1F5F9] dark:hover:bg-[#334155] active:scale-90 rounded-full p-2 transition" onclick="toggleTheme()">
+                    <i class="fas fa-moon" id="themeIcon"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 主要内容区域 -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- 配方封面和基本信息 -->
+            <div class="px-4 py-4">
+                <div class="card p-4">
+                    <div class="flex gap-4">
+                        <div class="w-24 h-24 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-700 cursor-pointer hover:opacity-90 transition" onclick="showFullImage(this)">
+                            <img src="https://images.unsplash.com/photo-1549931319-a545dcf3bc73?w=800&h=800&fit=crop" alt="配方封面" class="w-full h-full object-cover">
+                        </div>
+                        <!-- 图片全屏预览 -->
+                        <div id="fullImageModal" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 hidden" onclick="this.classList.add('hidden')">
+                            <img src="" alt="配方大图" class="max-w-[90vw] max-h-[90vh] object-contain rounded-xl">
+            <button class="absolute top-4 right-4 bg-white bg-opacity-20 text-white rounded-full p-3 hover:bg-opacity-40 transition-all" onclick="event.stopPropagation(); this.parentElement.classList.add('hidden')">
+                <i class="fas fa-times"></i>
+            </button>
+                        </div>
+                        <div class="flex-1">
+                            <h1 class="text-xl font-bold text-[#1E293B] dark:text-slate-100 mb-2">经典白吐司</h1>
+                            <div class="space-y-1 text-sm text-slate-600 dark:text-slate-400">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-tag w-4"></i>
+                                    <span>面包类</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-clock w-4"></i>
+                                    <span>制作时间：4小时</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab切换区 -->
+            <div class="flex bg-white dark:bg-[#1E293B] rounded-xl mx-4 mt-2 mb-4 overflow-hidden card">
+                <button id="tab-btn-recipe" class="flex-1 flex flex-col items-center py-3 text-center font-semibold tab-btn tab-active tab-bg-active gap-1 hover:bg-[#EFF6FF] dark:hover:bg-[#1E3A8A] active:scale-95 transition-all" onclick="switchTab('recipe')">
+                    <i class="fas fa-bread-slice text-lg mb-1"></i>
+                    <span class="mt-1">配方</span>
+                </button>
+                <button id="tab-btn-sop" class="flex-1 flex flex-col items-center py-3 text-center font-semibold tab-btn tab-inactive tab-bg-inactive gap-1 hover:bg-[#EFF6FF] dark:hover:bg-[#1E3A8A] active:scale-95 transition-all" onclick="switchTab('sop')">
+                    <i class="fas fa-list-alt text-lg mb-1"></i>
+                    <span class="mt-1">SOP</span>
+                </button>
+                <button id="tab-btn-step" class="flex-1 flex flex-col items-center py-3 text-center font-semibold tab-btn tab-inactive tab-bg-inactive gap-1 hover:bg-[#EFF6FF] dark:hover:bg-[#1E3A8A] active:scale-95 transition-all" onclick="switchTab('step')">
+                    <i class="fas fa-tasks text-lg mb-1"></i>
+                    <span class="mt-1">步骤</span>
+                </button>
+            </div>
+
+            <!-- 配方原料区 -->
+            <div id="recipe-section" class="flex-1 overflow-y-auto px-4 pb-32">
+                <div class="space-y-4">
+                    <!-- 面粉分组 -->
+                    <div class="card p-4">
+                        <div class="bg-[#F8FAFC] dark:bg-[#0F172A] rounded-md px-3 py-3 mb-3 border border-slate-200 dark:border-slate-600">
+                            <h3 class="font-semibold text-[#1E293B] dark:text-slate-100 flex items-center gap-2 text-xl">
+                                <i class="fas fa-wheat-awn text-amber-500"></i>
+                                面粉
+                            </h3>
+                        </div>
+                        <div class="space-y-3">
+                            <div class="ingredient-item flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-700 last:border-b-0 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg px-2 transition-all" onclick="toggleIngredientStatus(this)">
+                                <div class="flex items-center gap-3">
+                                    <div class="ingredient-status-text text-sm text-slate-400 dark:text-slate-500 hidden">✓ 已入料</div>
+                                    <span class="ingredient-name text-[#1E293B] dark:text-slate-100 text-lg font-medium">高筋面粉</span>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-3xl font-bold text-[#3B82F6] dark:text-[#60A5FA]" data-base-amount="500">500<span class="text-lg ml-1">g</span></div>
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">100%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 种面分组 -->
+                    <div class="card p-4">
+                        <div class="bg-[#F8FAFC] dark:bg-[#0F172A] rounded-md px-3 py-3 mb-3 border border-slate-200 dark:border-slate-600">
+                            <h3 class="font-semibold text-[#1E293B] dark:text-slate-100 flex items-center gap-2 text-xl">
+                                <i class="fas fa-seedling text-green-500"></i>
+                                种面
+                            </h3>
+                        </div>
+                        <div class="space-y-3">
+                            <div class="ingredient-item flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-700 last:border-b-0 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg px-2 transition-all" onclick="toggleIngredientStatus(this)">
+                                <div class="flex items-center gap-3">
+                                    <div class="ingredient-status-text text-sm text-slate-400 dark:text-slate-500 hidden">✓ 已入料</div>
+                                    <span class="ingredient-name text-[#1E293B] dark:text-slate-100 font-medium">自制种面</span>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-3xl font-bold text-[#3B82F6] dark:text-[#60A5FA]" data-base-amount="120">120<span class="text-lg ml-1">g</span></div>
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">24%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 湿料分组 -->
+                    <div class="card p-4">
+                        <div class="bg-[#F8FAFC] dark:bg-[#0F172A] rounded-md px-3 py-3 mb-3 border border-slate-200 dark:border-slate-600">
+                            <h3 class="font-semibold text-[#1E293B] dark:text-slate-100 flex items-center gap-2 text-xl">
+                                <i class="fas fa-droplet text-blue-500"></i>
+                                湿料
+                            </h3>
+                        </div>
+                        <div class="space-y-3">
+                            <div class="ingredient-item flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg px-2 transition-all" onclick="toggleIngredientStatus(this)">
+                                <div class="flex items-center gap-3">
+                                    <div class="ingredient-status-text text-sm text-slate-400 dark:text-slate-500 hidden">✓ 已入料</div>
+                                    <span class="ingredient-name text-[#1E293B] dark:text-slate-100 font-medium">牛奶</span>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-3xl font-bold text-[#3B82F6] dark:text-[#60A5FA]" data-base-amount="300">300<span class="text-lg ml-1">ml</span></div>
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">60%</div>
+                                </div>
+                            </div>
+                            <div class="ingredient-item flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg px-2 transition-all" onclick="toggleIngredientStatus(this)">
+                                <div class="flex items-center gap-3">
+                                    <div class="ingredient-status-text text-sm text-slate-400 dark:text-slate-500 hidden">✓ 已入料</div>
+                                    <span class="ingredient-name text-[#1E293B] dark:text-slate-100 text-lg font-medium">鸡蛋</span>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-3xl font-bold text-[#3B82F6] dark:text-[#60A5FA]" data-base-amount="50">50<span class="text-lg ml-1">g</span></div>
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">10%</div>
+                                </div>
+                            </div>
+                            <div class="ingredient-item flex items-center justify-between py-4 border-b-2 border-slate-100 dark:border-slate-700 last:border-b-0 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg px-3 transition-all" onclick="toggleIngredientStatus(this)">
+                                <div class="flex items-center gap-3">
+                                    <div class="ingredient-status-text text-sm text-slate-400 dark:text-slate-500 hidden">✓ 已入料</div>
+                                    <span class="ingredient-name text-[#1E293B] dark:text-slate-100 text-lg font-medium">糖浆配方</span>
+                                    <button class="text-[#3B82F6] dark:text-[#60A5FA] hover:bg-[#EFF6FF] dark:hover:bg-[#1E3A8A] rounded-full p-1 transition" onclick="jumpToRecipe('syrup-recipe'); event.stopPropagation();" title="查看糖浆配方">
+                                        <i class="fas fa-external-link-alt text-xs"></i>
+                                    </button>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-3xl font-bold text-[#3B82F6] dark:text-[#60A5FA]" data-base-amount="80">80<span class="text-lg ml-1">g</span></div>
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">16%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 干料分组 -->
+                    <div class="card p-4">
+                        <div class="bg-[#F8FAFC] dark:bg-[#0F172A] rounded-md px-3 py-3 mb-3 border border-slate-200 dark:border-slate-600">
+                            <h3 class="font-semibold text-[#1E293B] dark:text-slate-100 flex items-center gap-2 text-xl">
+                                <i class="fas fa-cube text-orange-500"></i>
+                                干料
+                            </h3>
+                        </div>
+                        <div class="space-y-3">
+                            <div class="ingredient-item flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg px-2 transition-all" onclick="toggleIngredientStatus(this)">
+                                <div class="flex items-center gap-3">
+                                    <div class="ingredient-status-text text-sm text-slate-400 dark:text-slate-500 hidden">✓ 已入料</div>
+                                    <span class="ingredient-name text-[#1E293B] dark:text-slate-100 font-medium">白砂糖</span>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-3xl font-bold text-[#3B82F6] dark:text-[#60A5FA]" data-base-amount="50">50<span class="text-lg ml-1">g</span></div>
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">10%</div>
+                                </div>
+                            </div>
+                            <div class="ingredient-item flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg px-2 transition-all" onclick="toggleIngredientStatus(this)">
+                                <div class="flex items-center gap-3">
+                                    <div class="ingredient-status-text text-sm text-slate-400 dark:text-slate-500 hidden">✓ 已入料</div>
+                                    <span class="ingredient-name text-[#1E293B] dark:text-slate-100 font-medium">盐</span>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-3xl font-bold text-[#3B82F6] dark:text-[#60A5FA]" data-base-amount="8">8<span class="text-lg ml-1">g</span></div>
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">1.6%</div>
+                                </div>
+                            </div>
+                            <div class="ingredient-item flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg px-2 transition-all" onclick="toggleIngredientStatus(this)">
+                                <div class="flex items-center gap-3">
+                                    <div class="ingredient-status-text text-sm text-slate-400 dark:text-slate-500 hidden">✓ 已入料</div>
+                                    <span class="ingredient-name text-[#1E293B] dark:text-slate-100 font-medium">干酵母</span>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-3xl font-bold text-[#3B82F6] dark:text-[#60A5FA]" data-base-amount="5">5<span class="text-lg ml-1">g</span></div>
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">1%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 辅料分组 -->
+                    <div class="card p-4">
+                        <div class="bg-[#F8FAFC] dark:bg-[#0F172A] rounded-md px-3 py-3 mb-3 border border-slate-200 dark:border-slate-600">
+                            <h3 class="font-semibold text-[#1E293B] dark:text-slate-100 flex items-center gap-2 text-xl">
+                                <i class="fas fa-mortar-pestle text-yellow-500"></i>
+                                辅料
+                            </h3>
+                        </div>
+                        <div class="space-y-3">
+                            <div class="ingredient-item flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg px-2 transition-all" onclick="toggleIngredientStatus(this)">
+                                <div class="flex items-center gap-3">
+                                    <div class="ingredient-status-text text-sm text-slate-400 dark:text-slate-500 hidden">✓ 已入料</div>
+                                    <span class="ingredient-name text-[#1E293B] dark:text-slate-100 font-medium">黄油</span>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-3xl font-bold text-[#3B82F6] dark:text-[#60A5FA]" data-base-amount="30">30<span class="text-lg ml-1">g</span></div>
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">6%</div>
+                                </div>
+                            </div>
+                            <div class="ingredient-item flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-700 last:border-b-0 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg px-2 transition-all" onclick="toggleIngredientStatus(this)">
+                                <div class="flex items-center gap-3">
+                                    <div class="ingredient-status-text text-sm text-slate-400 dark:text-slate-500 hidden">✓ 已入料</div>
+                                    <span class="ingredient-name text-[#1E293B] dark:text-slate-100 font-medium">芝麻</span>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-3xl font-bold text-[#3B82F6] dark:text-[#60A5FA]" data-base-amount="10">10<span class="text-lg ml-1">g</span></div>
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">2%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 基础面团 -->
+                    <div class="card p-4">
+                        <div class="flex justify-between items-center mb-3 bg-[#F8FAFC] dark:bg-[#0F172A] p-2 rounded-lg w-full">
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 bg-[#F8FAFC] dark:bg-[#0F172A] flex items-center justify-center mr-3">
+                                    <i class="fas fa-bread-slice text-[#3B82F6] dark:text-[#60A5FA]"></i>
+                                </div>
+                                <h3 class="font-semibold text-[#1E293B] dark:text-slate-100">基础面团</h3>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm text-slate-600 dark:text-slate-400">生产个数：</span>
+                                <div class="flex items-center border border-slate-200 dark:border-slate-600 rounded bg-white dark:bg-[#0F172A]">
+                                    <button class="px-2 py-1 text-slate-400 hover:text-[#3B82F6] dark:hover:text-[#60A5FA] active:scale-90 transition" onclick="adjustProduction('base', -1)">
+                                        <i class="fas fa-minus text-xs"></i>
+                                    </button>
+                                    <span id="baseProduction" class="w-8 text-center text-[#1E293B] dark:text-slate-100 text-sm font-bold cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition" onclick="editProduction('base')" title="点击直接编辑">1</span>
+                                    <button class="px-2 py-1 text-slate-400 hover:text-[#3B82F6] dark:hover:text-[#60A5FA] active:scale-90 transition" onclick="adjustProduction('base', 1)">
+                                        <i class="fas fa-plus text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-3 mb-3">
+                            <div class="flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-700 rounded-lg px-2">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-[#1E293B] dark:text-slate-100 font-medium">经典白吐司面团</span>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-3xl font-bold text-[#3B82F6] dark:text-[#60A5FA]" id="baseDoughWeight">943<span class="text-lg ml-1">g</span></div>
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">成本：￥<span id="baseDoughCost">4.20</span></div>
+                                </div>
+                            </div>
+                            <!-- 添加的配方材料示例 -->
+                            <div class="flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-700 last:border-b-0 rounded-lg px-2">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-[#1E293B] dark:text-slate-100 font-medium">酥菠萝皮</span>
+                                    <button class="text-[#3B82F6] dark:text-[#60A5FA] hover:bg-[#EFF6FF] dark:hover:bg-[#1E3A8A] rounded-full p-1 transition" onclick="jumpToRecipe('pineapple-crust'); event.stopPropagation();" title="查看酥菠萝皮配方">
+                                        <i class="fas fa-external-link-alt text-xs"></i>
+                                    </button>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-3xl font-bold text-[#3B82F6] dark:text-[#60A5FA]" id="additionalWeight">150<span class="text-lg ml-1">g</span></div>
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">成本：￥<span id="additionalCost">2.80</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-[#F8FAFC] dark:bg-[#0F172A] rounded-md p-3 border border-slate-200 dark:border-slate-600">
+                            <div class="flex justify-between items-center">
+                                <span class="font-semibold text-[#1E293B] dark:text-slate-100">单个总重：</span>
+                                <span class="text-xl font-bold text-[#3B82F6] dark:text-[#60A5FA]">1093g</span>
+                            </div>
+                            <div class="flex justify-between items-center mt-1">
+                                <span class="text-sm text-slate-600 dark:text-slate-400">总重量：</span>
+                                <span class="text-sm font-bold text-slate-600 dark:text-slate-400" id="baseTotalWeight">1.09kg</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-slate-600 dark:text-slate-400">总成本：</span>
+                                <span class="text-sm font-bold text-slate-600 dark:text-slate-400">￥7.00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 变化款1：经典白吐司砖 -->
+                    <div class="card p-4">
+                        <div class="flex justify-between items-center mb-3 bg-[#F8FAFC] dark:bg-[#0F172A] p-2 rounded-lg w-full">
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 bg-[#F8FAFC] dark:bg-[#0F172A] flex items-center justify-center mr-3">
+                                    <i class="fas fa-layer-group text-[#3B82F6] dark:text-[#60A5FA]"></i>
+                                </div>
+                                <h3 class="font-semibold text-[#1E293B] dark:text-slate-100">经典白吐司砖</h3>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm text-slate-600 dark:text-slate-400">生产个数：</span>
+                                <div class="flex items-center border border-slate-200 dark:border-slate-600 rounded bg-white dark:bg-[#0F172A]">
+                                    <button class="px-2 py-1 text-slate-400 hover:text-[#3B82F6] dark:hover:text-[#60A5FA] active:scale-90 transition" onclick="adjustProduction('variation1', -1)">
+                                        <i class="fas fa-minus text-xs"></i>
+                                    </button>
+                                    <span id="variation1Production" class="w-8 text-center text-[#1E293B] dark:text-slate-100 text-sm font-bold cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition" onclick="editProduction('variation1')" title="点击直接编辑">2</span>
+                                    <button class="px-2 py-1 text-slate-400 hover:text-[#3B82F6] dark:hover:text-[#60A5FA] active:scale-90 transition" onclick="adjustProduction('variation1', 1)">
+                                        <i class="fas fa-plus text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-3 mb-3">
+                            <div class="flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-700 rounded-lg px-2">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-[#1E293B] dark:text-slate-100 font-medium">基础面团</span>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-3xl font-bold text-[#3B82F6] dark:text-[#60A5FA]" id="variation1DoughWeight">500<span class="text-lg ml-1">g</span></div>
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">成本：￥<span id="variation1DoughCost">2.22</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-[#F8FAFC] dark:bg-[#0F172A] rounded-md p-3 border border-slate-200 dark:border-slate-600">
+                            <div class="flex justify-between items-center">
+                                <span class="font-semibold text-[#1E293B] dark:text-slate-100">单个总重：</span>
+                                <span class="text-xl font-bold text-[#3B82F6] dark:text-[#60A5FA]">500g</span>
+                            </div>
+                            <div class="flex justify-between items-center mt-1">
+                                <span class="text-sm text-slate-600 dark:text-slate-400">总重量：</span>
+                                <span class="text-sm font-bold text-slate-600 dark:text-slate-400" id="variation1TotalWeight">1.00kg</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-slate-600 dark:text-slate-400">总成本：</span>
+                                <span class="text-sm font-bold text-slate-600 dark:text-slate-400" id="variation1TotalCost">￥4.44</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 变化款2：巧克力吐司 -->
+                    <div class="card p-4">
+                        <div class="flex justify-between items-center mb-3 bg-[#F8FAFC] dark:bg-[#0F172A] p-2 rounded-lg w-full">
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 bg-[#F8FAFC] dark:bg-[#0F172A] flex items-center justify-center mr-3">
+                                    <i class="fas fa-layer-group text-[#3B82F6] dark:text-[#60A5FA]"></i>
+                                </div>
+                                <h3 class="font-semibold text-[#1E293B] dark:text-slate-100">巧克力吐司</h3>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm text-slate-600 dark:text-slate-400">生产个数：</span>
+                                <div class="flex items-center border border-slate-200 dark:border-slate-600 rounded bg-white dark:bg-[#0F172A]">
+                                    <button class="px-2 py-1 text-slate-400 hover:text-[#3B82F6] dark:hover:text-[#60A5FA] active:scale-90 transition" onclick="adjustProduction('variation2', -1)">
+                                        <i class="fas fa-minus text-xs"></i>
+                                    </button>
+                                    <span id="variation2Production" class="w-8 text-center text-[#1E293B] dark:text-slate-100 text-sm font-bold cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition" onclick="editProduction('variation2')" title="点击直接编辑">3</span>
+                                    <button class="px-2 py-1 text-slate-400 hover:text-[#3B82F6] dark:hover:text-[#60A5FA] active:scale-90 transition" onclick="adjustProduction('variation2', 1)">
+                                        <i class="fas fa-plus text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-3 mb-3">
+                            <div class="flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-700 rounded-lg px-2">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-[#1E293B] dark:text-slate-100 font-medium">基础面团</span>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-3xl font-bold text-[#3B82F6] dark:text-[#60A5FA]" id="variation2DoughWeight">350<span class="text-lg ml-1">g</span></div>
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">成本：￥<span id="variation2DoughCost">1.55</span></div>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-700 rounded-lg px-2">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-[#1E293B] dark:text-slate-100 font-medium">巧克力粒</span>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-3xl font-bold text-[#3B82F6] dark:text-[#60A5FA]" id="variation2ChocolateWeight">50<span class="text-lg ml-1">g</span></div>
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">成本：￥<span id="variation2ChocolateCost">1.20</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-[#F8FAFC] dark:bg-[#0F172A] rounded-md p-3 border border-slate-200 dark:border-slate-600">
+                            <div class="flex justify-between items-center">
+                                <span class="font-semibold text-[#1E293B] dark:text-slate-100">单个总重：</span>
+                                <span class="text-xl font-bold text-[#3B82F6] dark:text-[#60A5FA]">400g</span>
+                            </div>
+                            <div class="flex justify-between items-center mt-1">
+                                <span class="text-sm text-slate-600 dark:text-slate-400">总重量：</span>
+                                <span class="text-sm font-bold text-slate-600 dark:text-slate-400" id="variation2TotalWeight">1.20kg</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-slate-600 dark:text-slate-400">总成本：</span>
+                                <span class="text-sm font-bold text-slate-600 dark:text-slate-400" id="variation2TotalCost">￥8.25</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 变化款3：蔓越莓核桃吐司 -->
+                    <div class="card p-4">
+                        <div class="flex justify-between items-center mb-3 bg-[#F8FAFC] dark:bg-[#0F172A] p-2 rounded-lg w-full">
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 bg-[#F8FAFC] dark:bg-[#0F172A] flex items-center justify-center mr-3">
+                                    <i class="fas fa-layer-group text-[#3B82F6] dark:text-[#60A5FA]"></i>
+                                </div>
+                                <h3 class="font-semibold text-[#1E293B] dark:text-slate-100">蔓越莓吐司</h3>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm text-slate-600 dark:text-slate-400">生产个数：</span>
+                                <div class="flex items-center border border-slate-200 dark:border-slate-600 rounded bg-white dark:bg-[#0F172A]">
+                                    <button class="px-2 py-1 text-slate-400 hover:text-[#3B82F6] dark:hover:text-[#60A5FA] active:scale-90 transition" onclick="adjustProduction('variation3', -1)">
+                                        <i class="fas fa-minus text-xs"></i>
+                                    </button>
+                                    <span id="variation3Production" class="w-8 text-center text-[#1E293B] dark:text-slate-100 text-sm font-bold cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition" onclick="editProduction('variation3')" title="点击直接编辑">1</span>
+                                    <button class="px-2 py-1 text-slate-400 hover:text-[#3B82F6] dark:hover:text-[#60A5FA] active:scale-90 transition" onclick="adjustProduction('variation3', 1)">
+                                        <i class="fas fa-plus text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-3 mb-3">
+                            <div class="flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-700 rounded-lg px-2">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-[#1E293B] dark:text-slate-100 font-medium">基础面团</span>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-3xl font-bold text-[#3B82F6] dark:text-[#60A5FA]" id="variation3DoughWeight">480<span class="text-lg ml-1">g</span></div>
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">成本：￥<span id="variation3DoughCost">2.13</span></div>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-700 rounded-lg px-2">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-[#1E293B] dark:text-slate-100 font-medium">蔓越莓干</span>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-3xl font-bold text-[#3B82F6] dark:text-[#60A5FA]" id="variation3CranberryWeight">80<span class="text-lg ml-1">g</span></div>
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">成本：￥<span id="variation3CranberryCost">3.60</span></div>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-700 last:border-b-0 rounded-lg px-2">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-[#1E293B] dark:text-slate-100 font-medium">核桃配方</span>
+                                    <button class="text-[#3B82F6] dark:text-[#60A5FA] hover:bg-[#EFF6FF] dark:hover:bg-[#1E3A8A] rounded-full p-1 transition" onclick="jumpToRecipe('walnut-recipe'); event.stopPropagation();" title="查看核桃配方">
+                                        <i class="fas fa-external-link-alt text-xs"></i>
+                                    </button>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-3xl font-bold text-[#3B82F6] dark:text-[#60A5FA]" id="variation3WalnutWeight">40<span class="text-lg ml-1">g</span></div>
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">成本：￥<span id="variation3WalnutCost">2.40</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-[#F8FAFC] dark:bg-[#0F172A] rounded-md p-3 border border-slate-200 dark:border-slate-600">
+                            <div class="flex justify-between items-center">
+                                <span class="font-semibold text-[#1E293B] dark:text-slate-100">单个总重：</span>
+                                <span class="text-xl font-bold text-[#3B82F6] dark:text-[#60A5FA]">600g</span>
+                            </div>
+                            <div class="flex justify-between items-center mt-1">
+                                <span class="text-sm text-slate-600 dark:text-slate-400">总重量：</span>
+                                <span class="text-sm font-bold text-slate-600 dark:text-slate-400" id="variation3TotalWeight">600g</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-slate-600 dark:text-slate-400">总成本：</span>
+                                <span class="text-sm font-bold text-slate-600 dark:text-slate-400" id="variation3TotalCost">￥8.13</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SOP区域 -->
+            <div id="sop-section" class="flex-1 overflow-y-auto px-4 pb-32 hidden">
+                <div class="space-y-6 mb-8">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-xl font-bold text-slate-800 dark:text-slate-200">制作标准 (SOP)</h2>
+                    </div>
+                    <div id="sopList" class="space-y-4">
+                        <!-- 和面标准 -->
+                        <div class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-100 dark:border-slate-700">
+                            <div class="flex items-center mb-3">
+                                <div class="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-cog text-blue-500 dark:text-blue-400"></i>
+                                </div>
+                                <span class="ml-3 font-medium text-slate-700 dark:text-slate-200">和面标准</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg">
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">水温</div>
+                                    <div class="mt-1 font-medium text-slate-800 dark:text-slate-200">4-6℃</div>
+                                </div>
+                                <div class="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg">
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">初始慢速</div>
+                                    <div class="mt-1 font-medium text-slate-800 dark:text-slate-200">3-5分钟</div>
+                                </div>
+                                <div class="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg">
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">中速揉面</div>
+                                    <div class="mt-1 font-medium text-slate-800 dark:text-slate-200">5-8分钟</div>
+                                </div>
+                                <div class="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg">
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">快速揉面</div>
+                                    <div class="mt-1 font-medium text-slate-800 dark:text-slate-200">2-3分钟</div>
+                                </div>
+                                <div class="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg">
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">最终慢速</div>
+                                    <div class="mt-1 font-medium text-slate-800 dark:text-slate-200">1-2分钟</div>
+                                </div>
+                                <div class="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg">
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">出面温度</div>
+                                    <div class="mt-1 font-medium text-slate-800 dark:text-slate-200">24-26℃</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 发酵标准 -->
+                        <div class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-100 dark:border-slate-700">
+                            <div class="flex items-center mb-3">
+                                <div class="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-seedling text-blue-500 dark:text-blue-400"></i>
+                                </div>
+                                <span class="ml-3 font-medium text-slate-700 dark:text-slate-200">发酵标准</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg">
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">温度</div>
+                                    <div class="mt-1 font-medium text-slate-800 dark:text-slate-200">28-30℃</div>
+                                </div>
+                                <div class="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg">
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">湿度</div>
+                                    <div class="mt-1 font-medium text-slate-800 dark:text-slate-200">75-80%</div>
+                                </div>
+                                <div class="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg">
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">时间</div>
+                                    <div class="mt-1 font-medium text-slate-800 dark:text-slate-200">60-90分钟</div>
+                                </div>
+                                <div class="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg">
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">体积</div>
+                                    <div class="mt-1 font-medium text-slate-800 dark:text-slate-200">2-2.5倍大</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 分割标准 -->
+                        <div class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-100 dark:border-slate-700">
+                            <div class="flex items-center mb-3">
+                                <div class="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-cut text-blue-500 dark:text-blue-400"></i>
+                                </div>
+                                <span class="ml-3 font-medium text-slate-700 dark:text-slate-200">分割标准</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg">
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">重量</div>
+                                    <div class="mt-1 font-medium text-slate-800 dark:text-slate-200">每份克数</div>
+                                </div>
+                                <div class="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg">
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">松弛时间</div>
+                                    <div class="mt-1 font-medium text-slate-800 dark:text-slate-200">15-20分钟</div>
+                                </div>
+                                <div class="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg">
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">成型方式</div>
+                                    <div class="mt-1 font-medium text-slate-800 dark:text-slate-200">按产品定义</div>
+                                </div>
+                                <div class="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg">
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">操作温度</div>
+                                    <div class="mt-1 font-medium text-slate-800 dark:text-slate-200">24-26℃</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 醒发标准 -->
+                        <div class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-100 dark:border-slate-700">
+                            <div class="flex items-center mb-3">
+                                <div class="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-clock text-blue-500 dark:text-blue-400"></i>
+                                </div>
+                                <span class="ml-3 font-medium text-slate-700 dark:text-slate-200">醒发标准</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg">
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">温度</div>
+                                    <div class="mt-1 font-medium text-slate-800 dark:text-slate-200">28-32℃</div>
+                                </div>
+                                <div class="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg">
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">湿度</div>
+                                    <div class="mt-1 font-medium text-slate-800 dark:text-slate-200">75-85%</div>
+                                </div>
+                                <div class="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg">
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">时间</div>
+                                    <div class="mt-1 font-medium text-slate-800 dark:text-slate-200">45-60分钟</div>
+                                </div>
+                                <div class="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg">
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">膨胀程度</div>
+                                    <div class="mt-1 font-medium text-slate-800 dark:text-slate-200">80-85%</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 烤制标准 -->
+                        <div class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-100 dark:border-slate-700">
+                            <div class="flex items-center mb-3">
+                                <div class="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-fire text-blue-500 dark:text-blue-400"></i>
+                                </div>
+                                <span class="ml-3 font-medium text-slate-700 dark:text-slate-200">烤制标准</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg">
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">预热温度</div>
+                                    <div class="mt-1 font-medium text-slate-800 dark:text-slate-200">180-200℃</div>
+                                </div>
+                                <div class="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg">
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">烤制时间</div>
+                                    <div class="mt-1 font-medium text-slate-800 dark:text-slate-200">35-40分钟</div>
+                                </div>
+                                <div class="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg">
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">蒸汽量</div>
+                                    <div class="mt-1 font-medium text-slate-800 dark:text-slate-200">100-150ml</div>
+                                </div>
+                                <div class="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg">
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">成品颜色</div>
+                                    <div class="mt-1 font-medium text-slate-800 dark:text-slate-200">金黄色</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 步骤区域 -->
+            <div id="step-section" class="flex-1 overflow-y-auto px-4 pb-32 hidden">
+                <div class="space-y-4">
+                    <div class="card p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="font-semibold text-[#1E293B] dark:text-slate-100 flex items-center gap-2">
+                                <div class="w-6 h-6 bg-[#3B82F6] dark:bg-[#60A5FA] text-white rounded-full flex items-center justify-center text-sm font-bold">1</div>
+                                和面
+                            </h3>
+                            <div class="flex items-center gap-2">
+                            <div class="text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">5分钟</div>
+                                <button class="step-expand-btn text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1" onclick="toggleStepImages(this)" title="展开/收起图片">
+                                    <i class="fas fa-th-large"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="step-content">
+                        <p class="text-[#1E293B] dark:text-slate-100 leading-relaxed mb-3">将面粉、糖、盐放入搅拌缸，加入牛奶和鸡蛋，用慢速搅拌至无干粉。注意面粉要过筛，避免颗粒。</p>
+                            <div class="step-images">
+                                <div class="relative">
+                                    <img src="https://images.unsplash.com/photo-1506459225024-1428097a7e18?w=400&h=400&fit=crop" alt="和面步骤" class="rounded-lg w-full h-full object-cover">
+                                    <button class="absolute bottom-2 right-2 bg-black bg-opacity-60 text-white rounded-full p-2 hover:bg-opacity-80 transition-all" onclick="showStepImage(this)" title="放大图片">
+                                        <i class="fas fa-search-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="font-semibold text-[#1E293B] dark:text-slate-100 flex items-center gap-2">
+                                <div class="w-6 h-6 bg-[#3B82F6] dark:bg-[#60A5FA] text-white rounded-full flex items-center justify-center text-sm font-bold">2</div>
+                                揉面
+                            </h3>
+                            <div class="flex items-center gap-2">
+                            <div class="text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">10分钟</div>
+                                <button class="step-expand-btn text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1" onclick="toggleStepImages(this)" title="展开/收起图片">
+                                    <i class="fas fa-th-large"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="step-content">
+                        <p class="text-[#1E293B] dark:text-slate-100 leading-relaxed mb-3">转中速揉至面团光滑，加入软化的黄油，继续揉至扩展阶段，面团表面光滑有弹性。</p>
+                            <div class="step-images">
+                                <div class="relative">
+                                    <img src="https://images.unsplash.com/photo-1589367920969-ab8e050bbb04?w=400&h=400&fit=crop" alt="揉面步骤" class="rounded-lg w-full h-full object-cover">
+                                    <button class="absolute bottom-2 right-2 bg-black bg-opacity-60 text-white rounded-full p-2 hover:bg-opacity-80 transition-all" onclick="showStepImage(this)" title="放大图片">
+                                        <i class="fas fa-search-plus"></i>
+                                    </button>
+                                </div>
+                                <div class="relative">
+                                    <img src="https://images.unsplash.com/photo-1600326145552-327f74b9c189?w=400&h=400&fit=crop" alt="揉面步骤" class="rounded-lg w-full h-full object-cover">
+                                    <button class="absolute bottom-2 right-2 bg-black bg-opacity-60 text-white rounded-full p-2 hover:bg-opacity-80 transition-all" onclick="showStepImage(this)" title="放大图片">
+                                        <i class="fas fa-search-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="font-semibold text-[#1E293B] dark:text-slate-100 flex items-center gap-2">
+                                <div class="w-6 h-6 bg-[#3B82F6] dark:bg-[#60A5FA] text-white rounded-full flex items-center justify-center text-sm font-bold">3</div>
+                                一发
+                            </h3>
+                            <div class="flex items-center gap-2">
+                            <div class="text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">60分钟</div>
+                                <button class="step-expand-btn text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1" onclick="toggleStepImages(this)" title="展开/收起图片">
+                                    <i class="fas fa-th-large"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="step-content">
+                        <p class="text-[#1E293B] dark:text-slate-100 leading-relaxed mb-3">将面团放入发酵盒，在28°C环境下发酵至2倍大。用手指戳洞不回缩即可。</p>
+                            <div class="step-images">
+                                <div class="relative">
+                                    <img src="https://images.unsplash.com/photo-1612200058850-8e661d819ded?w=400&h=400&fit=crop" alt="发酵步骤" class="rounded-lg w-full h-full object-cover">
+                                    <button class="absolute bottom-2 right-2 bg-black bg-opacity-60 text-white rounded-full p-2 hover:bg-opacity-80 transition-all" onclick="showStepImage(this)" title="放大图片">
+                                        <i class="fas fa-search-plus"></i>
+                                    </button>
+                                </div>
+                                <div class="relative">
+                                    <img src="https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=400&fit=crop" alt="发酵步骤" class="rounded-lg w-full h-full object-cover">
+                                    <button class="absolute bottom-2 right-2 bg-black bg-opacity-60 text-white rounded-full p-2 hover:bg-opacity-80 transition-all" onclick="showStepImage(this)" title="放大图片">
+                                        <i class="fas fa-search-plus"></i>
+                                    </button>
+                                </div>
+                                <div class="relative">
+                                    <img src="https://images.unsplash.com/photo-1506459225024-1428097a7e18?w=400&h=400&fit=crop" alt="发酵步骤" class="rounded-lg w-full h-full object-cover">
+                                    <button class="absolute bottom-2 right-2 bg-black bg-opacity-60 text-white rounded-full p-2 hover:bg-opacity-80 transition-all" onclick="showStepImage(this)" title="放大图片">
+                                        <i class="fas fa-search-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="font-semibold text-[#1E293B] dark:text-slate-100 flex items-center gap-2">
+                                <div class="w-6 h-6 bg-[#3B82F6] dark:bg-[#60A5FA] text-white rounded-full flex items-center justify-center text-sm font-bold">4</div>
+                                整形
+                            </h3>
+                            <div class="flex items-center gap-2">
+                            <div class="text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">15分钟</div>
+                                <button class="step-expand-btn text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1" onclick="toggleStepImages(this)" title="展开/收起图片">
+                                    <i class="fas fa-th-large"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="step-content">
+                            <p class="text-[#1E293B] dark:text-slate-100 leading-relaxed mb-3">分割面团，每个500g，滚圆松弛15分钟后整形，放入吐司模具中。</p>
+                            <div class="step-images">
+                                <div class="relative">
+                                    <img src="https://images.unsplash.com/photo-1589367920969-ab8e050bbb04?w=400&h=400&fit=crop" alt="整形步骤" class="rounded-lg w-full h-full object-cover">
+                                    <button class="absolute bottom-2 right-2 bg-black bg-opacity-60 text-white rounded-full p-2 hover:bg-opacity-80 transition-all" onclick="showStepImage(this)" title="放大图片">
+                                        <i class="fas fa-search-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="font-semibold text-[#1E293B] dark:text-slate-100 flex items-center gap-2">
+                                <div class="w-6 h-6 bg-[#3B82F6] dark:bg-[#60A5FA] text-white rounded-full flex items-center justify-center text-sm font-bold">5</div>
+                                二发
+                            </h3>
+                            <div class="flex items-center gap-2">
+                            <div class="text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">45分钟</div>
+                                <button class="step-expand-btn text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1" onclick="toggleStepImages(this)" title="展开/收起图片">
+                                    <i class="fas fa-th-large"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="step-content">
+                        <p class="text-[#1E293B] dark:text-slate-100 leading-relaxed mb-3">在35°C环境下发酵至8分满，面团顶部接近模具边缘即可。</p>
+                            <div class="step-images">
+                                <div class="relative">
+                                    <img src="https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=400&fit=crop" alt="二发步骤" class="rounded-lg w-full h-full object-cover">
+                                    <button class="absolute bottom-2 right-2 bg-black bg-opacity-60 text-white rounded-full p-2 hover:bg-opacity-80 transition-all" onclick="showStepImage(this)" title="放大图片">
+                                        <i class="fas fa-search-plus"></i>
+                                    </button>
+                                </div>
+                                <div class="relative">
+                                    <img src="https://images.unsplash.com/photo-1612200058850-8e661d819ded?w=400&h=400&fit=crop" alt="二发步骤" class="rounded-lg w-full h-full object-cover">
+                                    <button class="absolute bottom-2 right-2 bg-black bg-opacity-60 text-white rounded-full p-2 hover:bg-opacity-80 transition-all" onclick="showStepImage(this)" title="放大图片">
+                                        <i class="fas fa-search-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="font-semibold text-[#1E293B] dark:text-slate-100 flex items-center gap-2">
+                                <div class="w-6 h-6 bg-[#3B82F6] dark:bg-[#60A5FA] text-white rounded-full flex items-center justify-center text-sm font-bold">6</div>
+                                烘烤
+                            </h3>
+                            <div class="flex items-center gap-2">
+                            <div class="text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">35分钟</div>
+                                <button class="step-expand-btn text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1" onclick="toggleStepImages(this)" title="展开/收起图片">
+                                    <i class="fas fa-th-large"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="step-content">
+                        <p class="text-[#1E293B] dark:text-slate-100 leading-relaxed mb-3">烤箱预热至180°C，烘烤35分钟至表面金黄，出炉后立即脱模晾凉。</p>
+                            <div class="step-images">
+                                <div class="relative">
+                                    <img src="https://images.unsplash.com/photo-1506459225024-1428097a7e18?w=400&h=400&fit=crop" alt="烘烤步骤" class="rounded-lg w-full h-full object-cover">
+                                    <button class="absolute bottom-2 right-2 bg-black bg-opacity-60 text-white rounded-full p-2 hover:bg-opacity-80 transition-all" onclick="showStepImage(this)" title="放大图片">
+                                        <i class="fas fa-search-plus"></i>
+                                    </button>
+                                </div>
+                                <div class="relative">
+                                    <img src="https://images.unsplash.com/photo-1600326145552-327f74b9c189?w=400&h=400&fit=crop" alt="烘烤步骤" class="rounded-lg w-full h-full object-cover">
+                                    <button class="absolute bottom-2 right-2 bg-black bg-opacity-60 text-white rounded-full p-2 hover:bg-opacity-80 transition-all" onclick="showStepImage(this)" title="放大图片">
+                                        <i class="fas fa-search-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 综合总重和成本统计 -->
+        <div class="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#1E293B] p-3 z-50 card bottom-bar border-t border-slate-200 dark:border-slate-600">
+            <div class="max-w-md mx-auto">
+                <!-- 综合统计 -->
+                <div class="bg-[#F8FAFC] dark:bg-[#0F172A] rounded-md px-4 py-2 border border-slate-200 dark:border-slate-600">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-balance-scale text-[#3B82F6] dark:text-[#60A5FA]"></i>
+                            <div>
+                                <div class="text-[#1E293B] dark:text-slate-100 text-sm font-medium">面团总重: <span class="font-bold" id="overallTotalWeight">2.09kg</span></div>
+                                <div class="text-[#64748B] dark:text-slate-400 text-xs">总成本：￥<span id="totalCost">11.44</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 共享至平台提示弹窗 -->
+    <div id="shareConfirmModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white dark:bg-[#1E293B] rounded-2xl p-6 max-w-sm mx-4 shadow-2xl">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-exclamation-triangle text-orange-500 text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-[#1E293B] dark:text-slate-100 mb-2">分享配方至平台</h3>
+                <p class="text-slate-600 dark:text-slate-400 text-sm mb-6">将您的精心配方分享给更多烘焙爱好者，获得点赞和关注。发布后配方将对所有用户可见。</p>
+                <div class="flex gap-3">
+                    <button class="flex-1 px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition" onclick="closeShareConfirm()">取消</button>
+                    <button class="flex-1 px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl hover:from-orange-600 hover:to-red-600 transition" onclick="confirmShare()">确认分享</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 分享给好友弹窗 -->
+    <div id="shareToFriendModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white dark:bg-[#1E293B] rounded-2xl p-6 max-w-md mx-4 w-[90%] shadow-2xl">
+            <div class="flex justify-between items-center mb-5">
+                <h3 class="text-lg font-bold text-[#1E293B] dark:text-slate-100">分享配方</h3>
+                <button id="share-close-btn" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl hover:rotate-90 transition-all" onclick="closeShareToFriend()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <p class="text-slate-600 dark:text-slate-400 text-sm mb-6" id="share-description">选择要分享到的平台</p>
+            
+            <div class="grid grid-cols-4 gap-4 mb-6">
+                <!-- 社交平台 -->
+                <div class="social-platform flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-all" onclick="shareViaMethod('wechat')">
+                    <div class="w-14 h-14 bg-green-500 rounded-full flex items-center justify-center text-white">
+                        <i class="fab fa-weixin text-xl"></i>
+                    </div>
+                    <span class="text-xs text-slate-600 dark:text-slate-400">微信</span>
+                </div>
+                
+                <div class="social-platform flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-all" onclick="openXiaohongshuModal()">
+                    <div class="w-14 h-14 bg-red-500 rounded-full flex items-center justify-center text-white">
+                        <i class="fas fa-bookmark text-xl"></i>
+                    </div>
+                    <span class="text-xs text-slate-600 dark:text-slate-400">小红书</span>
+                </div>
+                
+                <div class="social-platform flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-all" onclick="shareViaMethod('douyin')">
+                    <div class="w-14 h-14 bg-black rounded-full flex items-center justify-center text-white">
+                        <i class="fas fa-music text-xl"></i>
+                    </div>
+                    <span class="text-xs text-slate-600 dark:text-slate-400">抖音</span>
+                </div>
+                
+                <div class="social-platform flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-all" onclick="shareViaMethod('weibo')">
+                    <div class="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center text-white">
+                        <i class="fab fa-weibo text-xl"></i>
+                    </div>
+                    <span class="text-xs text-slate-600 dark:text-slate-400">微博</span>
+                </div>
+                
+                <div class="social-platform flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-all" onclick="shareViaMethod('qq')">
+                    <div class="w-14 h-14 bg-blue-500 rounded-full flex items-center justify-center text-white">
+                        <i class="fab fa-qq text-xl"></i>
+                    </div>
+                    <span class="text-xs text-slate-600 dark:text-slate-400">QQ</span>
+                </div>
+                
+                <div class="social-platform flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-all" onclick="shareViaMethod('bilibili')">
+                    <div class="w-14 h-14 bg-pink-500 rounded-full flex items-center justify-center text-white">
+                        <i class="fab fa-bilibili text-xl">B</i>
+                    </div>
+                    <span class="text-xs text-slate-600 dark:text-slate-400">哔哩哔哩</span>
+                </div>
+                
+                <div class="social-platform flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-all" onclick="shareViaMethod('link')">
+                    <div class="w-14 h-14 bg-gray-500 rounded-full flex items-center justify-center text-white">
+                        <i class="fas fa-link text-xl"></i>
+                    </div>
+                    <span class="text-xs text-slate-600 dark:text-slate-400">复制链接</span>
+                </div>
+                
+                <div class="social-platform flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-all" onclick="shareViaMethod('more')">
+                    <div class="w-14 h-14 bg-purple-500 rounded-full flex items-center justify-center text-white">
+                        <i class="fas fa-ellipsis-h text-xl"></i>
+                    </div>
+                    <span class="text-xs text-slate-600 dark:text-slate-400">更多</span>
+                </div>
+            </div>
+            
+            <!-- 分享到应用商店评分 -->
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 p-4 rounded-xl mb-4 cursor-pointer" onclick="shareToAppStore()">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white">
+                        <i class="fas fa-star text-white"></i>
+                    </div>
+                    <div>
+                        <div class="font-medium text-blue-800 dark:text-blue-300">去应用商店评分</div>
+                        <div class="text-xs text-blue-600 dark:text-blue-400">喜欢这个App？给我们5星好评吧！</div>
+                    </div>
+                    <i class="fas fa-chevron-right ml-auto text-blue-500 dark:text-blue-400"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 小红书分享界面 -->
+    <div id="xiaohongshuShareModal" class="fixed z-50 left-0 top-0 w-full h-full flex items-center justify-center bg-black bg-opacity-40 hidden">
+        <div class="bg-white dark:bg-[#1E293B] rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4 border border-slate-200 dark:border-slate-600">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-[#1E293B] dark:text-slate-100 font-semibold text-2xl">分享到小红书</h3>
+                <button onclick="closeXiaohongshuModal()" class="text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl active:scale-90 transition">×</button>
+            </div>
+            
+            <div class="space-y-6">
+                <!-- 用户ID和烘匠APP推广信息 -->
+                <div class="bg-[#FFF9F9] dark:bg-[#2D1B1B] p-4 rounded-lg border border-[#FFDED8] dark:border-[#4D2D2A]">
+                    <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 bg-[#FE2C55] rounded-full flex items-center justify-center mr-3">
+                            <i class="fas fa-user text-white"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">用户ID</p>
+                            <p class="font-semibold" id="shareUserId">YJ238961</p>
+                        </div>
+                    </div>
+                    <div class="text-sm text-slate-600 dark:text-slate-400">
+                        分享此配方，邀请朋友一起使用<span class="text-[#FE2C55] font-bold">【烘匠APP】</span>制作美食！
+                    </div>
+                </div>
+                
+                <!-- 分享内容预览 -->
+                <div class="border border-slate-200 dark:border-slate-600 rounded-lg p-4">
+                    <h4 class="font-medium mb-2">分享内容预览</h4>
+                    <div class="flex items-start">
+                        <div class="w-20 h-20 bg-slate-100 dark:bg-slate-700 rounded-lg overflow-hidden flex-shrink-0 mr-3">
+                            <img src="" alt="配方封面" id="sharePreviewImage" class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-1">
+                            <p class="font-medium mb-1" id="shareRecipeTitle">经典吐司面包配方</p>
+                            <p class="text-sm text-slate-600 dark:text-slate-400 line-clamp-2" id="shareRecipeDesc">松软香甜的经典吐司，内部组织细腻，入口即化，配方简单易上手！</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 推广文案输入 -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">添加推广文案</label>
+                    <textarea class="w-full p-3 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-[#1E293B] text-slate-900 dark:text-slate-100 placeholder-slate-400" rows="3" placeholder="添加文案，让更多人看到你的作品...">今天分享一款超好吃的面包配方，在烘匠APP上找到的！推荐大家都来试试~ #烘焙 #面包 #烘匠APP</textarea>
+                </div>
+                
+                <!-- 操作按钮 -->
+                <div class="flex gap-3">
+                    <button onclick="closeXiaohongshuModal()" class="flex-1 py-3 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-200 dark:hover:bg-slate-600 active:scale-95 transition-all">取消</button>
+                    <button onclick="confirmXiaohongshuShare()" class="flex-1 py-3 rounded-lg bg-[#FE2C55] text-white font-medium hover:bg-[#E82147] active:scale-95 transition-all">分享到小红书</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 退出确认弹窗 -->
+    <div id="exitConfirmModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white dark:bg-[#1E293B] rounded-2xl p-6 max-w-sm mx-4 shadow-2xl">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-save text-blue-500 text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-[#1E293B] dark:text-slate-100 mb-2">保存配料状态</h3>
+                <p class="text-slate-600 dark:text-slate-400 text-sm mb-6">检测到您已标记部分材料为已入料状态，是否保存当前配料进度？</p>
+                <div class="flex gap-3">
+                    <button class="flex-1 px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition" onclick="exitWithoutSaving()">不保存</button>
+                    <button class="flex-1 px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-xl hover:from-blue-600 hover:to-indigo-600 transition" onclick="saveAndExit()">保存并退出</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 发布到资源确认弹窗 -->
+    <div id="publishResourceModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white dark:bg-[#1E293B] rounded-2xl p-6 max-w-sm mx-4 shadow-2xl">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-[#FFF3E0] dark:bg-orange-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div class="text-2xl">👨‍🍳</div>
+                </div>
+                <h3 class="text-xl font-bold text-[#1E293B] dark:text-slate-100 mb-3">发布配方到社区</h3>
+                <p class="text-[#1E293B] dark:text-slate-100 mb-4">您的配方将被发布到烘匠配方社区，所有用户都将能够查看和使用您的配方。</p>
+                <p class="text-slate-500 dark:text-slate-400 text-sm mb-6">发布后将获得社区积分奖励</p>
+                <div class="flex gap-3">
+                    <button class="flex-1 px-4 py-3 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition" onclick="closePublishConfirm()">取消</button>
+                    <button class="flex-1 px-4 py-3 bg-[#FF9B37] text-white rounded-xl hover:bg-[#F18C29] active:scale-95 transition" onclick="confirmPublish()">确认发布</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 复制配方确认弹窗 -->
+    <div id="copyRecipeConfirmModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+      <div class="bg-white dark:bg-[#1E293B] rounded-2xl p-6 max-w-sm mx-4 shadow-2xl">
+        <div class="text-center">
+          <div class="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="fas fa-copy text-blue-500 text-2xl"></i>
+          </div>
+          <h3 class="text-lg font-bold text-[#1E293B] dark:text-slate-100 mb-2">复制配方</h3>
+          <p class="text-slate-600 dark:text-slate-400 text-sm mb-6">复制当前配方比例并去创建新的配方？</p>
+          <div class="flex gap-3">
+            <button class="flex-1 px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition" onclick="closeCopyRecipeConfirm()">取消</button>
+            <button class="flex-1 px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-xl hover:from-blue-600 hover:to-indigo-600 transition" onclick="confirmCopyRecipe()">去创建</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+        // 全局状态
+        let hasModifiedIngredients = false;
+        let moreMenuOpen = false;
+
+        // Tab切换功能
+        function switchTab(tab) {
+            // 更新Tab按钮状态
+            const tabs = ['recipe', 'sop', 'step'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-btn-${t}`);
+                const section = document.getElementById(`${t}-section`);
+                
+                if (t === tab) {
+                    btn.classList.add('tab-active', 'tab-bg-active');
+                    btn.classList.remove('tab-inactive', 'tab-bg-inactive');
+                    section.classList.remove('hidden');
+                } else {
+                    btn.classList.remove('tab-active', 'tab-bg-active');
+                    btn.classList.add('tab-inactive', 'tab-bg-inactive');
+                    section.classList.add('hidden');
+                }
+            });
+        }
+
+        // 材料状态切换（仅限上方原料，不包括基础面团和变化款）
+        function toggleIngredientStatus(element) {
+            const statusText = element.querySelector('.ingredient-status-text');
+            const ingredientName = element.querySelector('.ingredient-name');
+            
+            if (statusText.classList.contains('hidden')) {
+                // 标记为已入料
+                statusText.classList.remove('hidden');
+                statusText.classList.add('text-green-600', 'dark:text-green-400', 'font-medium');
+                statusText.classList.remove('text-slate-400', 'dark:text-slate-500');
+                ingredientName.classList.add('line-through', 'opacity-60');
+                element.classList.add('bg-green-50', 'dark:bg-green-950/20');
+                hasModifiedIngredients = true;
+            } else {
+                // 取消标记
+                statusText.classList.add('hidden');
+                statusText.classList.remove('text-green-600', 'dark:text-green-400', 'font-medium');
+                statusText.classList.add('text-slate-400', 'dark:text-slate-500');
+                ingredientName.classList.remove('line-through', 'opacity-60');
+                element.classList.remove('bg-green-50', 'dark:bg-green-950/20');
+            }
+            
+            // 实时更新配方比例和金额
+            updateRecipeProportions();
+        }
+
+        // 直接编辑生产个数
+        function editProduction(type) {
+            const element = document.getElementById(`${type}Production`);
+            const currentValue = parseInt(element.textContent) || 0;
+            
+            // 创建输入框
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.min = '0';
+            input.max = '99';
+            input.value = currentValue;
+            input.className = 'w-8 text-center text-sm font-bold border-none outline-none bg-transparent';
+            
+            // 根据类型设置文字颜色
+            if (type === 'base') {
+                input.className += ' text-[#1E293B] dark:text-slate-100';
+            } else if (type === 'variation1') {
+                input.className += ' text-blue-700 dark:text-blue-300';
+            } else if (type === 'variation2') {
+                input.className += ' text-purple-700 dark:text-purple-300';
+            } else if (type === 'variation3') {
+                input.className += ' text-green-700 dark:text-green-300';
+            }
+            
+            // 保存原始内容
+            const originalContent = element.innerHTML;
+            
+            // 替换为输入框
+            element.innerHTML = '';
+            element.appendChild(input);
+            
+            // 选中所有文本
+            input.focus();
+            input.select();
+            
+            // 完成编辑的函数
+            function finishEdit() {
+                const newValue = Math.max(0, Math.min(99, parseInt(input.value) || 0));
+                element.innerHTML = newValue;
+                
+                // 触发重新计算
+                adjustProduction(type, 0);
+            }
+            
+            // 监听事件
+            input.addEventListener('blur', finishEdit);
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    finishEdit();
+                } else if (e.key === 'Escape') {
+                    element.innerHTML = originalContent;
+                }
+            });
+            
+            // 阻止点击事件冒泡
+            input.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+        }
+
+        // 生产个数调整
+        function adjustProduction(type, delta) {
+            const element = document.getElementById(`${type}Production`);
+            const currentValue = parseInt(element.textContent) || 0;
+            const newValue = Math.max(0, Math.min(99, currentValue + delta));
+            element.textContent = newValue;
+            
+            // 更新对应区域的重量和成本
+            if (type === 'base') {
+                // 更新基础面团总重
+                const baseWeight = 1093 * newValue; // 基础重量 * 倍数
+                const baseCost = 7.00 * newValue; // 基础成本 * 倍数
+                document.getElementById('baseTotalWeight').textContent = formatWeight(baseWeight);
+                
+                // 更新基础面团内的各项重量
+                document.getElementById('baseDoughWeight').innerHTML = formatWeight(943 * newValue).replace(/(\d+(?:\.\d+)?)(g|kg)/, '$1<span class="text-lg ml-1">$2</span>');
+                document.getElementById('baseDoughCost').textContent = (4.20 * newValue).toFixed(2);
+                document.getElementById('additionalWeight').innerHTML = formatWeight(150 * newValue).replace(/(\d+(?:\.\d+)?)(g|kg)/, '$1<span class="text-lg ml-1">$2</span>');
+                document.getElementById('additionalCost').textContent = (2.80 * newValue).toFixed(2);
+                
+            } else if (type === 'variation1') {
+                // 更新变化款1总重
+                const singleWeight = 500;
+                const singleCost = 2.22;
+                const totalWeight = singleWeight * newValue;
+                const totalCost = singleCost * newValue;
+                document.getElementById('variation1TotalWeight').textContent = formatWeight(totalWeight);
+                document.getElementById('variation1TotalCost').textContent = '￥' + totalCost.toFixed(2);
+                
+                // 更新变化款内的面团重量
+                document.getElementById('variation1DoughWeight').innerHTML = formatWeight(500 * newValue).replace(/(\d+(?:\.\d+)?)(g|kg)/, '$1<span class="text-lg ml-1">$2</span>');
+                document.getElementById('variation1DoughCost').textContent = totalCost.toFixed(2);
+                
+            } else if (type === 'variation2') {
+                // 更新变化款2总重
+                const singleWeight = 400;
+                const singleDoughWeight = 350;
+                const singleChocolateWeight = 50;
+                const singleDoughCost = 1.55;
+                const singleChocolateCost = 1.20;
+                
+                const totalDoughWeight = singleDoughWeight * newValue;
+                const totalChocolateWeight = singleChocolateWeight * newValue;
+                const totalWeight = singleWeight * newValue;
+                const totalDoughCost = singleDoughCost * newValue;
+                const totalChocolateCost = singleChocolateCost * newValue;
+                const totalCost = totalDoughCost + totalChocolateCost;
+                
+                document.getElementById('variation2TotalWeight').textContent = formatWeight(totalWeight);
+                document.getElementById('variation2TotalCost').textContent = '￥' + totalCost.toFixed(2);
+                
+                // 更新变化款内的各项重量
+                document.getElementById('variation2DoughWeight').innerHTML = formatWeight(totalDoughWeight).replace(/(\d+(?:\.\d+)?)(g|kg)/, '$1<span class="text-lg ml-1">$2</span>');
+                document.getElementById('variation2DoughCost').textContent = totalDoughCost.toFixed(2);
+                document.getElementById('variation2ChocolateWeight').innerHTML = formatWeight(totalChocolateWeight).replace(/(\d+(?:\.\d+)?)(g|kg)/, '$1<span class="text-lg ml-1">$2</span>');
+                document.getElementById('variation2ChocolateCost').textContent = totalChocolateCost.toFixed(2);
+                
+            } else if (type === 'variation3') {
+                // 更新变化款3总重
+                const singleWeight = 600;
+                const singleDoughWeight = 480;
+                const singleCranberryWeight = 80;
+                const singleWalnutWeight = 40;
+                const singleDoughCost = 2.13;
+                const singleCranberryCost = 3.60;
+                const singleWalnutCost = 2.40;
+                
+                const totalDoughWeight = singleDoughWeight * newValue;
+                const totalCranberryWeight = singleCranberryWeight * newValue;
+                const totalWalnutWeight = singleWalnutWeight * newValue;
+                const totalWeight = singleWeight * newValue;
+                const totalDoughCost = singleDoughCost * newValue;
+                const totalCranberryCost = singleCranberryCost * newValue;
+                const totalWalnutCost = singleWalnutCost * newValue;
+                const totalCost = totalDoughCost + totalCranberryCost + totalWalnutCost;
+                
+                document.getElementById('variation3TotalWeight').textContent = formatWeight(totalWeight);
+                document.getElementById('variation3TotalCost').textContent = '￥' + totalCost.toFixed(2);
+                
+                // 更新变化款内的各项重量
+                document.getElementById('variation3DoughWeight').innerHTML = formatWeight(totalDoughWeight).replace(/(\d+(?:\.\d+)?)(g|kg)/, '$1<span class="text-lg ml-1">$2</span>');
+                document.getElementById('variation3DoughCost').textContent = totalDoughCost.toFixed(2);
+                document.getElementById('variation3CranberryWeight').innerHTML = formatWeight(totalCranberryWeight).replace(/(\d+(?:\.\d+)?)(g|kg)/, '$1<span class="text-lg ml-1">$2</span>');
+                document.getElementById('variation3CranberryCost').textContent = totalCranberryCost.toFixed(2);
+                document.getElementById('variation3WalnutWeight').innerHTML = formatWeight(totalWalnutWeight).replace(/(\d+(?:\.\d+)?)(g|kg)/, '$1<span class="text-lg ml-1">$2</span>');
+                document.getElementById('variation3WalnutCost').textContent = totalWalnutCost.toFixed(2);
+            }
+            
+            // 实时更新上方原料的重量和比例
+            updateRecipeProportions();
+            
+            // 更新综合统计
+            updateOverallSummary();
+        }
+
+        // 实时更新配方比例和金额
+        function updateRecipeProportions() {
+            // 获取所有生产数量
+            const baseValue = getProductionValue('base');
+            const variation1Value = getProductionValue('variation1');
+            const variation2Value = getProductionValue('variation2');
+            const variation3Value = getProductionValue('variation3');
+            
+            // 计算总生产倍数
+            const totalProduction = baseValue + variation1Value + variation2Value + variation3Value;
+            
+            // 如果总生产数为0，显示原始配方比例
+            const multiplier = totalProduction > 0 ? totalProduction : 1;
+            
+            // 更新上方所有原料的重量
+            const ingredientElements = document.querySelectorAll('#recipe-section .ingredient-item');
+            ingredientElements.forEach(element => {
+                const amountElement = element.querySelector('[data-base-amount]');
+                if (amountElement) {
+                    const baseAmount = parseFloat(amountElement.getAttribute('data-base-amount'));
+                    const newAmount = baseAmount * multiplier;
+                    
+                    // 保留原有单位
+                    const unit = amountElement.innerHTML.match(/<span[^>]*>([^<]+)<\/span>/)?.[1] || 'g';
+                    amountElement.innerHTML = `${formatWeight(newAmount).replace(/(g|kg)/, '')}<span class="text-lg ml-1">${unit}</span>`;
+                }
+            });
+        }
+
+        // 更新综合统计
+        function updateOverallSummary() {
+            // 获取所有生产数量
+            const baseValue = getProductionValue('base');
+            const variation1Value = getProductionValue('variation1');
+            const variation2Value = getProductionValue('variation2');
+            const variation3Value = getProductionValue('variation3');
+            
+            // 计算总重量
+            const baseWeight = 1093 * baseValue;
+            const variation1Weight = 500 * variation1Value;
+            const variation2Weight = 400 * variation2Value;
+            const variation3Weight = 600 * variation3Value;
+            const totalWeight = baseWeight + variation1Weight + variation2Weight + variation3Weight;
+            
+            // 计算总成本
+            const baseCost = 7.00 * baseValue;
+            const variation1Cost = 2.22 * variation1Value;
+            const variation2Cost = 2.75 * variation2Value;
+            const variation3Cost = 8.13 * variation3Value;
+            const totalCost = baseCost + variation1Cost + variation2Cost + variation3Cost;
+            
+            // 更新显示
+            document.getElementById('overallTotalWeight').textContent = formatWeight(totalWeight);
+            document.getElementById('totalCost').textContent = totalCost.toFixed(2);
+        }
+
+        // 格式化重量显示
+        function formatWeight(weight) {
+            if (weight >= 1000) {
+                return (weight / 1000).toFixed(2) + 'kg';
+            } else {
+                return weight + 'g';
+            }
+        }
+
+        // 跳转到其他配方详情
+        function jumpToRecipe(recipeId) {
+            // 保存当前状态
+            const currentState = {
+                recipeId: 'current-recipe',
+                ingredientStates: getIngredientStates(),
+                productionCounts: getProductionCounts()
+            };
+            sessionStorage.setItem('recipeDetailState', JSON.stringify(currentState));
+            
+            // 跳转到目标配方
+            window.location.href = `recipe-detail.html?id=${recipeId}&returnTo=current-recipe`;
+        }
+
+        // 获取当前材料状态（仅限上方原料）
+        function getIngredientStates() {
+            const states = {};
+            document.querySelectorAll('#recipe-section .ingredient-item').forEach((item, index) => {
+                const statusText = item.querySelector('.ingredient-status-text');
+                states[index] = statusText && !statusText.classList.contains('hidden');
+            });
+            return states;
+        }
+
+        // 获取生产个数
+        function getProductionCounts() {
+            const counts = {};
+            ['base', 'variation1', 'variation2', 'variation3'].forEach(type => {
+                const element = document.getElementById(`${type}Production`);
+                if (element) counts[type] = parseInt(element.textContent) || 0;
+            });
+            return counts;
+        }
+
+        // 更多菜单切换
+        function toggleMoreMenu() {
+            const dropdown = document.getElementById('moreMenuDropdown');
+            moreMenuOpen = !moreMenuOpen;
+            
+            if (moreMenuOpen) {
+                dropdown.classList.remove('hidden');
+            } else {
+                dropdown.classList.add('hidden');
+            }
+        }
+
+        // 点击外部关闭下拉菜单
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#moreMenuDropdown') && !e.target.closest('button[onclick="toggleMoreMenu()"]')) {
+                document.getElementById('moreMenuDropdown').classList.add('hidden');
+                moreMenuOpen = false;
+            }
+        });
+
+        // 分享至平台 - 直接使用分享给好友的弹窗
+        function shareToPublic() {
+            const shareDescription = document.getElementById('share-description');
+            if (shareDescription) {
+                shareDescription.textContent = '分享配方至平台';
+            }
+            document.getElementById('shareToFriendModal').classList.remove('hidden');
+        }
+
+        function closeShareConfirm() {
+            document.getElementById('shareConfirmModal').classList.add('hidden');
+        }
+
+        function confirmShare() {
+            document.getElementById('shareConfirmModal').classList.add('hidden');
+            showNotification('🎉 配方已成功分享至平台，期待获得更多关注！');
+        }
+        
+        // 发布到资源社区 - 打开确认弹窗
+        function publishToResources() {
+            // 关闭更多菜单
+            toggleMoreMenu();
+            // 显示发布确认弹窗
+            document.getElementById('publishResourceModal').classList.remove('hidden');
+        }
+        
+        // 取消发布到资源社区
+        function closePublishConfirm() {
+            document.getElementById('publishResourceModal').classList.add('hidden');
+        }
+        
+        // 确认发布到资源社区
+        function confirmPublish() {
+            document.getElementById('publishResourceModal').classList.add('hidden');
+            
+            // 显示发布成功的通知
+            showNotification('🎉 配方已成功发布到烘匠配方社区！');
+            
+            // 可以在这里添加额外的发布逻辑，如API调用等
+            
+            // 模拟发布后的积分奖励提示（1.5秒后显示）
+            setTimeout(() => {
+                showNotification('✨ 您获得了50积分奖励！');
+            }, 1500);
+        }
+        
+        // 分享给好友
+        function shareToFriend() {
+            const shareDescription = document.getElementById('share-description');
+            if (shareDescription) {
+                shareDescription.textContent = '分享配方给好友';
+            }
+            document.getElementById('shareToFriendModal').classList.remove('hidden');
+        }
+        
+        function closeShareToFriend() {
+            document.getElementById('shareToFriendModal').classList.add('hidden');
+        }
+        
+        function shareViaMethod(method) {
+            closeShareToFriend();
+            let message = '';
+            const recipeName = '经典白吐司';
+            
+            switch(method) {
+                case 'wechat':
+                    message = `已准备分享「${recipeName}」配方到微信`;
+                    break;
+                case 'douyin':
+                    message = `已准备将「${recipeName}」配方分享到抖音，拍摄制作过程视频吧！`;
+                    break;
+                case 'weibo':
+                    message = `已准备分享「${recipeName}」配方到微博`;
+                    break;
+                case 'qq':
+                    message = `已准备分享「${recipeName}」配方到QQ`;
+                    break;
+                case 'bilibili':
+                    message = `已准备分享「${recipeName}」配方到哔哩哔哩，分享您的制作教程吧！`;
+                    break;
+                case 'link':
+                    // 模拟复制链接
+                    const dummyLink = 'https://bakery.example.com/recipes/classic-toast';
+                    navigator.clipboard.writeText(dummyLink).then(() => {
+                        showNotification('🔗 配方链接已复制到剪贴板！');
+                    }).catch(() => {
+                        showNotification('❌ 链接复制失败，请手动复制：' + dummyLink);
+                    });
+                    return;
+                case 'more':
+                    message = `打开更多分享选项...`;
+                    break;
+            }
+            
+            if (message) {
+                showNotification(message);
+            }
+        }
+        
+        // 小红书分享相关函数
+        function openXiaohongshuModal() {
+            closeShareToFriend();
+            // 设置分享预览图片
+            const previewImage = document.getElementById('sharePreviewImage');
+            // 获取当前配方的封面图片
+            const coverImage = document.querySelector('.card .rounded-xl img');
+            if (coverImage) {
+                previewImage.src = coverImage.src;
+            }
+            
+            // 设置配方标题
+            document.getElementById('shareRecipeTitle').textContent = '经典白吐司';
+            
+            // 显示弹窗
+            document.getElementById('xiaohongshuShareModal').classList.remove('hidden');
+        }
+        
+        function closeXiaohongshuModal() {
+            document.getElementById('xiaohongshuShareModal').classList.add('hidden');
+        }
+        
+        function confirmXiaohongshuShare() {
+            closeXiaohongshuModal();
+            showNotification('🎉 成功分享到小红书，感谢您的分享！');
+        }
+        
+        // 分享到应用商店评分功能
+        function shareToAppStore() {
+            closeShareToFriend();
+            showNotification('感谢您的支持！正在跳转到应用商店...');
+        }
+
+        // 编辑配方
+        function editRecipe() {
+            toggleMoreMenu();
+            window.location.href = 'recipe-create.html?edit=true&id=current-recipe';
+        }
+
+        // 复制配方
+        function duplicateRecipe() {
+            // 关闭更多菜单
+            toggleMoreMenu();
+            // 显示复制配方确认弹窗
+            document.getElementById('copyRecipeConfirmModal').classList.remove('hidden');
+        }
+
+        // 打印配方
+        function printRecipe() {
+            toggleMoreMenu();
+            
+            // 创建打印窗口
+            const printWindow = window.open('', '_blank');
+            const recipeContent = generatePrintContent();
+            
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>经典白吐司 - 配方打印</title>
+                    <style>
+                        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 20px; line-height: 1.6; }
+                        .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+                        .section { margin-bottom: 25px; }
+                        .section h3 { color: #333; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+                        .ingredient { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dotted #ccc; }
+                        .step { margin-bottom: 15px; padding: 10px; background: #f9f9f9; border-radius: 5px; }
+                        .step-number { font-weight: bold; color: #3B82F6; }
+                        @media print { body { margin: 10px; } }
+                    </style>
+                </head>
+                <body>
+                    ${recipeContent}
+                </body>
+                </html>
+            `);
+            
+            printWindow.document.close();
+            printWindow.focus();
+            printWindow.print();
+        }
+        
+        // 修复函数名，使界面上的分享按钮可以正常工作
+        function shareRecipe() {
+            shareToPublic();
+        }
+
+        function generatePrintContent() {
+            return `
+                <div class="header">
+                    <h1>经典白吐司</h1>
+                    <p>制作时间：4小时 | 类别：面包类</p>
+                </div>
+                
+                <div class="section">
+                    <h3>原料清单</h3>
+                    <div class="ingredient"><span>高筋面粉</span><span>500g (100%)</span></div>
+                    <div class="ingredient"><span>牛奶</span><span>300ml (60%)</span></div>
+                    <div class="ingredient"><span>鸡蛋</span><span>50g (10%)</span></div>
+                    <div class="ingredient"><span>白砂糖</span><span>50g (10%)</span></div>
+                    <div class="ingredient"><span>盐</span><span>8g (1.6%)</span></div>
+                    <div class="ingredient"><span>干酵母</span><span>5g (1%)</span></div>
+                    <div class="ingredient"><span>黄油</span><span>30g (6%)</span></div>
+                </div>
+                
+                <div class="section">
+                    <h3>制作步骤</h3>
+                    <div class="step"><span class="step-number">1. 和面</span> - 将面粉、糖、盐放入搅拌缸，加入牛奶和鸡蛋，用慢速搅拌至无干粉。</div>
+                    <div class="step"><span class="step-number">2. 揉面</span> - 转中速揉至面团光滑，加入软化的黄油，继续揉至扩展阶段。</div>
+                    <div class="step"><span class="step-number">3. 一发</span> - 在28°C环境下发酵至2倍大，约60分钟。</div>
+                    <div class="step"><span class="step-number">4. 整形</span> - 分割面团，每个500g，滚圆松弛15分钟后整形。</div>
+                    <div class="step"><span class="step-number">5. 二发</span> - 在35°C环境下发酵至8分满，约45分钟。</div>
+                    <div class="step"><span class="step-number">6. 烘烤</span> - 180°C烘烤35分钟至表面金黄。</div>
+                </div>
+                
+                <div class="section">
+                    <h3>注意事项</h3>
+                    <p>• 面粉要过筛，避免颗粒影响口感</p>
+                    <p>• 黄油需要提前软化，但不要融化成液体</p>
+                    <p>• 发酵温度和湿度要控制好</p>
+                </div>
+            `;
+        }
+
+        // 删除配方
+        function deleteRecipe() {
+            toggleMoreMenu();
+            if (confirm('确定要删除这个配方吗？此操作无法撤销。')) {
+                showNotification('🗑️ 配方已删除');
+                setTimeout(() => {
+                    window.location.href = 'recipe-list.html';
+                }, 1500);
+            }
+        }
+
+        // 主题切换
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('themeIcon');
+            if(html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+            } else {
+                html.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+            }
+            
+            // 强制更新所有元素的暗色模式样式
+            refreshDarkModeStyles();
+        }
+        
+        // 强制更新所有元素的暗色模式样式
+        function refreshDarkModeStyles() {
+            // 获取所有可能需要更新的元素
+            const elementsToRefresh = [
+                '.card', '.step-images', '.bg-white', '.bg-slate-50',
+                '.text-slate-800', '.text-slate-600', '.text-slate-500',
+                '.border-slate-100', '.border-slate-200', '.border-slate-300',
+                '.hover\\:bg-slate-50', '.bg-slate-100',
+                '.sop-step-row', '.ingredient-item'
+            ].join(',');
+            
+            const allElements = document.querySelectorAll(elementsToRefresh);
+            
+            // 先移除再添加所有元素的class，强制浏览器重新应用样式
+            allElements.forEach(el => {
+                el.classList.remove('dark-force-refresh');
+                setTimeout(() => {
+                    el.classList.add('dark-force-refresh');
+                    setTimeout(() => {
+                        el.classList.remove('dark-force-refresh');
+                    }, 10);
+                }, 5);
+            });
+            
+            // 特别处理一些难以通过CSS处理的元素
+            if (document.documentElement.classList.contains('dark')) {
+                document.querySelectorAll('.ingredient-item').forEach(item => {
+                    if (item.classList.contains('bg-green-50')) {
+                        item.classList.remove('bg-green-50');
+                        item.classList.add('bg-green-950/20');
+                    }
+                });
+            } else {
+                document.querySelectorAll('.ingredient-item').forEach(item => {
+                    if (item.classList.contains('bg-green-950/20')) {
+                        item.classList.remove('bg-green-950/20');
+                        item.classList.add('bg-green-50');
+                    }
+                });
+            }
+        }
+
+        // 重置所有材料状态
+        function resetAllIngredients() {
+            document.querySelectorAll('#recipe-section .ingredient-item').forEach(item => {
+                const statusText = item.querySelector('.ingredient-status-text');
+                const ingredientName = item.querySelector('.ingredient-name');
+                
+                if (statusText && !statusText.classList.contains('hidden')) {
+                    statusText.classList.add('hidden');
+                    statusText.classList.remove('text-green-600', 'dark:text-green-400', 'font-medium');
+                    statusText.classList.add('text-slate-400', 'dark:text-slate-500');
+                    ingredientName.classList.remove('line-through', 'opacity-60');
+                    item.classList.remove('bg-green-50', 'dark:bg-green-950/20');
+                }
+            });
+            
+            hasModifiedIngredients = false;
+            showNotification('🔄 所有材料状态已重置');
+        }
+
+        // 页面退出确认
+        function checkExitConfirmation() {
+            if (hasModifiedIngredients) {
+                document.getElementById('exitConfirmModal').classList.remove('hidden');
+            } else {
+                window.history.back();
+            }
+        }
+
+        function exitWithoutSaving() {
+            document.getElementById('exitConfirmModal').classList.add('hidden');
+            window.history.back();
+        }
+
+        function saveAndExit() {
+            // 保存当前状态到本地存储
+            const state = {
+                ingredientStates: getIngredientStates(),
+                productionCounts: getProductionCounts(),
+                timestamp: Date.now()
+            };
+            localStorage.setItem('recipeDetailState_current', JSON.stringify(state));
+            
+            document.getElementById('exitConfirmModal').classList.add('hidden');
+            showNotification('💾 配料状态已保存');
+            setTimeout(() => {
+                window.history.back();
+            }, 1000);
+        }
+
+        // 显示通知
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-80 text-white px-4 py-2 rounded-xl z-50 text-sm';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // 自动读取主题
+        (function(){
+            if(localStorage.getItem('theme')==='dark') {
+                document.documentElement.classList.add('dark');
+                const themeIcon = document.getElementById('themeIcon');
+                themeIcon.classList.remove('fa-moon');
+                themeIcon.classList.add('fa-sun');
+            }
+        })();
+
+        // 恢复保存的状态
+        function restoreState() {
+            const savedState = localStorage.getItem('recipeDetailState_current');
+            if (savedState) {
+                const state = JSON.parse(savedState);
+                
+                // 恢复材料状态（仅限上方原料）
+                Object.entries(state.ingredientStates || {}).forEach(([index, isChecked]) => {
+                    const items = document.querySelectorAll('#recipe-section .ingredient-item');
+                    if (items[index] && isChecked) {
+                        toggleIngredientStatus(items[index]);
+                    }
+                });
+                
+                // 恢复生产个数
+                Object.entries(state.productionCounts || {}).forEach(([type, count]) => {
+                    const element = document.getElementById(`${type}Production`);
+                    if (element) {
+                        element.textContent = count;
+                        // 触发更新
+                        if (type === 'base') {
+                            adjustProduction('base', 0);
+                        } else if (type === 'variation1') {
+                            adjustProduction('variation1', 0);
+                        } else if (type === 'variation2') {
+                            adjustProduction('variation2', 0);
+                        } else if (type === 'variation3') {
+                            adjustProduction('variation3', 0);
+                        }
+                    }
+                });
+                
+                hasModifiedIngredients = Object.values(state.ingredientStates || {}).some(Boolean);
+            }
+        }
+
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 默认显示配方Tab
+            switchTab('recipe');
+            
+            // 恢复保存的状态
+            restoreState();
+            
+            // 初始化配方比例
+            updateRecipeProportions();
+            
+            // 初始化综合统计
+            updateOverallSummary();
+            
+            // 监听浏览器返回按钮
+            window.addEventListener('beforeunload', function(e) {
+                if (hasModifiedIngredients) {
+                    e.preventDefault();
+                    e.returnValue = '';
+                }
+            });
+        });
+
+        // 监听返回按钮
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const fullImageModal = document.getElementById('fullImageModal');
+                if (!fullImageModal.classList.contains('hidden')) {
+                    fullImageModal.classList.add('hidden');
+                } else {
+                    checkExitConfirmation();
+                }
+            }
+        });
+
+        // 图片预览功能
+        function showFullImage(container) {
+            const img = container.querySelector('img');
+            const modal = document.getElementById('fullImageModal');
+            const modalImg = modal.querySelector('img');
+            modalImg.src = img.src;
+            modal.classList.remove('hidden');
+        }
+        
+        // 步骤图片放大功能
+        function showStepImage(btn) {
+            const img = btn.previousElementSibling;
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <img src="${img.src}" alt="${img.alt}" class="max-w-[90vw] max-h-[90vh] object-contain rounded-xl">
+                <button class="absolute top-4 right-4 bg-white bg-opacity-20 text-white rounded-full p-3 hover:bg-opacity-40 transition-all">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            document.body.appendChild(modal);
+            
+            // 点击关闭
+            modal.addEventListener('click', function() {
+                modal.remove();
+            });
+        }
+        
+        // 步骤展开/收起功能
+        function toggleStepExpand(btn) {
+            const stepCard = btn.closest('.card');
+            stepCard.classList.toggle('step-collapsed');
+            
+            // 更改图标方向
+            const icon = btn.querySelector('i');
+            if (stepCard.classList.contains('step-collapsed')) {
+                icon.className = 'fas fa-bars fa-rotate-90';
+            } else {
+                icon.className = 'fas fa-bars';
+            }
+        }
+
+        function getProductionValue(type) {
+            const element = document.getElementById(`${type}Production`);
+            return element ? parseInt(element.textContent) || 0 : 0;
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化主题
+            if(localStorage.getItem('theme')==='dark') {
+                document.documentElement.classList.add('dark');
+                const themeIcon = document.getElementById('themeIcon');
+                themeIcon.classList.remove('fa-moon');
+                themeIcon.classList.add('fa-sun');
+                // 确保在加载时就应用所有暗色模式样式
+                setTimeout(refreshDarkModeStyles, 100);
+            }
+        });
+
+        // 主题切换功能
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeOptions = document.querySelectorAll('.theme-option');
+            const html = document.documentElement;
+            
+            // 从本地存储加载主题
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            setTheme(savedTheme);
+            
+            // 主题切换事件监听
+            themeOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    const theme = option.dataset.theme;
+                    setTheme(theme);
+                });
+            });
+            
+            // 设置主题函数
+            function setTheme(theme) {
+                // 移除所有主题类
+                html.classList.remove('theme-light', 'theme-dark', 'theme-jp', 'theme-kr');
+                // 添加新主题类
+                html.classList.add(`theme-${theme}`);
+                // 更新活动状态
+                themeOptions.forEach(opt => {
+                    opt.classList.toggle('active', opt.dataset.theme === theme);
+                });
+                // 保存到本地存储
+                localStorage.setItem('theme', theme);
+            }
+        });
+
+        // 步骤图片展开/收起功能
+        function toggleStepImages(btn) {
+            const stepCard = btn.closest('.card');
+            const imagesContainer = stepCard.querySelector('.step-images');
+            
+            if (imagesContainer) {
+                imagesContainer.classList.toggle('expanded');
+                
+                // 更改图标
+                const icon = btn.querySelector('i');
+                if (imagesContainer.classList.contains('expanded')) {
+                    icon.className = 'fas fa-list';
+                } else {
+                    icon.className = 'fas fa-th-large';
+                }
+            }
+        }
+
+        function confirmCopyRecipe() {
+            // 关闭确认弹窗
+            document.getElementById('copyRecipeConfirmModal').classList.add('hidden');
+            
+            // 保存当前配方数据
+            const recipeData = {
+                name: '经典白吐司（副本）',
+                category: '面包类',
+                ingredients: getIngredientStates(),
+                productions: getProductionCounts()
+            };
+            
+            // 将数据传递到新建页面
+            sessionStorage.setItem('copyRecipeData', JSON.stringify(recipeData));
+            
+            // 显示通知
+            showNotification('✅ 配方已复制，即将跳转到创建页面...');
+            
+            // 延迟跳转，让用户看到通知
+            setTimeout(() => {
+                window.location.href = 'xin jian ye.html?copy=1';
+            }, 1500);
+        }
+        function closeCopyRecipeConfirm() {
+            document.getElementById('copyRecipeConfirmModal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>

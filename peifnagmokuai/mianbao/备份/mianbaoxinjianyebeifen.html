@@ -1,0 +1,2822 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新建配方</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config = { darkMode: 'class' }</script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.css" rel="stylesheet">
+    <style>
+        /* 渐变色彩定义 - 与首页保持一致 */
+        .gradient-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .gradient-recipe {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+        .gradient-message {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+        .gradient-inventory {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        .gradient-order {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        /* 强制刷新暗黑模式的辅助类 */
+        .dark-force-refresh {}
+        .dark-handle {}
+        
+        /* 主题基础变量 */
+        :root {
+            /* Light Theme */
+            --light-bg: #f9fafb;
+            --light-card-bg: #FFFFFF;
+            --light-text: #1E293B;
+            --light-border: #e5e7eb;
+            --light-hover: #f3f4f6;
+            
+            /* Dark Theme */
+            --dark-bg: #0F172A;
+            --dark-card-bg: #1E293B;
+            --dark-text: #F1F5F9;
+            --dark-border: #334155;
+            --dark-hover: #1E3A8A;
+            
+            /* Japanese Theme */
+            --jp-bg: #F7F6F2;
+            --jp-card-bg: #FFFCF7;
+            --jp-text: #2C2C2C;
+            --jp-border: #E5E2D9;
+            --jp-accent: #D64F45;
+            --jp-hover: #FFF1EC;
+            
+            /* Korean Theme */
+            --kr-bg: #F3F7F6;
+            --kr-card-bg: #FFFFFF;
+            --kr-text: #363B3A;
+            --kr-border: #DDE7E5;
+            --kr-accent: #98C6BE;
+            --kr-hover: #E8F3F1;
+        }
+
+        /* 主题切换器样式 */
+        .theme-switcher {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            background: white;
+            border-radius: 1rem;
+            padding: 0.5rem;
+            display: flex;
+            gap: 0.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+            border: 1px solid var(--light-border);
+        }
+
+        .theme-option {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .theme-option:hover {
+            transform: scale(1.1);
+        }
+
+        .theme-option.active {
+            box-shadow: 0 0 0 2px var(--light-border);
+        }
+
+        /* Light Theme */
+        .theme-light {
+            background: var(--light-bg);
+            color: var(--light-text);
+        }
+
+        .theme-light .card {
+            background: var(--light-card-bg);
+            border-color: var(--light-border);
+        }
+
+        /* Dark Theme */
+        .theme-dark {
+            background: var(--dark-bg);
+            color: var(--dark-text);
+        }
+
+        .theme-dark .card {
+            background: var(--dark-card-bg);
+            border-color: var(--dark-border);
+        }
+
+        /* Japanese Theme */
+        .theme-jp {
+            background: var(--jp-bg);
+            color: var(--jp-text);
+        }
+
+        .theme-jp .card {
+            background: var(--jp-card-bg);
+            border-color: var(--jp-border);
+        }
+
+        .theme-jp .btn-primary {
+            background: var(--jp-accent);
+        }
+
+        /* Korean Theme */
+        .theme-kr {
+            background: var(--kr-bg);
+            color: var(--kr-text);
+        }
+
+        .theme-kr .card {
+            background: var(--kr-card-bg);
+            border-color: var(--kr-border);
+        }
+
+        .theme-kr .btn-primary {
+            background: var(--kr-accent);
+        }
+
+        /* 基础主题样式 */
+        html, body { 
+            background: #f9fafb; 
+            transition: all 0.3s ease;
+        }
+        .dark html, .dark body { 
+            background: #0F172A; 
+        }
+        
+        /* 卡片样式 */
+        .card { 
+            border-radius: 12px; 
+            box-shadow: 0 4px 12px 0 rgba(0,0,0,0.1); 
+            background: #FFFFFF; 
+            border: 1px solid #e5e7eb; 
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+        }
+        .dark .card { 
+            background: #1E293B; 
+            box-shadow: 0 4px 20px 0 rgba(0,0,0,0.25); 
+            border: 1px solid #334155; 
+        }
+
+        /* 主题切换按钮 */
+        #themeToggleBtn {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: white;
+            border: 1px solid #e5e7eb;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .dark #themeToggleBtn {
+            background: #334155;
+            border-color: #475569;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        #themeToggleBtn:hover {
+            transform: scale(1.1) rotate(180deg);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+        .dark #themeToggleBtn:hover {
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        /* 文本颜色 */
+        .text-primary {
+            color: #1E293B;
+            transition: color 0.3s ease;
+        }
+        .dark .text-primary {
+            color: #F1F5F9;
+        }
+        
+        /* 输入框样式 */
+        input, textarea {
+            transition: all 0.3s ease;
+        }
+        .dark input, .dark textarea {
+            background: #1E293B;
+            color: #F1F5F9;
+            border-color: #475569;
+        }
+        
+        /* 按钮样式 */
+        .btn-primary {
+            transition: all 0.3s ease;
+        }
+        .dark .btn-primary {
+            background: linear-gradient(135deg, #8B5CF6, #A855F7);
+            color: #F1F5F9;
+        }
+
+        /* 步骤卡片样式 */
+        .step-card {
+            transition: all 0.3s ease;
+        }
+        .dark .step-card {
+            background: #1E293B;
+            border-color: #334155;
+        }
+
+        .input-shadow:focus { box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); border-color: #667eea; }
+        .tab-active { color: #667eea !important; }
+        .tab-inactive { color: #6b7280 !important; }
+        .tab-bg-active { background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)) !important; border: 1px solid #667eea; }
+        .tab-bg-inactive { background: #FFFFFF !important; border: 1px solid #e5e7eb; }
+        .dark .tab-bg-active { background: #1E3A8A !important; border: 1px solid #667eea; }
+        .dark .tab-bg-inactive { background: #1E293B !important; border: 1px solid #334155; }
+        .transition-all { transition: all 0.2s cubic-bezier(.4,0,.2,1); }
+        .bottom-bar { border-radius: 24px 24px 0 0; }
+        .group-blue { background: #E8F0FE; }
+        .group-yellow { background: #FFF7E0; }
+        .group-pink { background: #FDE7EF; }
+        .group-green { background: #E6F6EC; }
+        .group-gray { background: #F3F4F6; }
+        .dark .group-blue { background: #22304a; }
+        .dark .group-yellow { background: #4a3e22; }
+        .dark .group-pink { background: #4a2230; }
+        .dark .group-green { background: #224a30; }
+        .dark .group-gray { background: #23272f; }
+        .sop-step-row { transition: all 0.2s ease; }
+        .sop-step-row:hover { background: #2a2f3a !important; }
+        .dark .sop-step-row:hover { background: #2a2f3a !important; }
+        .sop-menu-dropdown { min-width: 100px; }
+        .sop-drag-handle:active { cursor: grabbing !important; }
+        .sop-type-modal { backdrop-filter: blur(8px); }
+        .sop-type-grid { max-height: 60vh; }
+        .sop-type-item { transition: all 0.15s ease; }
+        .sop-type-item:hover { background: rgba(59, 130, 246, 0.1) !important; transform: translateY(-1px); }
+        .sop-step-input { background: rgba(255,255,255,0.05) !important; }
+        .sop-step-input:focus { background: rgba(255,255,255,0.1) !important; }
+        .step-row { transition: all 0.3s ease; background: #FFFFFF !important; border: 1px solid #E2E8F0 !important; }
+        .step-row:hover { background: #F8FAFC !important; border-color: #CBD5E1 !important; transform: translateY(-1px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+        .dark .step-row { background: #1E293B !important; border: 1px solid #334155 !important; }
+        .dark .step-row:hover { background: #0F172A !important; border-color: #475569 !important; }
+        .media-upload-area { transition: all 0.2s ease; background: #F1F5F9; border: 2px dashed #CBD5E1; }
+        .media-upload-area:hover { border-color: #8B5CF6 !important; background: rgba(139, 92, 246, 0.05) !important; }
+        .dark .media-upload-area { background: #0F172A; border-color: #475569; }
+        .media-preview { position: relative; overflow: hidden; }
+        .media-preview .remove-btn { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.7); }
+        .step-number { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .video-indicator { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+        .crop-container { max-width: 100%; max-height: 400px; }
+        .crop-preview { width: 120px; height: 120px; border-radius: 12px; overflow: hidden; border: 2px solid #E2E8F0; }
+        .dark .crop-preview { border-color: #334155; }
+        
+        /* 步骤图片横向滚动样式 */
+        .snap-x {
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none; /* Firefox */
+        }
+        .snap-x::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Edge */
+        }
+        .snap-center {
+            scroll-snap-align: center;
+        }
+        
+        .drag-handle-enhanced { 
+            background: linear-gradient(135deg, #E2E8F0, #CBD5E1); 
+            border-radius: 8px; 
+            padding: 8px; 
+            cursor: grab; 
+            transition: all 0.2s ease;
+            border: 1px solid #94A3B8;
+        }
+        .drag-handle-enhanced:hover { 
+            background: linear-gradient(135deg, #CBD5E1, #94A3B8); 
+            transform: scale(1.05); 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .drag-handle-enhanced:active { cursor: grabbing; transform: scale(0.95); }
+        .dark .drag-handle-enhanced { 
+            background: linear-gradient(135deg, #334155, #475569); 
+            border-color: #64748B;
+        }
+        .dark .drag-handle-enhanced:hover { 
+            background: linear-gradient(135deg, #475569, #64748B); 
+        }
+        .sop-step-enhanced { 
+            background: #FFFFFF !important; 
+            border: 1px solid #E2E8F0 !important; 
+            transition: all 0.3s ease;
+        }
+        .sop-step-enhanced:hover { 
+            background: #F8FAFC !important; 
+            border-color: #CBD5E1 !important; 
+            transform: translateY(-1px); 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        .dark .sop-step-enhanced { 
+            background: #1E293B !important; 
+            border: 1px solid #334155 !important; 
+        }
+        .dark .sop-step-enhanced:hover { 
+            background: #0F172A !important; 
+            border-color: #475569 !important; 
+        }
+
+        /* 添加左滑删除相关样式 */
+        .ingredient-item {
+            position: relative;
+            overflow: hidden;
+            touch-action: pan-y;
+            transform: translateX(0);
+            transition: transform 0.3s ease;
+            width: 100%;
+        }
+
+        .ingredient-item .delete-action {
+            position: absolute;
+            right: -80px; /* 初始时完全在视图外 */
+            top: 0;
+            bottom: 0;
+            width: 80px;
+            background-color: #F44336;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 10; /* 确保在其他元素之上 */
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .ingredient-item.swiping {
+            transition: none;
+        }
+
+        /* 同步状态的样式 */
+        .name-input {
+            transition: all 0.3s ease;
+        }
+
+        .name-input.synced {
+            border-color: #4CAF50;
+            background-color: rgba(76, 175, 80, 0.05);
+        }
+
+        .name-input.not-synced {
+            border-color: #F44336;
+        }
+
+        .sync-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .sync-indicator.synced {
+            background-color: #4CAF50;
+        }
+
+        .sync-indicator.not-synced {
+            background-color: #F44336;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-50 dark:bg-[#0F172A] text-gray-800 dark:text-slate-100">
+    <div class="max-w-md mx-auto min-h-screen flex flex-col bg-gray-50 dark:bg-[#0F172A]">
+        <!-- 顶部导航 -->
+        <div class="sticky top-0 z-50 bg-white dark:bg-[#1E293B] flex items-center justify-between px-4 py-3 card border-b border-gray-200 dark:border-slate-600">
+            <button class="text-gray-500 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-[#334155] active:scale-95 transition rounded-full p-2" onclick="checkExitConfirmation()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <span class="text-lg font-bold flex-1 text-center text-gray-800 dark:text-slate-100 tracking-wide">新建配方</span>
+            <div class="flex gap-2 items-center">
+                <button class="text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-[#1E3A8A] active:scale-90 rounded-full p-2 transition" title="拍照识别" onclick="openCamera()"><i class="fas fa-camera-retro"></i></button>
+                <!-- 还原主题切换按钮 -->
+                <button id="themeToggleBtn" class="ml-2 text-xl hover:bg-gray-100 dark:hover:bg-[#334155] active:scale-90 rounded-full p-2 transition" onclick="toggleTheme()">
+                    <span id="themeIcon">🌙</span>
+                </button>
+            </div>
+        </div>
+        <!-- 图片上传区 -->
+        <div class="relative mx-4 mt-4 mb-2">
+            <input type="file" id="coverImage" class="hidden" accept="image/*">
+            <label for="coverImage" class="block w-full h-40 card flex flex-col items-center justify-center cursor-pointer border-2 border-dashed border-purple-500 hover:border-purple-600 transition-all">
+                <div id="imagePreview" class="w-full h-full flex flex-col items-center justify-center text-purple-600 dark:text-purple-400">
+                    <i class="fas fa-camera text-3xl mb-2"></i>
+                    <span>点击上传封面图片</span>
+                </div>
+            </label>
+        </div>
+        <!-- Tab切换区 -->
+        <div class="flex bg-white dark:bg-[#1E293B] rounded-xl mx-4 mt-2 mb-4 overflow-hidden card">
+            <button id="tab-btn-recipe" class="flex-1 flex flex-col items-center py-3 text-center font-semibold tab-btn tab-active tab-bg-active gap-1 hover:bg-[#EFF6FF] dark:hover:bg-[#1E3A8A] active:scale-95 transition-all" onclick="switchTab('recipe')">
+                <i class="fas fa-bread-slice text-lg mb-1"></i>
+                <span class="mt-1">配方</span>
+            </button>
+            <button id="tab-btn-sop" class="flex-1 flex flex-col items-center py-3 text-center font-semibold tab-btn tab-inactive tab-bg-inactive gap-1 hover:bg-[#EFF6FF] dark:hover:bg-[#1E3A8A] active:scale-95 transition-all" onclick="switchTab('sop')">
+                <i class="fas fa-list-alt text-lg mb-1"></i>
+                <span class="mt-1">SOP</span>
+            </button>
+            <button id="tab-btn-step" class="flex-1 flex flex-col items-center py-3 text-center font-semibold tab-btn tab-inactive tab-bg-inactive gap-1 hover:bg-[#EFF6FF] dark:hover:bg-[#1E3A8A] active:scale-95 transition-all" onclick="switchTab('step')">
+                <i class="fas fa-tasks text-lg mb-1"></i>
+                <span class="mt-1">步骤</span>
+            </button>
+        </div>
+        <!-- 分类选择（仅在配方页面显示） -->
+        <div id="recipe-meta-section" class="space-y-2 mb-4 px-4">
+            <input type="text" placeholder="配方名称 *" class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 focus:border-purple-500 focus:ring-2 focus:ring-purple-500 outline-none bg-white dark:bg-[#1E293B] text-gray-600 dark:text-slate-400 input-shadow">
+            <div class="relative">
+                <select id="categorySelect" class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 focus:border-purple-500 focus:ring-2 focus:ring-purple-500 outline-none bg-white dark:bg-[#1E293B] text-gray-600 dark:text-slate-400 appearance-none cursor-pointer">
+                    <option value="">选择分类 *</option>
+                    <option value="bread">面包</option>
+                    <option value="cake">蛋糕</option>
+                    <option value="drink">饮品</option>
+                    <option value="other">其他</option>
+                </select>
+                <button onclick="openCategoryModal()" class="absolute right-2 top-1/2 -translate-y-1/2 text-purple-600 dark:text-purple-400 text-lg hover:bg-purple-50 dark:hover:bg-[#1E3A8A] active:scale-90 rounded-full p-1 transition-all" title="新建类别"><i class="fas fa-plus-circle"></i></button>
+            </div>
+        </div>
+        <!-- 原料分组区（统一设计风格） -->
+        <div class="space-y-4 flex-1 overflow-y-auto px-4 pb-32" id="recipe-section">
+            <!-- 配方说明卡片 -->
+            <div class="mt-4 mb-4">
+                <div class="card p-4">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="w-8 h-8 gradient-primary rounded-full flex items-center justify-center">
+                            <i class="fas fa-bread-slice text-white text-sm"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-800 dark:text-slate-100">配方组成</h3>
+                    </div>
+                    <p class="text-sm text-gray-600 dark:text-slate-400">按分组管理原料配比，支持百分比计算和成本核算</p>
+                </div>
+            </div>
+            <div class="card p-4">
+                <div class="flex justify-between items-center mb-3 bg-gray-50 dark:bg-[#0F172A] p-2 rounded-lg w-full">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-gray-50 dark:bg-[#0F172A] flex items-center justify-center mr-3">
+                            <i class="fas fa-bread-slice text-purple-600 dark:text-purple-400"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-800 dark:text-slate-100">面粉 (基准100%)</h3>
+                    </div>
+                </div>
+                <div id="flourIngredients" class="space-y-2"></div>
+                <div class="flex justify-end mt-3">
+                    <button class="text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-[#1E3A8A] active:scale-90 rounded-lg px-3 py-2 transition-all flex items-center text-sm" onclick="addIngredient('flour')">
+                        <i class="fas fa-plus mr-1"></i>
+                        <span>添加面粉</span>
+                    </button>
+                </div>
+            </div>
+            <div class="card p-4">
+                <div class="flex justify-between items-center mb-3 bg-gray-50 dark:bg-[#0F172A] p-2 rounded-lg w-full">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-gray-50 dark:bg-[#0F172A] flex items-center justify-center mr-3">
+                            <i class="fas fa-seedling text-purple-600 dark:text-purple-400"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-800 dark:text-slate-100">种面</h3>
+                    </div>
+                </div>
+                <div id="starterIngredients" class="space-y-2"></div>
+                <div class="flex justify-end mt-3">
+                    <button class="text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-[#1E3A8A] active:scale-90 rounded-lg px-3 py-2 transition-all flex items-center text-sm" onclick="addIngredient('starter')">
+                        <i class="fas fa-plus mr-1"></i>
+                        <span>添加种面</span>
+                    </button>
+                </div>
+            </div>
+            <div class="card p-4">
+                <div class="flex justify-between items-center mb-3 bg-gray-50 dark:bg-[#0F172A] p-2 rounded-lg w-full">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-gray-50 dark:bg-[#0F172A] flex items-center justify-center mr-3">
+                            <i class="fas fa-prescription-bottle text-purple-600 dark:text-purple-400"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-800 dark:text-slate-100">干料</h3>
+                    </div>
+                </div>
+                <div id="dryIngredients" class="space-y-2"></div>
+                <div class="flex justify-end mt-3">
+                    <button class="text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-[#1E3A8A] active:scale-90 rounded-lg px-3 py-2 transition-all flex items-center text-sm" onclick="addIngredient('dry')">
+                        <i class="fas fa-plus mr-1"></i>
+                        <span>添加干料</span>
+                    </button>
+                </div>
+            </div>
+            <div class="card p-4">
+                <div class="flex justify-between items-center mb-3 bg-gray-50 dark:bg-[#0F172A] p-2 rounded-lg w-full">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-gray-50 dark:bg-[#0F172A] flex items-center justify-center mr-3">
+                            <i class="fas fa-tint text-purple-600 dark:text-purple-400"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-800 dark:text-slate-100">湿料</h3>
+                    </div>
+                </div>
+                <div id="wetIngredients" class="space-y-2"></div>
+                <div class="flex justify-end mt-3">
+                    <button class="text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-[#1E3A8A] active:scale-90 rounded-lg px-3 py-2 transition-all flex items-center text-sm" onclick="addIngredient('wet')">
+                        <i class="fas fa-plus mr-1"></i>
+                        <span>添加湿料</span>
+                    </button>
+                </div>
+            </div>
+            <div class="card p-4">
+                <div class="flex justify-between items-center mb-3 bg-gray-50 dark:bg-[#0F172A] p-2 rounded-lg w-full">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-gray-50 dark:bg-[#0F172A] flex items-center justify-center mr-3">
+                            <i class="fas fa-mortar-pestle text-purple-600 dark:text-purple-400"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-800 dark:text-slate-100">辅料</h3>
+                    </div>
+                </div>
+                <div id="auxIngredients" class="space-y-2"></div>
+                <div class="flex justify-end mt-3">
+                    <button class="text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-[#1E3A8A] active:scale-90 rounded-lg px-3 py-2 transition-all flex items-center text-sm" onclick="addIngredient('aux')">
+                        <i class="fas fa-plus mr-1"></i>
+                        <span>添加辅料</span>
+                    </button>
+                </div>
+            </div>
+            <div class="card p-4">
+                <div class="flex justify-between items-center mb-3 bg-gray-50 dark:bg-[#0F172A] p-2 rounded-lg w-full">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-gray-50 dark:bg-[#0F172A] flex items-center justify-center mr-3">
+                            <i class="fas fa-bread-slice text-purple-600 dark:text-purple-400"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-800 dark:text-slate-100">基础面团 <span class="text-red-500 dark:text-red-400">*</span></h3>
+                    </div>
+                </div>
+                <div id="baseIngredients" class="space-y-2"></div>
+                <div class="flex justify-end mt-3">
+                    <button class="text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-[#1E3A8A] active:scale-90 rounded-lg px-3 py-2 transition-all flex items-center text-sm" onclick="addIngredient('base')">
+                        <i class="fas fa-plus mr-1"></i>
+                        <span>添加基础面团</span>
+                    </button>
+                </div>
+            </div>
+            <div id="variationList"></div>
+            <div class="flex justify-end mt-3">
+                <button id="addVariationBtn" class="text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-[#1E3A8A] active:scale-90 rounded-lg px-3 py-2 transition-all flex items-center text-sm">
+                    <i class="fas fa-plus mr-1"></i>
+                    <span>添加变化款</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- SOP步骤列表区（统一设计风格） -->
+        <div class="flex-1 flex flex-col pb-32 hidden" id="sop-section">
+            <!-- SOP操作说明卡片 -->
+            <div class="mx-4 mt-4 mb-4">
+                <div class="card p-4">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="w-8 h-8 gradient-primary rounded-full flex items-center justify-center">
+                            <i class="fas fa-list-alt text-white text-sm"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-800 dark:text-slate-100">标准作业程序</h3>
+                    </div>
+                    <p class="text-sm text-gray-600 dark:text-slate-400">设定每个步骤的具体参数和要求，确保制作标准化</p>
+                </div>
+            </div>
+            <!-- SOP步骤列表 -->
+            <div class="flex-1 flex flex-col gap-3 px-4 py-2 overflow-y-auto" id="sopStepsList">
+                <!-- SOP步骤行将在这里动态生成 -->
+            </div>
+            <!-- 添加SOP步骤按钮 -->
+            <div class="mx-4 my-4">
+                <button id="addSopStepBtn" class="w-full py-3 rounded-xl card text-purple-600 dark:text-purple-400 font-semibold hover:bg-purple-50 dark:hover:bg-[#1E3A8A] active:scale-95 transition-all border border-gray-200 dark:border-slate-600 flex items-center justify-center gap-2" onclick="addSopStep()">
+                    <i class="fas fa-plus"></i>
+                    <span>添加SOP步骤</span>
+                </button>
+            </div>
+            <!-- 备注区域 -->
+            <div class="mx-4 mb-4">
+                <div class="card p-4">
+                    <div class="flex items-center gap-2 mb-3">
+                        <i class="fas fa-sticky-note text-purple-600 dark:text-purple-400"></i>
+                        <h4 class="font-medium text-gray-800 dark:text-slate-100">SOP备注</h4>
+                    </div>
+                    <div class="relative">
+                        <textarea id="sopRemark" class="w-full px-4 py-3 text-sm bg-gray-50 dark:bg-[#0F172A] border border-gray-200 dark:border-slate-600 rounded-xl outline-none resize-none text-gray-800 dark:text-slate-100 placeholder-gray-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 dark:focus:ring-purple-900 transition" placeholder="请输入SOP相关备注..." maxlength="100" rows="3"></textarea>
+                        <div class="absolute bottom-2 right-3 text-xs text-slate-500 dark:text-slate-400" id="sopRemarkCount">0/100</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 步骤编辑区（统一设计风格） -->
+        <div class="flex-1 flex flex-col pb-32 hidden" id="step-section">
+            <!-- 步骤操作说明卡片 -->
+            <div class="mx-4 mt-4 mb-4">
+                <div class="card p-4">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="w-8 h-8 gradient-primary rounded-full flex items-center justify-center">
+                            <i class="fas fa-tasks text-white text-sm"></i>
+                        </div>
+                        <h3 class="font-semibold text-[#1E293B] dark:text-slate-100">制作步骤</h3>
+                    </div>
+                    <p class="text-sm text-slate-600 dark:text-slate-400">详细记录每个制作环节，支持图片和视频说明</p>
+                </div>
+            </div>
+            
+            <!-- 提示信息 -->
+            <div class="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-3 mx-4 mb-4 flex items-center">
+                <i class="fas fa-info-circle text-purple-500 mr-2"></i>
+                <p class="text-sm text-purple-700 dark:text-purple-300">点击图片或<i class="fas fa-search-plus mx-1"></i>图标可查看大图</p>
+            </div>
+            
+            <!-- 步骤列表 -->
+            <div id="stepsList" class="px-4 space-y-8"></div>
+            
+            <!-- 添加步骤按钮 -->
+            <div class="px-4 mt-4">
+                <button class="w-full py-3 rounded-xl card text-purple-600 dark:text-purple-400 font-semibold hover:bg-purple-50 dark:hover:bg-purple-900/20 active:scale-95 transition-all border border-slate-200 dark:border-slate-600" onclick="addStep()">
+                    <i class="fas fa-plus mr-2"></i> 添加步骤
+                </button>
+            </div>
+        </div>
+        <!-- 底部固定栏：总重卡片+保存按钮并列 -->
+        <div class="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#1E293B] py-3 px-4 z-50 card bottom-bar border-t border-gray-200 dark:border-slate-600">
+            <div class="max-w-md mx-auto flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="rounded-lg border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-[#0F172A] px-3 py-2 flex flex-col items-center">
+                        <div class="text-gray-600 dark:text-slate-400 text-xs">面团总重</div>
+                        <div class="text-sm font-bold text-purple-600 dark:text-purple-400"><span id="totalWeight">0</span></div>
+                    </div>
+                </div>
+                <button id="saveBtn" class="gradient-primary hover:from-[#764ba2] hover:to-[#667eea] active:scale-95 text-white px-4 py-2 rounded-lg font-medium text-sm shadow-md transition-all">保存配方</button>
+            </div>
+        </div>
+        
+        <!-- 图片全屏预览 -->
+        <div id="fullImageModal" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 hidden" onclick="this.classList.add('hidden')">
+            <img src="" alt="图片大图" class="max-w-[90vw] max-h-[90vh] object-contain rounded-xl">
+            <button class="absolute top-4 right-4 bg-white bg-opacity-20 text-white rounded-full p-3 hover:bg-opacity-40 transition-all" onclick="event.stopPropagation(); this.parentElement.classList.add('hidden')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <!-- 单位选择弹窗（常驻DOM，默认hidden） -->
+        <div id="unit-popup" class="fixed z-50 left-0 top-0 w-full h-full flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm transition-all">
+            <div class="bg-white dark:bg-[#1E293B] rounded-2xl p-6 min-w-[300px] max-w-[90vw] shadow-2xl border border-slate-200 dark:border-slate-600 transform transition-all">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-slate-100">选择单位</h3>
+                    <button onclick="closeUnitSelect()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+            </div>
+                
+                <!-- Tab切换按钮组 -->
+                <div class="flex gap-2 mb-6 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl" id="unit-tab-btns">
+                    <!-- Tab按钮将通过JS动态生成 -->
+        </div>
+                
+                <!-- 单位列表容器 -->
+                <div id="unit-popup-list" class="grid grid-cols-3 gap-2 max-h-[40vh] overflow-y-auto pr-2 mb-4">
+                    <!-- 单位选项将通过JS动态生成 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 材料名称检索弹窗（常驻DOM，默认hidden） -->
+        <div id="material-popup" class="fixed z-50 left-0 top-0 w-full h-full flex items-center justify-center bg-black bg-opacity-30 hidden">
+            <div class="bg-white dark:bg-[#1E293B] card p-4 min-w-[220px] border border-gray-200 dark:border-slate-600">
+                <div class="font-semibold mb-2 text-gray-800 dark:text-slate-100">选择材料</div>
+                <div id="material-popup-list" class="flex flex-col gap-2 max-h-60 overflow-y-auto"></div>
+                <button onclick="closeMaterialSearch()" class="mt-3 w-full py-1 rounded bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600 active:scale-95 transition-all">取消</button>
+            </div>
+        </div>
+        <!-- 新建类别弹窗 -->
+        <div id="categoryModal" class="fixed z-50 left-0 top-0 w-full h-full flex items-center justify-center bg-black bg-opacity-30 hidden">
+            <div class="bg-white dark:bg-[#1E293B] card p-6 min-w-[220px] border border-slate-200 dark:border-slate-600">
+                <div class="font-semibold mb-2 text-gray-800 dark:text-slate-100">新建类别</div>
+                <input id="newCategoryInput" class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-600 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 dark:focus:ring-purple-900 outline-none bg-white dark:bg-[#0F172A] text-gray-800 dark:text-slate-100 mb-3" placeholder="输入新类别名称">
+                <div class="flex gap-2">
+                    <button onclick="closeCategoryModal()" class="flex-1 py-2 rounded bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600 active:scale-95 transition-all">取消</button>
+                    <button onclick="addNewCategory()" class="flex-1 py-2 rounded gradient-primary text-white font-semibold hover:from-[#764ba2] hover:to-[#667eea] active:scale-95 transition-all">确定</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- SOP类型选择弹窗 -->
+        <div id="sopTypeModal" class="fixed z-50 left-0 top-0 w-full h-full flex items-center justify-center bg-black bg-opacity-70 sop-type-modal hidden">
+            <div class="bg-white dark:bg-[#1E293B] rounded-2xl shadow-2xl p-6 max-w-lg w-full mx-4 border border-slate-200 dark:border-slate-600">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-gray-800 dark:text-slate-100 font-semibold text-xl">SOP步骤类型预览</h3>
+                    <button onclick="closeSopTypeModal()" class="text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl active:scale-90 transition">×</button>
+                </div>
+                <div id="sopTypeList">
+                    <!-- SOP类型列表将在这里动态生成 -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- 步骤操作菜单弹窗 -->
+        <div id="stepMenuModal" class="fixed z-50 left-0 top-0 w-full h-full flex items-center justify-center bg-black bg-opacity-40 hidden">
+            <div class="bg-white dark:bg-white rounded-2xl shadow-2xl p-0 max-w-xs w-full mx-4 overflow-hidden">
+                <button id="stepMenuDelete" class="w-full px-6 py-4 text-red-600 text-lg font-medium hover:bg-red-50 active:bg-red-100 transition border-b border-gray-200">
+                    删除
+                </button>
+                <button id="stepMenuAdd" class="w-full px-6 py-4 text-purple-600 text-lg font-medium hover:bg-purple-50 active:bg-purple-100 transition border-b border-gray-200">
+                    添加一行
+                </button>
+                <button onclick="closeStepMenuModal()" class="w-full px-6 py-4 text-gray-600 text-lg font-medium hover:bg-gray-50 active:bg-gray-100 transition">
+                    取消
+                </button>
+            </div>
+        </div>
+        
+        <!-- 媒体上传选择弹窗 -->
+        <div id="mediaUploadModal" class="fixed z-50 left-0 top-0 w-full h-full flex items-center justify-center bg-black bg-opacity-40 hidden">
+            <div class="bg-white dark:bg-white rounded-2xl shadow-2xl p-0 max-w-xs w-full mx-4 overflow-hidden">
+                <button onclick="selectImage()" class="w-full px-6 py-4 text-purple-600 text-lg font-medium hover:bg-purple-50 active:bg-purple-100 transition border-b border-gray-200">
+                    <i class="fas fa-image mr-2"></i>选择图片
+                </button>
+                <button onclick="selectVideo()" class="w-full px-6 py-4 text-green-600 text-lg font-medium hover:bg-green-50 active:bg-green-100 transition border-b border-gray-200">
+                    <i class="fas fa-video mr-2"></i>选择视频
+                </button>
+                <button onclick="captureMedia()" class="w-full px-6 py-4 text-purple-600 text-lg font-medium hover:bg-purple-50 active:bg-purple-100 transition border-b border-gray-200">
+                    <i class="fas fa-camera mr-2"></i>拍照/录像
+                </button>
+                <button onclick="closeMediaUploadModal()" class="w-full px-6 py-4 text-gray-600 text-lg font-medium hover:bg-gray-50 active:bg-gray-100 transition">
+                    取消
+                </button>
+            </div>
+        </div>
+        
+        <!-- 图片裁剪弹窗 -->
+        <div id="cropModal" class="fixed z-50 left-0 top-0 w-full h-full flex items-center justify-center bg-black bg-opacity-40 hidden">
+            <div class="bg-white dark:bg-[#1E293B] rounded-2xl shadow-2xl p-6 max-w-lg w-full mx-4 border border-slate-200 dark:border-slate-600">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-gray-800 dark:text-slate-100 font-semibold text-lg">裁剪图片</h3>
+                    <button onclick="closeCropModal()" class="text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl active:scale-90 transition">×</button>
+                </div>
+                
+                <div class="space-y-4">
+                    <!-- 裁剪区域 -->
+                    <div class="crop-container">
+                        <img id="cropImage" style="max-width: 100%; display: block;">
+                    </div>
+                    
+                    <!-- 预览区域 -->
+                    <div class="flex items-center gap-4">
+                        <div class="text-sm text-slate-600 dark:text-slate-400">预览效果：</div>
+                        <div class="crop-preview" id="cropPreview"></div>
+                    </div>
+                    
+                    <!-- 操作按钮 -->
+                    <div class="flex gap-3">
+                        <button onclick="closeCropModal()" class="flex-1 py-2 rounded-lg bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600 active:scale-95 transition-all">取消</button>
+                        <button onclick="confirmCrop()" class="flex-1 py-2 rounded-lg gradient-primary text-white font-semibold hover:from-[#764ba2] hover:to-[#667eea] active:scale-95 transition-all">确定裁剪</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+    <!-- 分享弹窗 -->
+    <div id="shareModal" class="fixed z-50 left-0 top-0 w-full h-full flex items-center justify-center bg-black bg-opacity-40 hidden">
+        <div class="bg-white dark:bg-[#1E293B] rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4 border border-slate-200 dark:border-slate-600">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-gray-800 dark:text-slate-100 font-semibold text-2xl">分享食谱</h3>
+                <button onclick="closeShareModal()" class="text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl active:scale-90 transition">×</button>
+            </div>
+            
+            <div class="mb-8">
+                <p class="text-slate-600 dark:text-slate-400 mb-2">选择分享平台</p>
+                
+                <!-- 国内平台 -->
+                <div class="mainland-platforms">
+                    <h4 class="text-xl font-medium mb-4">国内</h4>
+                    <div class="grid grid-cols-4 gap-6">
+                        <!-- 微信朋友圈 -->
+                        <div class="flex flex-col items-center" onclick="shareToSpecificPlatform('wechat')">
+                            <div class="w-14 h-14 bg-[#4CCA5A] rounded-full flex items-center justify-center mb-2">
+                                <i class="fab fa-weixin text-white text-2xl"></i>
+                            </div>
+                            <span class="text-sm text-center">微信朋友圈</span>
+                        </div>
+                        <!-- 抖音 -->
+                        <div class="flex flex-col items-center" onclick="shareToSpecificPlatform('douyin')">
+                            <div class="w-14 h-14 bg-black rounded-full flex items-center justify-center mb-2">
+                                <i class="fab fa-tiktok text-white text-2xl"></i>
+                            </div>
+                            <span class="text-sm text-center">抖音</span>
+                        </div>
+                        <!-- 小红书 -->
+                        <div class="flex flex-col items-center" onclick="openXiaohongshuModal()">
+                            <div class="w-14 h-14 bg-[#FE2C55] rounded-full flex items-center justify-center mb-2">
+                                <i class="fas fa-book text-white text-2xl"></i>
+                            </div>
+                            <span class="text-sm text-center">小红书</span>
+                        </div>
+                        <!-- 烘匠平台 -->
+                        <div class="flex flex-col items-center" onclick="shareToSpecificPlatform('hongjang')">
+                            <div class="w-14 h-14 bg-[#FF9F2E] rounded-full flex items-center justify-center mb-2">
+                                <i class="fas fa-bread-slice text-white text-2xl"></i>
+                            </div>
+                            <span class="text-sm text-center">烘匠平台</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 国外平台 -->
+                <div class="foreign-platforms hidden">
+                    <h4 class="text-xl font-medium mb-4 mt-6">国外</h4>
+                    <div class="grid grid-cols-4 gap-6">
+                        <!-- Instagram -->
+                        <div class="flex flex-col items-center" onclick="shareToSpecificPlatform('instagram')">
+                            <div class="w-14 h-14 bg-gradient-to-tr from-[#FF8A00] via-[#DD2A7B] to-[#8134AF] rounded-full flex items-center justify-center mb-2">
+                                <i class="fab fa-instagram text-white text-2xl"></i>
+                            </div>
+                            <span class="text-sm text-center">Instagram</span>
+                        </div>
+                        <!-- Facebook -->
+                        <div class="flex flex-col items-center" onclick="shareToSpecificPlatform('facebook')">
+                            <div class="w-14 h-14 bg-[#1877F2] rounded-full flex items-center justify-center mb-2">
+                                <i class="fab fa-facebook-f text-white text-2xl"></i>
+                            </div>
+                            <span class="text-sm text-center">Facebook</span>
+                        </div>
+                        <!-- LINE -->
+                        <div class="flex flex-col items-center" onclick="shareToSpecificPlatform('line')">
+                            <div class="w-14 h-14 bg-[#06C755] rounded-full flex items-center justify-center mb-2">
+                                <i class="fab fa-line text-white text-2xl"></i>
+                            </div>
+                            <span class="text-sm text-center">LINE</span>
+                        </div>
+                        <!-- Twitter -->
+                        <div class="flex flex-col items-center" onclick="shareToSpecificPlatform('twitter')">
+                            <div class="w-14 h-14 bg-[#1DA1F2] rounded-full flex items-center justify-center mb-2">
+                                <i class="fab fa-twitter text-white text-2xl"></i>
+                            </div>
+                            <span class="text-sm text-center">Twitter</span>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-4 gap-6 mt-6">
+                        <!-- Telegram -->
+                        <div class="flex flex-col items-center" onclick="shareToSpecificPlatform('telegram')">
+                            <div class="w-14 h-14 bg-[#0088CC] rounded-full flex items-center justify-center mb-2">
+                                <i class="fab fa-telegram-plane text-white text-2xl"></i>
+                            </div>
+                            <span class="text-sm text-center">Telegram</span>
+                        </div>
+                        <!-- KakaoTalk -->
+                        <div class="flex flex-col items-center" onclick="shareToSpecificPlatform('kakaotalk')">
+                            <div class="w-14 h-14 bg-[#FEE500] rounded-full flex items-center justify-center mb-2">
+                                <i class="fas fa-comment text-black text-2xl"></i>
+                            </div>
+                            <span class="text-sm text-center">KakaoTalk</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 取消按钮 -->
+            <div class="w-full">
+                <button onclick="closeShareModal()" class="w-full py-4 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-medium text-lg hover:bg-gray-200 dark:hover:bg-gray-700 active:scale-95 transition-all">
+                    取消
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 小红书分享界面 -->
+    <div id="xiaohongshuShareModal" class="fixed z-50 left-0 top-0 w-full h-full flex items-center justify-center bg-black bg-opacity-40 hidden">
+        <div class="bg-white dark:bg-[#1E293B] rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4 border border-slate-200 dark:border-slate-600">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-gray-800 dark:text-slate-100 font-semibold text-2xl">分享到小红书</h3>
+                <button onclick="closeXiaohongshuModal()" class="text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl active:scale-90 transition">×</button>
+            </div>
+            
+            <div class="space-y-6">
+                <!-- 用户ID和烘匠APP推广信息 -->
+                <div class="bg-[#FFF9F9] dark:bg-[#2D1B1B] p-4 rounded-lg border border-[#FFDED8] dark:border-[#4D2D2A]">
+                    <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 bg-[#FE2C55] rounded-full flex items-center justify-center mr-3">
+                            <i class="fas fa-user text-white"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">用户ID</p>
+                            <p class="font-semibold" id="shareUserId">YJ238961</p>
+                        </div>
+                    </div>
+                    <div class="text-sm text-gray-600 dark:text-slate-400">
+                        分享此配方，邀请朋友一起使用<span class="text-[#FE2C55] font-bold">【烘匠APP】</span>制作美食！
+                    </div>
+                </div>
+                
+                <!-- 分享内容预览 -->
+                <div class="border border-slate-200 dark:border-slate-600 rounded-lg p-4">
+                    <h4 class="font-medium mb-2">分享内容预览</h4>
+                    <div class="flex items-start">
+                        <div class="w-20 h-20 bg-slate-100 dark:bg-slate-700 rounded-lg overflow-hidden flex-shrink-0 mr-3">
+                            <img src="" alt="配方封面" id="sharePreviewImage" class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-1">
+                            <p class="font-medium mb-1" id="shareRecipeTitle">经典吐司面包配方</p>
+                            <p class="text-sm text-gray-600 dark:text-slate-400 line-clamp-2" id="shareRecipeDesc">松软香甜的经典吐司，内部组织细腻，入口即化，配方简单易上手！</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 推广文案输入 -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">添加推广文案</label>
+                    <textarea class="w-full p-3 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-[#1E293B] text-gray-900 dark:text-slate-100 placeholder-gray-400" rows="3" placeholder="添加文案，让更多人看到你的作品...">今天分享一款超好吃的面包配方，在烘匠APP上找到的！推荐大家都来试试~ #烘焙 #面包 #烘匠APP</textarea>
+                </div>
+                
+                <!-- 操作按钮 -->
+                <div class="flex gap-3">
+                    <button onclick="closeXiaohongshuModal()" class="flex-1 py-3 rounded-lg bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 font-medium hover:bg-gray-200 dark:hover:bg-slate-600 active:scale-95 transition-all">取消</button>
+                    <button onclick="confirmXiaohongshuShare()" class="flex-1 py-3 rounded-lg bg-[#FE2C55] text-white font-medium hover:bg-[#E82147] active:scale-95 transition-all">分享到小红书</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 拍照识别界面 -->
+    <div id="cameraModal" class="fixed z-50 left-0 top-0 w-full h-full bg-black flex flex-col hidden">
+        <!-- 相机预览区域 -->
+        <div id="cameraPreview" class="flex-1 bg-black hidden">
+            <!-- 实际应用中这里会显示相机预览 -->
+            <div class="w-full h-full relative overflow-hidden">
+                <!-- 模拟相机界面 -->
+                <div class="absolute inset-0 bg-gradient-to-b from-gray-700 to-gray-900 flex items-center justify-center">
+                    <div class="text-white text-5xl opacity-30">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                </div>
+                
+                <!-- 拍照闪光效果 -->
+                <div id="cameraFlash" class="absolute inset-0 bg-white hidden opacity-0 transition-opacity duration-200"></div>
+                
+                <!-- 相机网格和对焦图标 -->
+                <div class="absolute inset-0 grid grid-cols-3 grid-rows-3 pointer-events-none">
+                    <div class="border-r border-b border-white/20"></div>
+                    <div class="border-r border-l border-b border-white/20"></div>
+                    <div class="border-l border-b border-white/20"></div>
+                    <div class="border-r border-t border-b border-white/20"></div>
+                    <div class="border-r border-l border-t border-b border-white/20 flex items-center justify-center">
+                        <div class="w-12 h-12 border-2 border-purple-400 rounded-full opacity-50"></div>
+                    </div>
+                    <div class="border-l border-t border-b border-white/20"></div>
+                    <div class="border-r border-t border-white/20"></div>
+                    <div class="border-r border-l border-t border-white/20"></div>
+                    <div class="border-l border-t border-white/20"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 顶部导航栏 -->
+        <div class="absolute top-0 left-0 right-0 p-4">
+            <button class="text-white hover:bg-black/30 active:scale-95 transition rounded-full p-2" onclick="closeCamera()">
+                <i class="fas fa-arrow-left text-xl"></i>
+            </button>
+        </div>
+        
+        <!-- 底部操作区 -->
+        <div class="bg-black py-6 px-4">
+            <!-- 说明文字 -->
+            <div class="text-white text-center mb-6">
+                <p class="text-sm">手写/电子配方本 自动识别可快速创建配方</p>
+            </div>
+            
+            <!-- 拍照按钮 -->
+            <div class="flex justify-center items-center">
+                <button class="w-16 h-16 rounded-full bg-white flex items-center justify-center active:scale-95 transition" onclick="takePhoto()">
+                    <div class="w-14 h-14 border-2 border-gray-300 rounded-full"></div>
+                </button>
+            </div>
+        </div>
+    </div>
+    </div>
+    <script>
+        // 初始化拖拽排序
+        document.querySelectorAll('[id$="Ingredients"]').forEach(el => {
+            new Sortable(el, {
+                handle: '.drag-handle',
+                animation: 150
+            });
+        });
+
+        // 单位选择弹窗（分区tab）
+        const unitTabs = [
+            {name:'质量单位', icon:'fa-weight', list:['g','kg','mg','lb','oz']},
+            {name:'体积单位', icon:'fa-flask', list:['ml','L','cup','tsp','tbsp']},
+            {name:'自定义单位', icon:'fa-edit', list:['自定义']}
+        ];
+        
+        let currentUnitTab = 0;
+        let currentUnitBtn = null;
+        
+        function showUnitSelect(btn) {
+            currentUnitBtn = btn;
+            document.getElementById('unit-popup').classList.remove('hidden');
+            renderUnitTabBtns();
+            renderUnitList();
+        }
+        
+        function renderUnitTabBtns() {
+            const tabBtns = document.getElementById('unit-tab-btns');
+            tabBtns.innerHTML = '';
+            unitTabs.forEach((tab, idx) => {
+                const b = document.createElement('button');
+                b.className = `flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg transition-all ${
+                    currentUnitTab === idx 
+                    ? 'bg-white dark:bg-slate-700 text-purple-600 dark:text-purple-400 shadow-sm' 
+                    : 'text-gray-600 dark:text-slate-400 hover:bg-white/50 dark:hover:bg-slate-700/50'
+                }`;
+                b.innerHTML = `<i class="fas ${tab.icon}"></i><span>${tab.name}</span>`;
+                b.onclick = () => { 
+                    currentUnitTab = idx; 
+                    renderUnitTabBtns(); 
+                    renderUnitList(); 
+                };
+                tabBtns.appendChild(b);
+            });
+        }
+        
+        function renderUnitList() {
+            const list = document.getElementById('unit-popup-list');
+            list.innerHTML = '';
+            
+            if(unitTabs[currentUnitTab].name === '自定义单位') {
+                list.className = 'px-2';
+                const wrap = document.createElement('div');
+                wrap.className = 'flex flex-col items-center gap-4 w-full py-4';
+                wrap.innerHTML = `
+                    <div class="relative w-full">
+                        <input id="customUnitInput" 
+                               class="w-full px-4 py-3 bg-gray-50 dark:bg-[#0F172A] text-gray-800 dark:text-slate-100 
+                                      border border-gray-200 dark:border-slate-600 rounded-xl outline-none 
+                                      placeholder-gray-400 transition-all
+                                      focus:border-purple-500 focus:ring-2 focus:ring-purple-100 dark:focus:ring-purple-900" 
+                               placeholder="输入自定义单位">
+                        <div class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                            <i class="fas fa-edit"></i>
+                        </div>
+                    </div>
+                    <button class="w-full py-3 px-6 gradient-primary 
+                                 hover:from-[#764ba2] hover:to-[#667eea] active:scale-95
+                                 text-white font-semibold rounded-xl transition-all shadow-lg
+                                 flex items-center justify-center gap-2"
+                            onclick="setCustomUnit()">
+                        <i class="fas fa-check"></i>
+                        <span>确定</span>
+                    </button>
+                `;
+                list.appendChild(wrap);
+            } else {
+                list.className = 'grid grid-cols-3 gap-2 max-h-[40vh] overflow-y-auto pr-2';
+                unitTabs[currentUnitTab].list.forEach(u => {
+                    const b = document.createElement('button');
+                    b.className = `w-full py-3 px-4 rounded-xl transition-all
+                                 bg-gray-50 dark:bg-[#0F172A] 
+                                 border border-gray-200 dark:border-slate-600
+                                 hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20
+                                 active:scale-95 text-center
+                                 text-gray-800 dark:text-slate-100`;
+                    b.textContent = u;
+                    b.onclick = () => {
+                        currentUnitBtn.textContent = u;
+                        closeUnitSelect();
+                    };
+                    list.appendChild(b);
+                });
+            }
+        }
+        
+        function setCustomUnit() {
+            const val = document.getElementById('customUnitInput').value.trim();
+            if(val) {
+                currentUnitBtn.textContent = val;
+                closeUnitSelect();
+            } else {
+                // 添加输入为空的提示动画
+                const input = document.getElementById('customUnitInput');
+                input.classList.add('ring-2', 'ring-red-400');
+                setTimeout(() => {
+                    input.classList.remove('ring-2', 'ring-red-400');
+                }, 800);
+            }
+        }
+        
+        function closeUnitSelect() {
+            document.getElementById('unit-popup').classList.add('hidden');
+        }
+
+        // 材料名称自动检索弹窗（输入第一个字才弹出）
+        const materialList = ['高筋面粉','低筋面粉','全麦粉','酵母','白砂糖','盐','黄油','牛奶','鸡蛋','水','奶粉','橄榄油','葡萄干','核桃','芝士'];
+        let currentNameInput = null;
+        function showMaterialSearch(input) {
+            currentNameInput = input;
+            if(!input.value) { closeMaterialSearch(); return; }
+            updateMaterialSearch(input.value);
+            document.getElementById('material-popup').classList.remove('hidden');
+        }
+        function updateMaterialSearch(keyword) {
+            const list = document.getElementById('material-popup-list');
+            list.innerHTML = '';
+            materialList.filter(m => m.includes(keyword)).forEach(m => {
+                const b = document.createElement('button');
+                b.className = 'px-3 py-1 rounded bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/30 text-left transition';
+                b.textContent = m;
+                b.onclick = () => {
+                    currentNameInput.value = m;
+                    // 同步状态变绿
+                    const nameInput = currentNameInput;
+                    nameInput.classList.remove('not-synced');
+                    nameInput.classList.add('synced');
+                    
+                    closeMaterialSearch();
+                    updateAutoFields(currentNameInput);
+                };
+                list.appendChild(b);
+            });
+        }
+        function closeMaterialSearch() {
+            document.getElementById('material-popup').classList.add('hidden');
+        }
+
+        // 添加原料行（所有按钮/图标加点击效果，基础面团和变化款里的面团都计入总重，名称不可编辑）
+        function addIngredient(type) {
+            let container;
+            if(type.startsWith('variation')) {
+                container = document.getElementById(`${type}Ingredients`);
+            } else {
+                container = document.getElementById(`${type}Ingredients`);
+            }
+            let nameValue = '';
+            let nameReadOnly = false;
+            if(type==='base' && container.children.length===0) {
+                const recipeName = document.querySelector('input[placeholder="配方名称"]')?.value || '';
+                nameValue = recipeName;
+                nameReadOnly = true;
+            }
+            // 变化款里的面团名称不可编辑
+            if(type.startsWith('variation')) {
+                nameValue = '基础面团';
+                nameReadOnly = true;
+            }
+            const div = document.createElement('div');
+            div.className = 'flex flex-wrap items-center gap-3 bg-white dark:bg-[#1E293B] rounded-lg p-2 shadow-sm border border-slate-200 dark:border-slate-600 ingredient-item';
+            div.setAttribute('data-open', 'false');
+            div.innerHTML = `
+                <div class="drag-handle text-slate-400 dark:text-slate-500 cursor-move pr-1 active:scale-90 transition hover:text-purple-600 dark:hover:text-purple-400">
+                    <i class="fas fa-grip-vertical"></i>
+                </div>
+                <div class="flex-1 min-w-[80px] border-b border-slate-300 dark:border-slate-600 relative">
+                    <input type="text" placeholder="名称" class="name-input w-full px-2 py-2 border-none outline-none bg-transparent text-gray-800 dark:text-slate-100 not-synced ${nameReadOnly?'cursor-not-allowed':''}" value="${nameValue}" ${nameReadOnly?'readonly':''} oninput="if(this.value.length>0&&!this.readOnly){showMaterialSearch(this);}else{closeMaterialSearch();}updateAutoFields(this)">
+                </div>
+                <div class="w-20 border-b border-slate-300 dark:border-slate-600 relative">
+                    <input type="text" inputmode="decimal" placeholder="规格" class="w-full px-2 py-2 text-center border-none outline-none bg-transparent text-gray-800 dark:text-slate-100" oninput="updateAutoFields(this)">
+                </div>
+                <div class="w-20 border-b border-slate-300 dark:border-slate-600 relative">
+                    <input type="text" inputmode="decimal" placeholder="用量" class="w-full px-2 py-2 text-center border-none outline-none bg-transparent text-gray-800 dark:text-slate-100" oninput="updateAutoFields(this)">
+                </div>
+                <div class="w-20 border-b border-slate-300 dark:border-slate-600 relative">
+                    <input type="text" inputmode="decimal" placeholder="成本" class="w-full px-2 py-2 text-center border-none outline-none bg-transparent text-gray-800 dark:text-slate-100" oninput="updateAutoFields(this)">
+                </div>
+                <div class="border-b border-slate-300 dark:border-slate-600 min-w-[30px] text-center">
+                    <button type="button" class="unit-btn px-2 py-2 text-purple-600 dark:text-purple-400 hover:text-purple-700 active:scale-90 transition bg-transparent border-none cursor-pointer" onclick="showUnitSelect(this)">g</button>
+                </div>
+                <span class="percent-field text-slate-500 dark:text-slate-400 select-none ml-1">0%</span>
+                <span class="price-field text-slate-500 dark:text-slate-400 select-none ml-1">￥0.00</span>
+                <div class="delete-action"><i class="fas fa-trash-alt mr-1"></i> 删除</div>
+            `;
+            container.appendChild(div);
+            initSwipeDelete(div);
+            updateSortable();
+            updateVariationTotal();
+        }
+
+        // 拖拽排序初始化
+        function updateSortable() {
+            document.querySelectorAll('.ingredients-group').forEach(el => {
+                if (!el.sortable) {
+                    el.sortable = new Sortable(el, {
+                        group: { name: 'ingredients', pull: true, put: true },
+                        handle: '.drag-handle',
+                        animation: 180,
+                        ghostClass: 'bg-purple-100',
+                        chosenClass: 'ring-2 ring-purple-400',
+                        onEnd: function() {
+                            updateAllAutoFields();
+                        }
+                    });
+                }
+            });
+        }
+
+        // 拖拽后刷新所有分组自动字段
+        function updateAllAutoFields() {
+            document.querySelectorAll('.ingredients-group').forEach(group => {
+                Array.from(group.children).forEach(row => {
+                    updateAutoFields(row.querySelector('input[type="number"]') || row.querySelector('input[type="text"]'));
+                });
+            });
+        }
+
+        // 百分比以面粉为基准
+        function updateAutoFields(input) {
+            const row = input.closest('.flex');
+            // 找到所有面粉分组的总量
+            let flourTotal = 0;
+            document.querySelectorAll('#flourIngredients input[placeholder="规格"]').forEach(f => {
+                flourTotal += parseFloat(f.value) || 0;
+            });
+            // 当前分组
+            const container = row.parentElement;
+            const allRows = Array.from(container.children);
+            allRows.forEach(r => {
+                const qty = r.querySelector('input[placeholder="规格"]');
+                const percent = r.querySelector('.percent-field');
+                const price = r.querySelector('.price-field');
+                const val = parseFloat(qty?.value) || 0;
+                // 百分比以面粉为基准
+                percent.textContent = flourTotal ? ((val / flourTotal * 100).toFixed(2)) + '%' : '0.00%';
+                // 金额（假设同步状态为绿色时有成本，示例：数量*0.03）
+                const sync = r.querySelector('.sync-btn i');
+                if (sync && sync.classList.contains('text-green-500')) {
+                    price.textContent = '￥' + (val * 0.03).toFixed(2);
+                } else {
+                    price.textContent = '￥0.00';
+                }
+            });
+            updateTotalWeight();
+            updateVariationTotal();
+        }
+
+        // 同步状态切换
+        function toggleSync(element) {
+            const nameInput = element.closest('.ingredient-item').querySelector('.name-input');
+            
+            if (nameInput.classList.contains('synced')) {
+                nameInput.classList.remove('synced');
+                nameInput.classList.add('not-synced');
+            } else {
+                nameInput.classList.remove('not-synced');
+                nameInput.classList.add('synced');
+            }
+            updateAutoFields(nameInput);
+        }
+
+        // 总重=基础面团+所有变化款里的面团，超5位自动切kg
+        function updateTotalWeight() {
+            let total = 0;
+            document.querySelectorAll(`#baseIngredients input[type="number"]`).forEach(input => {
+                total += parseFloat(input.value) || 0;
+            });
+            document.querySelectorAll('.variation-group').forEach(group => {
+                group.querySelectorAll('input[type="number"]').forEach(input => {
+                    total += parseFloat(input.value) || 0;
+                });
+            });
+            let display = '';
+            if(total>=100000) {
+                display = (total/1000).toFixed(2)+' kg';
+            } else {
+                display = total.toFixed(2)+' g';
+            }
+            document.getElementById('totalWeight').textContent = display;
+        }
+
+        // 监听重量输入变化
+        document.addEventListener('input', function(e) {
+            if (e.target.placeholder === '重量') {
+                updateTotalWeight();
+            }
+        });
+
+        // 图片裁剪相关变量
+        let cropper = null;
+        let currentImageFile = null;
+
+        // 图片上传预览（支持裁剪）
+        document.getElementById('coverImage').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                if (!file.type.startsWith('image/')) {
+                    alert('请选择图片文件！');
+                    return;
+                }
+                currentImageFile = file;
+                openCropModal(file);
+            }
+        });
+
+        // 打开裁剪弹窗
+        function openCropModal(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const cropImage = document.getElementById('cropImage');
+                cropImage.src = e.target.result;
+                
+                // 显示弹窗
+                document.getElementById('cropModal').classList.remove('hidden');
+                
+                // 初始化裁剪器（正方形裁剪）
+                setTimeout(() => {
+                    if (cropper) {
+                        cropper.destroy();
+                    }
+                    cropper = new Cropper(cropImage, {
+                        aspectRatio: 1, // 正方形比例
+                        viewMode: 1,
+                        guides: true,
+                        center: true,
+                        autoCropArea: 0.8,
+                        cropBoxResizable: true,
+                        toggleDragModeOnDblclick: false,
+                        preview: '#cropPreview',
+                        ready: function() {
+                            // 裁剪器初始化完成
+                        }
+                    });
+                }, 100);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // 关闭裁剪弹窗
+        function closeCropModal() {
+            document.getElementById('cropModal').classList.add('hidden');
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+            // 重置文件输入
+            document.getElementById('coverImage').value = '';
+        }
+
+        // 确认裁剪
+        function confirmCrop() {
+            if (!cropper) return;
+            
+            // 获取裁剪后的画布
+            const canvas = cropper.getCroppedCanvas({
+                width: 400, // 输出尺寸：400x400像素，保证质量
+                height: 400,
+                imageSmoothingEnabled: true,
+                imageSmoothingQuality: 'high'
+            });
+            
+            // 转换为高质量的图片
+            const croppedImageDataUrl = canvas.toDataURL('image/jpeg', 0.9); // 90%质量
+            
+            // 更新预览
+            document.getElementById('imagePreview').innerHTML = `
+                <img src="${croppedImageDataUrl}" class="w-full h-full object-cover rounded-xl">
+            `;
+            
+            // 关闭弹窗
+            closeCropModal();
+            
+            // 显示成功提示
+            showNotification('✅ 图片裁剪完成');
+        }
+
+        // Tab切换功能
+        function switchTab(tab) {
+            // 更新Tab按钮状态
+            const tabs = ['recipe', 'sop', 'step'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-btn-${t}`);
+                const section = document.getElementById(`${t}-section`);
+                
+                if (t === tab) {
+                    btn.classList.add('tab-active', 'tab-bg-active');
+                    btn.classList.remove('tab-inactive', 'tab-bg-inactive');
+                    section.classList.remove('hidden');
+                } else {
+                    btn.classList.remove('tab-active', 'tab-bg-active');
+                    btn.classList.add('tab-inactive', 'tab-bg-inactive');
+                    section.classList.add('hidden');
+                }
+            });
+            
+            // 切换配方信息显示（配方名称和分类选择仅在配方页面显示）
+            const recipeMetaSection = document.getElementById('recipe-meta-section');
+            if (recipeMetaSection) {
+                if (tab === 'recipe') {
+                    recipeMetaSection.classList.remove('hidden');
+                } else {
+                    recipeMetaSection.classList.add('hidden');
+                }
+            }
+            
+            // 更新底部栏显示
+            const saveBtn = document.getElementById('saveBtn');
+            if (saveBtn) {
+                const totalWeightCard = saveBtn.parentElement.querySelector('.flex.items-center');
+                if(tab==='sop') {
+                    saveBtn.textContent = '保存SOP';
+                    if (totalWeightCard) totalWeightCard.classList.add('hidden');
+                    saveBtn.classList.add('w-full');
+                } else if(tab==='step') {
+                    saveBtn.textContent = '保存步骤';
+                    if (totalWeightCard) totalWeightCard.classList.add('hidden');
+                    saveBtn.classList.add('w-full');
+                } else {
+                    saveBtn.textContent = '保存配方';
+                    if (totalWeightCard) totalWeightCard.classList.remove('hidden');
+                    saveBtn.classList.remove('w-full');
+                }
+            }
+            
+            // SOP首次打开时初始化数据
+            if(tab==='sop' && document.getElementById('sopStepsList') && document.getElementById('sopStepsList').children.length === 0) {
+                initSopSteps();
+            }
+            // 步骤首次打开时初始化数据
+            if(tab==='step' && document.getElementById('stepsList') && document.getElementById('stepsList').children.length === 0) {
+                initSteps();
+            }
+        }
+
+        // 变化款分组动态添加/删除
+        let variationCount = 0;
+                    function addVariationGroup() {
+            variationCount++;
+            const id = `variation${variationCount}`;
+            const div = document.createElement('div');
+            div.className = 'card p-4 mb-4 variation-group';
+            div.innerHTML = `
+                <div class="flex justify-between items-center mb-3 bg-[#F8FAFC] dark:bg-[#0F172A] p-2 rounded-lg w-full">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-[#F8FAFC] dark:bg-[#0F172A] flex items-center justify-center mr-3">
+                            <i class="fas fa-layer-group text-purple-600 dark:text-purple-400"></i>
+                        </div>
+                        <h3 class="font-semibold text-[#1E293B] dark:text-slate-100">变化款</h3>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button class="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 active:scale-90 transition rounded-full p-1" onclick="this.closest('.variation-group').remove(); updateAllAutoFields();"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+                <div id="${id}Ingredients" class="space-y-2 ingredients-group"></div>
+                <div id="${id}Total" class="mt-3 text-right text-sm text-purple-700 dark:text-purple-300 font-semibold bg-purple-100/50 dark:bg-purple-900/20 rounded-lg px-3 py-1 hidden"></div>
+                <div class="flex justify-end mt-3">
+                    <button class="text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 active:scale-90 rounded-lg px-3 py-2 transition-all flex items-center text-sm" onclick="addIngredient('${id}')">
+                        <i class="fas fa-plus mr-1"></i>
+                        <span>添加一行</span>
+                    </button>
+                </div>
+            `;
+            document.getElementById('variationList').appendChild(div);
+            updateSortable();
+        }
+        document.getElementById('addVariationBtn').onclick = addVariationGroup;
+
+        // 更新变化款分组总重
+        function updateVariationTotal() {
+            // 旧的变化款分组
+            const old = document.getElementById('variationIngredients');
+            if(old) {
+                const allRows = Array.from(old.children);
+                let total = 0;
+                allRows.forEach(r => {
+                    const qty = r.querySelector('input[type="number"]');
+                    total += parseFloat(qty?.value) || 0;
+                });
+                const totalDiv = document.getElementById('variationTotal');
+                if(allRows.length>1 && total>0){
+                    totalDiv.textContent = '变化款总重：' + total + 'g';
+                    totalDiv.classList.remove('hidden');
+                }else{
+                    totalDiv.classList.add('hidden');
+                }
+            }
+            // 新的动态变化款分组
+            document.querySelectorAll('.variation-group').forEach(group => {
+                const container = group.querySelector('.ingredients-group');
+                const totalDiv = group.querySelector('div[id$="Total"]');
+                const allRows = Array.from(container.children);
+                let total = 0;
+                allRows.forEach(r => {
+                    const qty = r.querySelector('input[type="number"]');
+                    total += parseFloat(qty?.value) || 0;
+                });
+                if(allRows.length>1 && total>0){
+                    totalDiv.textContent = '变化款总重：' + total + 'g';
+                    totalDiv.classList.remove('hidden');
+                }else{
+                    totalDiv.classList.add('hidden');
+                }
+            });
+        }
+
+        // 基础面团必填校验
+        function validateBase() {
+            const baseRows = document.getElementById('baseIngredients').children;
+            if(baseRows.length===0){
+                alert('基础面团为必填项！');
+                return false;
+            }
+            return true;
+        }
+
+        // 拍照/扫描交互弹窗
+        function openCamera() {
+            document.getElementById('cameraModal').classList.remove('hidden');
+            // 在真实环境中这里会初始化相机
+            setTimeout(() => {
+                document.getElementById('cameraPreview').classList.remove('hidden');
+            }, 300);
+        }
+        
+        function closeCamera() {
+            document.getElementById('cameraModal').classList.add('hidden');
+            document.getElementById('cameraPreview').classList.add('hidden');
+        }
+        
+        function takePhoto() {
+            // 模拟拍照效果
+            const flashEffect = document.getElementById('cameraFlash');
+            flashEffect.classList.remove('hidden');
+            flashEffect.classList.add('opacity-100');
+            
+            setTimeout(() => {
+                flashEffect.classList.remove('opacity-100');
+                flashEffect.classList.add('opacity-0');
+            }, 100);
+            
+            setTimeout(() => {
+                flashEffect.classList.add('hidden');
+                flashEffect.classList.remove('opacity-0');
+                showNotification('✅ 已自动识别配方内容');
+                closeCamera();
+            }, 500);
+        }
+        
+        function openScan() {
+            alert('模拟手写配方识别界面，识别后自动填充到配方（后续可对接API）');
+        }
+
+        // 新建类别弹窗交互
+        function openCategoryModal() {
+            document.getElementById('categoryModal').classList.remove('hidden');
+            document.getElementById('newCategoryInput').value = '';
+            setTimeout(()=>{document.getElementById('newCategoryInput').focus();},100);
+        }
+        function closeCategoryModal() {
+            document.getElementById('categoryModal').classList.add('hidden');
+        }
+        function addNewCategory() {
+            const val = document.getElementById('newCategoryInput').value.trim();
+            if(val) {
+                const select = document.getElementById('categorySelect');
+                const opt = document.createElement('option');
+                opt.value = val;
+                opt.textContent = val;
+                select.appendChild(opt);
+                select.value = val;
+                closeCategoryModal();
+            }
+        }
+
+        // 步骤管理（专业UI设计）
+        let stepCount = 0;
+        let currentStepRow = null;
+        let currentMediaSlot = null;
+        
+        function initSteps() {
+            // 初始化3个示例步骤，分别展示1张、2张和3张图片的布局
+            const defaultSteps = [
+                { title: '步骤1（一张图片示例）', content: '和面：将所有干性原料混合，慢慢加入液体原料，搅拌至面团光滑，注意控制加水速度' },
+                { title: '步骤2（两张图片示例）', content: '发酵：将面团放入发酵箱，温度28℃，湿度75%，发酵90分钟，直至面团体积增大一倍' },
+                { title: '步骤3（三张图片示例）', content: '整形：将发酵好的面团分割，擀平，卷起，放入模具中进行二次发酵，注意保持适当松弛时间' }
+            ];
+            
+            // 创建步骤并添加示例图片
+            defaultSteps.forEach((step, index) => {
+                const stepElement = addStep(step.title, step.content);
+                
+                // 根据步骤编号添加不同数量的示例图片
+                const imageCount = index + 1; // 步骤1添加1张图，步骤2添加2张图，步骤3添加3张图
+                addExampleImages(stepElement, imageCount);
+            });
+            
+            updateStepSortable();
+        }
+        
+        function addExampleImages(stepElement, count) {
+            // 示例图片URL数组
+            const sampleImageUrls = [
+                'https://images.unsplash.com/photo-1506459225024-1428097a7e18?w=600&h=400&fit=crop',
+                'https://images.unsplash.com/photo-1589367920969-ab8e050bbb04?w=600&h=400&fit=crop',
+                'https://images.unsplash.com/photo-1600326145552-327f74b9c189?w=600&h=400&fit=crop',
+                'https://images.unsplash.com/photo-1612200058850-8e661d819ded?w=600&h=400&fit=crop',
+                'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600&h=400&fit=crop'
+            ];
+            
+            // 找到媒体区域容器
+            const mediaContainer = stepElement.querySelector('.flex.overflow-x-auto');
+            
+            // 清空默认的空白媒体槽
+            mediaContainer.innerHTML = '';
+            
+            // 添加指定数量的示例图片
+            for (let i = 0; i < count; i++) {
+                const mediaSlot = document.createElement('div');
+                mediaSlot.className = 'flex-none w-[70%] snap-center relative';
+                
+                // 使用示例图片URL（循环使用）
+                const imageUrl = sampleImageUrls[i % sampleImageUrls.length];
+                
+                mediaSlot.innerHTML = `
+                    <img src="${imageUrl}" alt="示例图片${i+1}" class="rounded-lg w-full h-auto" onclick="showFullImage(this)">
+                    <div class="absolute bottom-3 right-3 bg-black bg-opacity-60 text-white rounded-full p-2 hover:bg-opacity-80 transition-all" onclick="showFullImage(this.parentElement)">
+                        <i class="fas fa-search-plus"></i>
+                    </div>
+                `;
+                
+                mediaContainer.appendChild(mediaSlot);
+            }
+            
+            // 始终添加一个空的上传槽
+            const emptySlot = document.createElement('div');
+            emptySlot.className = 'media-slot flex-none w-[70%] snap-center relative';
+            emptySlot.innerHTML = `
+                <div class="media-upload-area w-full h-20 rounded-lg flex items-center justify-center cursor-pointer transition-all border-2 border-dashed border-slate-200 dark:border-slate-600 hover:border-purple-500 hover:bg-gray-50 dark:hover:bg-slate-800" onclick="openMediaUpload(this)">
+                    <div class="text-center text-slate-400 dark:text-slate-500">
+                        <i class="fas fa-plus text-lg mb-1"></i>
+                        <div class="text-xs">添加图片/视频</div>
+                    </div>
+                </div>
+            `;
+            mediaContainer.appendChild(emptySlot);
+        }
+        
+        function addStep(stepTitle = '', stepContent = '') {
+            stepCount++;
+            const container = document.getElementById('stepsList');
+            const div = document.createElement('div');
+            div.className = 'card';
+             
+            div.innerHTML = `
+                <div class="flex items-center p-4 border-b border-slate-100 dark:border-slate-700">
+                    <div class="w-10 h-10 gradient-primary text-white rounded-full flex items-center justify-center text-lg font-bold mr-3 step-number">
+                        ${stepCount}
+                        </div>
+                    <input type="text" class="bg-transparent text-[#1E293B] dark:text-slate-100 font-bold border-none outline-none placeholder-slate-400 text-xl focus:bg-[#F8FAFC] dark:focus:bg-[#0F172A] rounded px-2 py-1" 
+                           value="${stepTitle || '步骤' + stepCount}" placeholder="步骤标题" />
+                    <div class="flex items-center gap-2 ml-auto">
+                        <button class="step-menu-btn text-gray-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 active:scale-90 transition text-lg p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700" onclick="openStepMenu(this)">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                        <div class="step-drag-handle drag-handle-enhanced cursor-grab" title="拖拽排序">
+                            <i class="fas fa-grip-vertical text-[#64748B] dark:text-slate-400"></i>
+                            </div>
+                        </div>
+                    </div>
+                
+                <div class="p-4">
+                    <!-- 步骤内容输入 -->
+                    <textarea class="w-full px-4 py-3 bg-gray-50 dark:bg-slate-800 text-gray-800 dark:text-slate-100 border border-slate-200 dark:border-slate-600 rounded-xl outline-none resize-none placeholder-slate-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 dark:focus:ring-purple-900 transition text-sm leading-relaxed mb-4" 
+                              placeholder="请输入详细的制作步骤说明..." rows="3">${stepContent}</textarea>
+                    
+                    <!-- 媒体上传区 -->
+                    <div class="flex overflow-x-auto gap-3 pb-2 mb-2 snap-x">
+                        <div class="media-slot flex-none w-[70%] snap-center relative">
+                            <div class="media-upload-area w-full h-20 rounded-lg flex items-center justify-center cursor-pointer transition-all border-2 border-dashed border-slate-200 dark:border-slate-600 hover:border-purple-500 hover:bg-gray-50 dark:hover:bg-slate-800" onclick="openMediaUpload(this)">
+                                <div class="text-center text-slate-400 dark:text-slate-500">
+                                    <i class="fas fa-plus text-lg mb-1"></i>
+                                    <div class="text-xs">添加图片/视频</div>
+                </div>
+                    </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+            updateStepNumbers();
+            return div;
+        }
+        
+        // 备注字符计数
+        document.addEventListener('DOMContentLoaded', function() {
+            const sopRemark = document.getElementById('sopRemark');
+            const sopRemarkCount = document.getElementById('sopRemarkCount');
+            
+            sopRemark.addEventListener('input', function() {
+                const count = this.value.length;
+                sopRemarkCount.textContent = `${count}/100`;
+                if(count >= 90) {
+                    sopRemarkCount.classList.add('text-red-500');
+                } else {
+                    sopRemarkCount.classList.remove('text-red-500');
+                }
+            });
+        });
+        
+        // 数量调整函数（移动端友好的步进器）
+        function adjustQuantity(btn, delta) {
+            const input = btn.parentElement.querySelector('input[type="number"]');
+            const currentValue = parseFloat(input.value) || 0;
+            const step = parseFloat(input.step) || 1;
+            const newValue = Math.max(0, currentValue + (delta * step));
+            input.value = newValue;
+            updateAutoFields(input);
+        }
+
+        // 点击外部关闭所有菜单和弹窗
+        document.addEventListener('click', function(e) {
+            // 关闭SOP三点菜单
+            if(!e.target.closest('.sop-step-menu')) {
+                document.querySelectorAll('.sop-menu-dropdown').forEach(d => d.classList.add('hidden'));
+            }
+            // 关闭SOP类型选择弹窗
+            if(!e.target.closest('.sop-type-modal > div') && !e.target.closest('.sop-icon-btn')) {
+                const modal = document.getElementById('sopTypeModal');
+                if(modal && !modal.classList.contains('hidden')) {
+                    closeSopTypeModal();
+                }
+            }
+            // 关闭步骤菜单弹窗
+            if(!e.target.closest('#stepMenuModal > div') && !e.target.closest('.step-menu-btn')) {
+                const modal = document.getElementById('stepMenuModal');
+                if(modal && !modal.classList.contains('hidden')) {
+                    closeStepMenuModal();
+                }
+            }
+            // 关闭媒体上传弹窗
+            if(!e.target.closest('#mediaUploadModal > div') && !e.target.closest('.media-upload-area')) {
+                const modal = document.getElementById('mediaUploadModal');
+                if(modal && !modal.classList.contains('hidden')) {
+                    closeMediaUploadModal();
+                }
+            }
+            // 关闭图片裁剪弹窗
+            if(!e.target.closest('#cropModal > div') && !e.target.closest('#coverImage')) {
+                const modal = document.getElementById('cropModal');
+                if(modal && !modal.classList.contains('hidden')) {
+                    closeCropModal();
+                }
+            }
+        });
+        
+        function updateStepNumbers() {
+            const steps = document.querySelectorAll('#stepsList .step-row');
+            steps.forEach((step, index) => {
+                const numberEl = step.querySelector('.step-number');
+                if(numberEl) {
+                    numberEl.textContent = index + 1;
+                }
+            });
+        }
+        
+        function updateStepSortable() {
+            const container = document.getElementById('stepsList');
+            if (container && !container.sortable) {
+                container.sortable = new Sortable(container, {
+                    handle: '.step-drag-handle',
+                    animation: 300,
+                    ghostClass: 'opacity-50',
+                    chosenClass: 'ring-2 ring-purple-400 scale-105',
+                    easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+                    onEnd: function() {
+                        updateStepNumbers();
+                    }
+                });
+            }
+        }
+        
+        // 步骤菜单操作
+        function openStepMenu(btn) {
+            currentStepRow = btn.closest('.step-row');
+            document.getElementById('stepMenuModal').classList.remove('hidden');
+            
+            // 绑定菜单操作
+            document.getElementById('stepMenuDelete').onclick = function() {
+                if(document.getElementById('stepsList').children.length <= 1) {
+                    alert('至少需要保留一个步骤');
+                    return;
+                }
+                currentStepRow.remove();
+                updateStepNumbers();
+                closeStepMenuModal();
+            };
+            
+            document.getElementById('stepMenuAdd').onclick = function() {
+                addStep();
+                const container = document.getElementById('stepsList');
+                const newRow = container.lastElementChild;
+                container.insertBefore(newRow, currentStepRow.nextSibling);
+                updateStepNumbers();
+                updateStepSortable();
+                closeStepMenuModal();
+            };
+        }
+        
+        function closeStepMenuModal() {
+            document.getElementById('stepMenuModal').classList.add('hidden');
+            currentStepRow = null;
+        }
+        
+        // 媒体上传功能
+        function openMediaUpload(slot) {
+            currentMediaSlot = slot;
+            document.getElementById('mediaUploadModal').classList.remove('hidden');
+        }
+        
+        function closeMediaUploadModal() {
+            document.getElementById('mediaUploadModal').classList.add('hidden');
+            currentMediaSlot = null;
+        }
+        
+        function selectImage() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.multiple = false;
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if(file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        showMediaPreview(e.target.result, 'image', file.name);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+            input.click();
+            closeMediaUploadModal();
+        }
+        
+        function selectVideo() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'video/*';
+            input.multiple = false;
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if(file) {
+                    // 视频自动处理模拟
+                    setTimeout(() => {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            showMediaPreview(e.target.result, 'video', file.name);
+                            // 模拟视频自动处理完成
+                            showNotification('✅ 视频已自动压缩优化');
+                        };
+                        reader.readAsDataURL(file);
+                    }, 1000);
+                    showNotification('🔄 正在自动处理视频...');
+                }
+            };
+            input.click();
+            closeMediaUploadModal();
+        }
+        
+        function captureMedia() {
+            // 模拟拍照/录像功能
+            showNotification('📷 模拟调用摄像头功能');
+            closeMediaUploadModal();
+        }
+        
+        function showMediaPreview(src, type, filename) {
+            if(!currentMediaSlot) return;
+            
+            const isVideo = type === 'video';
+            const preview = document.createElement('div');
+            preview.className = 'media-preview w-full h-full relative rounded-lg overflow-hidden';
+            
+            if(isVideo) {
+                preview.innerHTML = `
+                    <video class="w-full h-full object-cover" controls>
+                        <source src="${src}" type="video/mp4">
+                    </video>
+                    <div class="video-indicator text-white text-xs bg-black bg-opacity-50 px-2 py-1 rounded">
+                        <i class="fas fa-play mr-1"></i>视频
+                    </div>
+                    <button class="remove-btn w-6 h-6 rounded-full text-white text-xs hover:bg-red-600 transition flex items-center justify-center" onclick="removeMedia(this)">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+            } else {
+                preview.innerHTML = `
+                    <img src="${src}" class="w-full h-full object-cover" alt="${filename}" onclick="showFullImage(this)">
+                    <div class="absolute bottom-3 right-3 bg-black bg-opacity-60 text-white rounded-full p-2 hover:bg-opacity-80 transition-all" onclick="showFullImage(this.parentElement)">
+                        <i class="fas fa-search-plus"></i>
+                    </div>
+                    <button class="remove-btn w-6 h-6 rounded-full text-white text-xs hover:bg-red-600 transition flex items-center justify-center" onclick="removeMedia(this)">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+            }
+            
+            currentMediaSlot.innerHTML = '';
+            currentMediaSlot.appendChild(preview);
+        }
+        
+        function showNotification(message) {
+            // 简单的通知显示
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-80 text-white px-4 py-2 rounded-xl z-50 text-sm';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+        
+        // 步骤备注字符计数
+        document.addEventListener('DOMContentLoaded', function() {
+            const stepRemark = document.getElementById('stepRemark');
+            const stepRemarkCount = document.getElementById('stepRemarkCount');
+            
+            if(stepRemark && stepRemarkCount) {
+                stepRemark.addEventListener('input', function() {
+                    const count = this.value.length;
+                    stepRemarkCount.textContent = `${count}/120`;
+                    if(count >= 110) {
+                        stepRemarkCount.classList.add('text-red-500');
+                    } else {
+                        stepRemarkCount.classList.remove('text-red-500');
+                    }
+                });
+            }
+        });
+        
+        // 图片全屏预览功能
+        function showFullImage(container) {
+            const img = container.querySelector('img');
+            const modal = document.getElementById('fullImageModal');
+            const modalImg = modal.querySelector('img');
+            
+            if (img) {
+                // 获取原始图片URL，显示高清大图
+                modalImg.src = img.src;
+                modal.classList.remove('hidden');
+            }
+        }
+        
+        // 分享功能相关
+        function openShareModal() {
+            document.getElementById('shareModal').classList.remove('hidden');
+            
+            // 根据用户IP判断显示国内还是国外平台
+            // 这里模拟使用GeolocationAPI或IP查询服务
+            checkUserRegion();
+        }
+        
+        function closeShareModal() {
+            document.getElementById('shareModal').classList.add('hidden');
+        }
+        
+        function checkUserRegion() {
+            // 模拟检测用户所在地区
+            // 实际生产环境应该使用IP地址查询服务或HTML5 Geolocation API
+            
+            // 获取浏览器语言作为简单判断依据
+            const userLanguage = navigator.language || navigator.userLanguage;
+            const mainlandPlatforms = document.querySelector('.mainland-platforms');
+            const foreignPlatforms = document.querySelector('.foreign-platforms');
+            
+            // 如果是中文，显示国内平台
+            if (userLanguage.startsWith('zh')) {
+                mainlandPlatforms.classList.remove('hidden');
+                foreignPlatforms.classList.add('hidden');
+            } else {
+                // 非中文，显示国外平台
+                mainlandPlatforms.classList.add('hidden');
+                foreignPlatforms.classList.remove('hidden');
+            }
+            
+            // 也可以添加一个切换按钮，让用户手动切换
+        }
+        
+        function shareToSpecificPlatform(platform) {
+            // 关闭分享平台选择弹窗
+            closeShareModal();
+            
+            // 获取当前配方信息
+            const recipeName = document.querySelector('input[placeholder="配方名称 *"]').value || '未命名配方';
+            const imagePreview = document.getElementById('imagePreview');
+            const imageUrl = imagePreview.querySelector('img')?.src || '';
+            
+            // 根据不同平台处理分享逻辑
+            switch(platform) {
+                case 'xiaohongshu':
+                    openXiaohongshuModal(recipeName, imageUrl);
+                    break;
+                case 'wechat':
+                    showNotification('已准备分享至微信朋友圈');
+                    // 实际应用中这里应该调用微信分享SDK
+                    break;
+                case 'douyin':
+                    showNotification('已准备分享至抖音');
+                    // 实际应用中这里应该调用抖音分享SDK
+                    break;
+                case 'hongjang':
+                    showNotification('已分享至烘匠平台');
+                    break;
+                case 'instagram':
+                case 'facebook':
+                case 'line':
+                case 'twitter':
+                case 'telegram':
+                case 'kakaotalk':
+                    showNotification(`已准备分享至${platform}`);
+                    // 实际应用中这里应该调用相应的分享SDK
+                    break;
+                default:
+                    showNotification('分享功能暂未实现');
+            }
+        }
+        
+        // 小红书分享弹窗功能
+        function openXiaohongshuModal(recipeName, imageUrl) {
+            const modal = document.getElementById('xiaohongshuShareModal');
+            
+            // 如果没有传参，则自动获取当前配方信息
+            if (!recipeName) {
+                recipeName = document.querySelector('input[placeholder="配方名称 *"]').value || '经典吐司面包配方';
+            }
+            
+            if (!imageUrl) {
+                const imagePreview = document.getElementById('imagePreview');
+                imageUrl = imagePreview.querySelector('img')?.src || '';
+            }
+            
+            const sharePreviewImage = document.getElementById('sharePreviewImage');
+            const shareRecipeTitle = document.getElementById('shareRecipeTitle');
+            
+            // 设置分享预览信息
+            if (sharePreviewImage) {
+                if (imageUrl) {
+                    sharePreviewImage.src = imageUrl;
+                } else {
+                    // 使用默认图片
+                    sharePreviewImage.src = "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600&h=400&fit=crop";
+                }
+            }
+            
+            if (shareRecipeTitle) {
+                shareRecipeTitle.textContent = recipeName;
+            }
+            
+            // 设置用户ID (实际应用中从用户系统获取)
+            const userId = 'HJ' + Math.floor(100000 + Math.random() * 900000); // 生成随机ID作示例
+            document.getElementById('shareUserId').textContent = userId;
+            
+            // 确保模态窗口显示
+            modal.classList.remove('hidden');
+            // 关闭之前的分享窗口
+            closeShareModal();
+        }
+        
+        function closeXiaohongshuModal() {
+            document.getElementById('xiaohongshuShareModal').classList.add('hidden');
+        }
+        
+        function confirmXiaohongshuShare() {
+            // 这里应调用小红书分享SDK或API
+            // 目前仅做模拟
+            showNotification('✅ 已成功分享至小红书');
+            closeXiaohongshuModal();
+        }
+
+        // 页面加载时每个分组自动添加一条输入行
+        window.addEventListener('DOMContentLoaded', function() {
+            ['flour','starter','dry','wet','aux','base'].forEach(type => {
+                addIngredient(type);
+            });
+            
+            // 自动显示SOP类型弹窗以供查看
+            setTimeout(() => {
+                document.getElementById('sopTypeModal').classList.remove('hidden');
+                renderSopTypeList();
+            }, 500);
+        });
+
+        function removeMedia(button) {
+            const mediaSlot = button.closest('.media-slot');
+            if (mediaSlot) {
+                mediaSlot.innerHTML = `
+                    <div class="media-upload-area w-full h-20 rounded-lg flex items-center justify-center cursor-pointer transition-all border-2 border-dashed border-slate-200 dark:border-slate-600 hover:border-purple-500 hover:bg-gray-50 dark:hover:bg-slate-800" onclick="openMediaUpload(this)">
+                        <div class="text-center text-slate-400 dark:text-slate-500">
+                            <i class="fas fa-plus text-lg mb-1"></i>
+                            <div class="text-xs">图片/视频</div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        // 主题切换功能
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeOptions = document.querySelectorAll('.theme-option');
+            const html = document.documentElement;
+            
+            // 从本地存储加载主题
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            setTheme(savedTheme);
+            
+            // 主题切换事件监听
+            themeOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    const theme = option.dataset.theme;
+                    setTheme(theme);
+                });
+            });
+            
+            // 设置主题函数
+            function setTheme(theme) {
+                // 移除所有主题类
+                html.classList.remove('theme-light', 'theme-dark', 'theme-jp', 'theme-kr');
+                // 添加新主题类
+                html.classList.add(`theme-${theme}`);
+                // 更新活动状态
+                themeOptions.forEach(opt => {
+                    opt.classList.toggle('active', opt.dataset.theme === theme);
+                });
+                // 保存到本地存储
+                localStorage.setItem('theme', theme);
+            }
+        });
+
+        // SOP步骤管理（完整类型列表，严格按截图顺序）
+        const sopStepTypes = [
+            {name: '搅拌', icon: 'fa-cog', color: '#8B5CF6'},
+                {name: '水温', icon: 'fa-thermometer-empty', color: '#A855F7'},
+            {name: '面温', icon: 'fa-thermometer-half', color: '#FB7185'},
+            {name: '初醒', icon: 'fa-clock', color: '#8B5CF6'},
+            {name: '时间', icon: 'fa-clock', color: '#A3A3A3'},
+            {name: '发酵', icon: 'fa-seedling', color: '#10B981'},
+            {name: '风门', icon: 'fa-wind', color: '#94A3B8'},
+            {name: '烘烤', icon: 'fa-fire', color: '#F97316'},
+            {name: '温度', icon: 'fa-thermometer-half', color: '#EF4444'},
+            {name: '湿度', icon: 'fa-tint', color: '#38BDF8'},
+            {name: '重量', icon: 'fa-weight', color: '#34D399'},
+            {name: '松弛', icon: 'fa-bed', color: '#A78BFA'},
+            {name: '翻面', icon: 'fa-hand-paper', color: '#FB923C'},
+            {name: '分割', icon: 'fa-cut', color: '#EC4899'},
+            {name: '整形', icon: 'fa-shapes', color: '#F59E0B'},
+            {name: '工艺', icon: 'fa-cogs', color: '#6366F1'},
+            {name: '冷藏', icon: 'fa-snowflake', color: '#38BDF8'},
+            {name: '冷冻', icon: 'fa-snowflake', color: '#7C3AED'},
+            {name: 'PH值', icon: 'fa-flask', color: '#EC4899'},
+            {name: '包油', icon: 'fa-oil-can', color: '#F59E0B'},
+            {name: '包馅', icon: 'fa-cookie-bite', color: '#D97706'},
+            {name: '割口', icon: 'fa-cut', color: '#DC2626'},
+            {name: '装饰', icon: 'fa-paint-brush', color: '#8B5CF6'},
+            {name: '上火', icon: 'fa-fire', color: '#F43F5E'},
+            {name: '下火', icon: 'fa-fire', color: '#9F1239'},
+            {name: '蒸汽', icon: 'fa-cloud', color: '#7DD3FC'}
+        ];
+        
+        function initSopSteps() {
+            // 创建所有26种SOP步骤类型的模板内容
+            const templates = {
+                '搅拌': {
+                        water_temp: '水温 (4-6℃)',
+                    first_slow: '初始慢速 (3-5分钟)',
+                    medium: '中速 (5-8分钟)',
+                    fast: '快速 (2-3分钟)',
+                    final_slow: '最终慢速 (1-2分钟)',
+                        dough_temp: '出面温度 (24-26℃)'
+                },
+                '水温': {
+                    min_temp: '最低温度 (℃)',
+                    max_temp: '最高温度 (℃)',
+                    target_temp: '理想温度 (℃)',
+                    notes: '温度要求备注'
+                },
+                '面温': {
+                    min_temp: '最低温度 (℃)',
+                    max_temp: '最高温度 (℃)',
+                    target_temp: '理想温度 (℃)',
+                    notes: '面团温度要求'
+                },
+                '初醒': {
+                    temperature: '温度 (26-28℃)',
+                    humidity: '湿度 (70-75%)',
+                    time: '时间 (15-20分钟)',
+                    notes: '初醒要求'
+                },
+                '时间': {
+                    duration: '持续时间',
+                    start_time: '开始时间',
+                    end_time: '结束时间',
+                    notes: '时间要求'
+                },
+                '发酵': {
+                        temperature: '温度 (28-30℃)',
+                        humidity: '湿度 (75-80%)',
+                        time: '时间 (60-90分钟)',
+                        volume: '体积 (2-2.5倍大)'
+                },
+                '风门': {
+                    opening: '开度 (%)',
+                    time: '开启时间',
+                    position: '位置',
+                    notes: '风门调节要求'
+                },
+                '烘烤': {
+                    pre_temp: '预热温度 (180-200℃)',
+                    bake_time: '烤制时间 (35-40分钟)',
+                    steam: '蒸汽量 (100-150ml)',
+                    color: '成品颜色 (金黄色)'
+                },
+                '温度': {
+                    min_temp: '最低温度 (℃)',
+                    max_temp: '最高温度 (℃)',
+                    target_temp: '目标温度 (℃)',
+                    notes: '温度要求备注'
+                },
+                '湿度': {
+                    min_humid: '最低湿度 (%)',
+                    max_humid: '最高湿度 (%)',
+                    target_humid: '目标湿度 (%)',
+                    notes: '湿度要求备注'
+                },
+                '重量': {
+                    min_weight: '最小重量 (g)',
+                    max_weight: '最大重量 (g)',
+                    target_weight: '目标重量 (g)',
+                    tolerance: '误差范围 (±g)'
+                },
+                '松弛': {
+                    temperature: '温度 (24-26℃)',
+                    humidity: '湿度 (70-75%)',
+                    time: '时间 (15-20分钟)',
+                    cover: '是否需要覆盖'
+                },
+                '翻面': {
+                    frequency: '翻面次数',
+                    interval: '间隔时间',
+                    technique: '翻面手法',
+                    notes: '翻面注意事项'
+                },
+                '分割': {
+                        weight: '重量 (每份克数)',
+                        rest_time: '松弛时间 (15-20分钟)',
+                        shape: '成型方式',
+                        temp_req: '操作温度 (24-26℃)'
+                },
+                '整形': {
+                    technique: '整形手法',
+                    final_shape: '最终形状',
+                    difficulty: '难度等级',
+                    notes: '整形注意事项'
+                },
+                '工艺': {
+                    method: '工艺方法',
+                    equipment: '所需设备',
+                    skill_level: '技能要求',
+                    notes: '工艺注意事项'
+                },
+                '冷藏': {
+                    temperature: '温度 (2-6℃)',
+                    humidity: '湿度 (80-85%)',
+                    time: '时间 (小时)',
+                    cover: '是否需要覆盖'
+                },
+                '冷冻': {
+                    temperature: '温度 (-18℃以下)',
+                    time: '冷冻时间 (小时)',
+                    packaging: '包装要求',
+                    thaw_method: '解冻方法'
+                },
+                'PH值': {
+                    min_ph: '最小PH值',
+                    max_ph: '最大PH值',
+                    target_ph: '目标PH值',
+                    measurement: '测量方法'
+                },
+                '包油': {
+                    oil_type: '油脂类型',
+                    oil_temp: '油脂温度 (℃)',
+                    technique: '包裹手法',
+                    rest_time: '静置时间 (分钟)'
+                },
+                '包馅': {
+                    filling_type: '馅料类型',
+                    filling_temp: '馅料温度 (℃)',
+                    ratio: '面馅比例',
+                    sealing: '收口方法'
+                },
+                '割口': {
+                    pattern: '割纹图案',
+                    depth: '割纹深度 (mm)',
+                    angle: '割纹角度 (°)',
+                    tool: '使用工具'
+                },
+                '装饰': {
+                    material: '装饰材料',
+                    technique: '装饰手法',
+                    position: '装饰位置',
+                    timing: '装饰时机'
+                },
+                '上火': {
+                    temperature: '温度 (℃)',
+                    duration: '时间 (分钟)',
+                    position: '炉内位置',
+                    notes: '火力调节'
+                },
+                '下火': {
+                    temperature: '温度 (℃)',
+                    duration: '时间 (分钟)',
+                    position: '炉内位置',
+                    notes: '火力调节'
+                },
+                '醒发': {
+                        temperature: '温度 (28-32℃)',
+                        humidity: '湿度 (75-85%)',
+                        time: '时间 (45-60分钟)',
+                        proofing: '膨胀程度 (80-85%)'
+                },
+                '蒸汽': {
+                    amount: '蒸汽量 (ml)',
+                    injection: '注入时机',
+                    duration: '蒸汽持续时间',
+                    notes: '蒸汽注意事项'
+                    }
+            };
+
+            const sopStepsList = document.getElementById('sopStepsList');
+            sopStepsList.innerHTML = '';
+            
+            // 添加所有26种SOP步骤类型
+            sopStepTypes.forEach((type) => {
+                // 为每种类型找到对应的模板
+                let template = templates[type.name] || null;
+                addSopStep(type.name, type.icon, type.name, template);
+            });
+            
+            updateSopSortable();
+        }
+        
+        // 添加SOP步骤
+        function addSopStep(name = '新步骤', icon = 'fa-clock', type = '时间', template = null) {
+            const container = document.getElementById('sopStepsList');
+            const stepId = 'sop-step-' + Date.now();
+                const div = document.createElement('div');
+            div.className = 'sop-step-enhanced sop-step-row p-4 rounded-xl relative flex flex-col';
+            div.id = stepId;
+            
+            // 步骤头部
+            let headerHTML = `
+                <div class="flex items-center mb-3">
+                    <button class="sop-icon-btn w-10 h-10 rounded-lg flex items-center justify-center text-lg mr-3 transition hover:bg-purple-50 dark:hover:bg-purple-900/20" onclick="openSopTypeModal(this)" title="SOP类型：${type}" data-type="${type}">
+                        <i class="fas ${icon}"></i>
+                    </button>
+                    <input type="text" class="flex-1 bg-transparent text-[#1E293B] dark:text-slate-100 font-medium border-none outline-none focus:bg-[#F8FAFC] dark:focus:bg-[#0F172A] rounded px-2 py-1" value="${name}" placeholder="步骤名称">
+                    <div class="flex items-center gap-1">
+                        <button class="sop-step-menu p-2 rounded-full hover:bg-[#F1F5F9] dark:hover:bg-[#334155] active:scale-90 text-slate-400 dark:text-slate-500 transition" onclick="toggleSopMenu(this)">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <div class="sop-menu-dropdown absolute right-4 top-12 bg-white dark:bg-[#1E293B] rounded-lg shadow-xl border border-slate-200 dark:border-slate-600 p-1 z-10 hidden">
+                            <button class="w-full text-left px-3 py-1.5 rounded hover:bg-[#F1F5F9] dark:hover:bg-[#334155] text-[#1E293B] dark:text-slate-100 transition flex items-center gap-2" onclick="addSopStepAfter(this)">
+                                <i class="fas fa-plus text-xs"></i>
+                                <span class="text-sm">添加后续步骤</span>
+                            </button>
+                            <button class="w-full text-left px-3 py-1.5 rounded hover:bg-[#F1F5F9] dark:hover:bg-[#334155] text-red-500 transition flex items-center gap-2" onclick="deleteSopStep(this)">
+                                <i class="fas fa-trash text-xs"></i>
+                                <span class="text-sm">删除</span>
+                            </button>
+                        </div>
+                        <div class="sop-drag-handle p-1.5 rounded-full hover:bg-[#F1F5F9] dark:hover:bg-[#334155] cursor-grab text-slate-400 dark:text-slate-500 transition" title="拖拽排序">
+                            <i class="fas fa-grip-lines"></i>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // 创建模板内容
+            let contentHTML = '';
+            if (template) {
+                contentHTML = `
+                    <div class="grid grid-cols-2 gap-3 sop-step-form">
+                        ${Object.entries(template).map(([key, placeholder]) => `
+                                <div class="relative">
+                                    <input type="text" 
+                                    class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-gray-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 sop-step-input focus:border-purple-500 focus:ring-2 focus:ring-purple-100 dark:focus:ring-purple-900/20 transition-all" 
+                                        placeholder="${placeholder}">
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+            } else {
+                // 默认的四个输入框
+                contentHTML = `
+                    <div class="grid grid-cols-2 gap-3 sop-step-form">
+                        <div class="relative">
+                            <input type="text" 
+                                class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-gray-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 sop-step-input focus:border-purple-500 focus:ring-2 focus:ring-purple-100 dark:focus:ring-purple-900/20 transition-all" 
+                                placeholder="参数1">
+                    </div>
+                        <div class="relative">
+                            <input type="text" 
+                                class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-gray-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 sop-step-input focus:border-purple-500 focus:ring-2 focus:ring-purple-100 dark:focus:ring-purple-900/20 transition-all"
+                placeholder="参数2">
+        </div>
+        <div class="relative">
+            <input type="text" 
+                class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-gray-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 sop-step-input focus:border-purple-500 focus:ring-2 focus:ring-purple-100 dark:focus:ring-purple-900/20 transition-all"
+                placeholder="参数3">
+        </div>
+        <div class="relative">
+            <input type="text" 
+                class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-gray-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 sop-step-input focus:border-purple-500 focus:ring-2 focus:ring-purple-100 dark:focus:ring-purple-900/20 transition-all" 
+                                placeholder="参数4">
+                        </div>
+                    </div>
+                `;
+            }
+            
+            div.innerHTML = headerHTML + contentHTML;
+            container.appendChild(div);
+            
+            return div;
+        }
+        
+        function toggleSopMenu(btn) {
+            const dropdown = btn.nextElementSibling;
+            const allDropdowns = document.querySelectorAll('.sop-menu-dropdown');
+            allDropdowns.forEach(d => {
+                if(d !== dropdown) d.classList.add('hidden');
+            });
+            dropdown.classList.toggle('hidden');
+        }
+        
+        function addSopStepAfter(btn) {
+            const row = btn.closest('.sop-step-row');
+            const container = document.getElementById('sopStepsList');
+            addSopStep('新步骤', 'fa-clock', '时间');
+            const newRow = container.lastElementChild;
+            container.insertBefore(newRow, row.nextSibling);
+            btn.closest('.sop-menu-dropdown').classList.add('hidden');
+            updateSopSortable();
+        }
+        
+        function deleteSopStep(btn) {
+            if(document.getElementById('sopStepsList').children.length <= 1) {
+                alert('至少需要保留一个步骤');
+                return;
+            }
+            btn.closest('.sop-step-row').remove();
+            btn.closest('.sop-menu-dropdown').classList.add('hidden');
+        }
+        
+        // SOP类型选择弹窗管理
+        let currentSopIconBtn = null;
+        
+        function openSopTypeModal(btn) {
+            currentSopIconBtn = btn;
+            renderSopTypeList();
+            document.getElementById('sopTypeModal').classList.remove('hidden');
+        }
+        
+        function closeSopTypeModal() {
+            document.getElementById('sopTypeModal').classList.add('hidden');
+            currentSopIconBtn = null;
+        }
+        
+        function renderSopTypeList() {
+            const container = document.getElementById('sopTypeList');
+            container.innerHTML = '';
+            
+            // 添加标题和说明
+            const header = document.createElement('div');
+            header.className = 'mb-4 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg text-center';
+                header.innerHTML = `
+                    <h3 class="text-purple-700 dark:text-purple-300 font-bold mb-1">SOP步骤类型预览</h3>
+                    <p class="text-purple-600 dark:text-purple-400 text-sm">以下是所有可用的SOP步骤类型</p>
+            `;
+            container.appendChild(header);
+            
+            // 创建包含所有类型的网格布局
+            const grid = document.createElement('div');
+            grid.className = 'grid grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto pb-4';
+            
+            sopStepTypes.forEach(type => {
+                const div = document.createElement('div');
+                div.className = 'sop-type-item flex items-center justify-between p-3 rounded-lg cursor-pointer border border-slate-200 dark:border-slate-600 hover:border-purple-500 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all';
+                div.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background-color: ${type.color}20;">
+                    <i class="fas ${type.icon} text-lg" style="color: ${type.color}"></i>
+                        </div>
+                        <span class="text-[#1E293B] dark:text-slate-100 text-sm font-medium">${type.name}</span>
+                    </div>
+                `;
+                div.onclick = () => selectSopType(type);
+                grid.appendChild(div);
+            });
+            
+            container.appendChild(grid);
+            
+            // 添加使用说明
+            const footer = document.createElement('div');
+            footer.className = 'mt-4 p-3 bg-slate-100 dark:bg-slate-800/50 rounded-lg';
+            footer.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-500 dark:text-slate-400 text-sm">点击任意类型可以选择</span>
+                    <button class="px-4 py-2 gradient-primary text-white rounded-lg text-sm" onclick="closeSopTypeModal()">关闭预览</button>
+                </div>
+            `;
+            container.appendChild(footer);
+        }
+        
+        function selectSopType(type) {
+            if(currentSopIconBtn) {
+                const icon = currentSopIconBtn.querySelector('i');
+                icon.className = `fas ${type.icon}`;
+                icon.style.color = type.color;
+                currentSopIconBtn.setAttribute('data-type', type.name);
+                currentSopIconBtn.title = `SOP类型：${type.name}`;
+            }
+            closeSopTypeModal();
+        }
+        
+        function updateSopSortable() {
+            const container = document.getElementById('sopStepsList');
+            if (container && !container.sortable) {
+                container.sortable = new Sortable(container, {
+                    handle: '.sop-drag-handle',
+                    animation: 250,
+                    ghostClass: 'opacity-50',
+                    chosenClass: 'ring-2 ring-purple-400 scale-105',
+                    easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+                    onStart: function() {
+                        document.querySelectorAll('.sop-menu-dropdown').forEach(d => d.classList.add('hidden'));
+                    }
+                });
+            }
+        }
+
+        // 暗色模式切换
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('themeIcon');
+            if(html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                icon.textContent = '🌙';
+                localStorage.setItem('theme','light');
+            } else {
+                html.classList.add('dark');
+                icon.textContent = '☀️';
+                localStorage.setItem('theme','dark');
+            }
+            
+            // 强制更新所有元素的暗色模式样式
+            refreshDarkModeStyles();
+        }
+        
+        // 强制更新所有元素的暗色模式样式
+        function refreshDarkModeStyles() {
+            // 获取所有可能需要更新的元素
+            const elementsToRefresh = [
+                '.card', '.step-images', '.bg-white', '.bg-slate-50', '.bg-slate-100',
+                '.text-slate-800', '.text-slate-600', '.text-slate-500', '.text-slate-400',
+                '.border-slate-100', '.border-slate-200', '.border-slate-300',
+                '.hover\\:bg-slate-50', '.hover\\:bg-slate-100',
+                '.sop-step-enhanced', '.sop-step-row', '.sop-step-input',
+                '.sop-type-item', '.media-upload-area', '.step-row'
+            ].join(',');
+            
+            const allElements = document.querySelectorAll(elementsToRefresh);
+            
+            // 先移除再添加所有元素的class，强制浏览器重新应用样式
+            allElements.forEach(el => {
+                el.classList.remove('dark-force-refresh');
+                setTimeout(() => {
+                    el.classList.add('dark-force-refresh');
+                    setTimeout(() => {
+                        el.classList.remove('dark-force-refresh');
+                    }, 10);
+                }, 5);
+            });
+            
+            // 特别处理一些特定元素
+            document.querySelectorAll('.drag-handle-enhanced').forEach(el => {
+                if(html.classList.contains('dark')) {
+                    el.classList.add('dark-handle');
+                } else {
+                    el.classList.remove('dark-handle');
+                }
+            });
+            
+            // 重新应用所有卡片的暗色模式
+            document.querySelectorAll('.card').forEach(el => {
+                if(html.classList.contains('dark')) {
+                    el.style.background = '#1E293B';
+                    el.style.borderColor = '#334155';
+                } else {
+                    el.style.background = '#FFFFFF';
+                    el.style.borderColor = '#E2E8F0';
+                }
+            });
+        }
+
+        // 自动读取主题
+        (function(){
+            if(localStorage.getItem('theme')==='dark') {
+                document.documentElement.classList.add('dark');
+                document.getElementById('themeIcon').textContent = '☀️';
+                // 确保在加载时就应用所有暗色模式样式
+                setTimeout(refreshDarkModeStyles, 100);
+            }
+        })();
+
+        // 初始化左滑删除功能
+        function initSwipeDelete(element) {
+            let startX = 0;
+            let currentX = 0;
+            let isDragging = false;
+            
+            // 添加鼠标事件支持（为了在桌面端测试）
+            function handleMouseDown(e) {
+                startX = e.clientX;
+                isDragging = true;
+                element.classList.add('swiping');
+                document.addEventListener('mousemove', handleMouseMove);
+                document.addEventListener('mouseup', handleMouseUp);
+                e.preventDefault();
+            }
+            
+            function handleMouseMove(e) {
+                if (!isDragging) return;
+                
+                currentX = e.clientX;
+                const diffX = currentX - startX;
+                
+                // 只允许向左滑动
+                if (diffX <= 0) {
+                    // 限制最大滑动距离为80px
+                    const translateX = Math.max(-80, diffX);
+                    element.style.transform = `translateX(${translateX}px)`;
+                    // 如果滑动超过20px，就显示删除按钮
+                    if (translateX < -20) {
+                        element.querySelector('.delete-action').style.right = '0';
+                    } else {
+                        element.querySelector('.delete-action').style.right = '-80px';
+                    }
+                } else {
+                    // 如果已经打开了删除按钮，则允许向右滑动关闭
+                    if (element.getAttribute('data-open') === 'true') {
+                        const translateX = Math.min(0, diffX - 80);
+                        element.style.transform = `translateX(${translateX}px)`;
+                        if (translateX > -40) {
+                            element.querySelector('.delete-action').style.right = '-80px';
+                        }
+                    } else {
+                        element.style.transform = 'translateX(0)';
+                    }
+                }
+                
+                e.preventDefault();
+            }
+            
+            function handleMouseUp(e) {
+                if (!isDragging) return;
+                isDragging = false;
+                element.classList.remove('swiping');
+                document.removeEventListener('mousemove', handleMouseMove);
+                document.removeEventListener('mouseup', handleMouseUp);
+                
+                // 判断滑动距离是否足够显示删除按钮
+                const diffX = currentX - startX;
+                
+                if (diffX < -40) {
+                    // 打开删除按钮
+                    element.style.transform = 'translateX(-80px)';
+                    element.setAttribute('data-open', 'true');
+                    element.querySelector('.delete-action').style.right = '0';
+                } else {
+                    // 关闭删除按钮
+                    element.style.transform = 'translateX(0)';
+                    element.setAttribute('data-open', 'false');
+                    element.querySelector('.delete-action').style.right = '-80px';
+                }
+            }
+            
+            function handleTouchStart(e) {
+                startX = e.touches[0].clientX;
+                isDragging = true;
+                element.classList.add('swiping');
+                
+                // 阻止其他触摸事件
+                e.stopPropagation();
+            }
+            
+            function handleTouchMove(e) {
+                if (!isDragging) return;
+                
+                currentX = e.touches[0].clientX;
+                const diffX = currentX - startX;
+                
+                // 只允许向左滑动
+                if (diffX <= 0) {
+                    // 限制最大滑动距离为80px
+                    const translateX = Math.max(-80, diffX);
+                    element.style.transform = `translateX(${translateX}px)`;
+                    // 如果滑动超过20px，就显示删除按钮
+                    if (translateX < -20) {
+                        element.querySelector('.delete-action').style.right = '0';
+                    } else {
+                        element.querySelector('.delete-action').style.right = '-80px';
+                    }
+                } else {
+                    // 如果已经打开了删除按钮，则允许向右滑动关闭
+                    if (element.getAttribute('data-open') === 'true') {
+                        const translateX = Math.min(0, diffX - 80);
+                        element.style.transform = `translateX(${translateX}px)`;
+                        if (translateX > -40) {
+                            element.querySelector('.delete-action').style.right = '-80px';
+                        }
+                    } else {
+                        element.style.transform = 'translateX(0)';
+                    }
+                }
+                
+                // 阻止滚动
+                e.preventDefault();
+            }
+            
+            function handleTouchEnd() {
+                if (!isDragging) return;
+                isDragging = false;
+                element.classList.remove('swiping');
+                
+                // 判断滑动距离是否足够显示删除按钮
+                const diffX = currentX - startX;
+                
+                if (diffX < -40) {
+                    // 打开删除按钮
+                    element.style.transform = 'translateX(-80px)';
+                    element.setAttribute('data-open', 'true');
+                    element.querySelector('.delete-action').style.right = '0';
+                } else {
+                    // 关闭删除按钮
+                    element.style.transform = 'translateX(0)';
+                    element.setAttribute('data-open', 'false');
+                    element.querySelector('.delete-action').style.right = '-80px';
+                }
+            }
+            
+            function handleDeleteClick() {
+                element.remove();
+                updateTotalWeight();
+                updateVariationTotal();
+            }
+            
+            element.addEventListener('touchstart', handleTouchStart, { passive: false });
+            element.addEventListener('touchmove', handleTouchMove, { passive: false });
+            element.addEventListener('touchend', handleTouchEnd);
+            
+            // 添加鼠标事件支持（为了在桌面端测试）
+            element.addEventListener('mousedown', handleMouseDown);
+            
+            // 添加删除按钮点击事件
+            const deleteBtn = element.querySelector('.delete-action');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', handleDeleteClick);
+            }
+        }
+
+        // 页面加载时初始化所有的左滑删除功能
+        window.addEventListener('DOMContentLoaded', function() {
+            // 初始化默认添加的材料
+            ['flour','starter','dry','wet','aux','base'].forEach(type => {
+                addIngredient(type);
+            });
+            
+            // 添加触摸事件监听
+            document.addEventListener('click', function(e) {
+                // 点击页面其他地方时关闭所有打开的删除按钮
+                const openItems = document.querySelectorAll('.ingredient-item[data-open="true"]');
+                if (openItems.length > 0 && !e.target.closest('.delete-action')) {
+                    openItems.forEach(item => {
+                        item.style.transform = 'translateX(0)';
+                        item.setAttribute('data-open', 'false');
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

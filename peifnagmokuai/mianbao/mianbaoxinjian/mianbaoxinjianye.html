@@ -1,0 +1,1983 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>新建配方</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config = { darkMode: 'class' }</script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.css" rel="stylesheet">
+    <style>
+        /* --- 核心样式 (来自详情页) --- */
+        :root {
+            --font-scale: 1;
+            --base-font-size: 15px;
+            --amount-font-size: 16px;
+            --percent-font-size: 12px;
+            --step-font-size: 14px;
+        }
+
+        /* Dynamic Font Sizing Rules */
+        .ingredient-name, 
+        .sop-card p,
+        .sop-card .font-medium, 
+        .sop-card .font-bold,
+        .clean-input
+        {
+            font-size: calc(var(--base-font-size) * var(--text-font-scale, var(--font-scale))) !important;
+            line-height: 1.5;
+        }
+
+        .group-title {
+            font-size: calc(var(--base-font-size) * 1.2 * var(--text-font-scale, var(--font-scale))) !important;
+            line-height: 1.5;
+        }
+        
+        .amount-display,
+        .amount-input,
+        #totalWeight,
+        #totalCost
+        {
+            font-size: calc(var(--amount-font-size) * var(--number-font-scale, var(--font-scale))) !important;
+        }
+        
+        .ingredient-percent {
+            font-size: calc(var(--percent-font-size) * var(--number-font-scale, var(--font-scale))) !important;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            padding-bottom: 90px;
+        }
+
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* 标签样式 */
+        .tag-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 12px;
+            border-radius: 9999px;
+            font-size: 13px;
+            font-weight: 500;
+            margin-right: 8px;
+            transition: all 0.2s ease;
+        }
+        .tag-primary { background: #fff7ed; color: #ea580c; border: 1px solid rgba(234, 88, 12, 0.1); }
+        .dark .tag-primary { background: rgba(234, 88, 12, 0.15); color: #fb923c; border: none; }
+        .tag-gray { background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; }
+        .dark .tag-gray { background: #334155; color: #cbd5e1; border: none; }
+
+        /* Tab样式 */
+        .tab-group {
+            display: flex;
+            background: #f1f5f9;
+            padding: 4px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+        }
+        .dark .tab-group { background: #1e293b; }
+        
+        .tab-item {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 0;
+            border-radius: 12px;
+            color: #64748b;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid transparent;
+        }
+        .dark .tab-item { color: #94a3b8; }
+
+        .tab-item.active {
+            background: white;
+            color: #ea580c;
+            font-weight: 600;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            border-color: rgba(0,0,0,0.02);
+        }
+        .dark .tab-item.active {
+            background: #334155;
+            color: #fb923c;
+        }
+        
+        .tab-item i { margin-right: 6px; font-size: 14px; }
+
+        /* 卡片与列表 */
+        .ingredient-group-card {
+            background: white;
+            border-radius: 16px;
+            padding: 0;
+            margin-bottom: 16px;
+            border: 1px solid rgba(0,0,0,0.03);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            overflow: hidden;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .dark .ingredient-group-card {
+            background: #1e293b;
+            border-color: #334155;
+            box-shadow: none;
+        }
+
+        .group-header {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            background: #ffffff !important;
+            border-bottom: 1px solid #f1f5f9;
+            justify-content: space-between;
+        }
+        .dark .group-header {
+            background: #0f172a !important;
+            border-color: #334155;
+        }
+
+        .group-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-size: 13px;
+        }
+        .group-title {
+            font-weight: 600;
+            font-size: 16px;
+            color: #1e293b;
+            letter-spacing: -0.01em;
+        }
+        .dark .group-title { color: #f1f5f9; }
+
+        /* 分组颜色 */
+        .group-flour .group-icon { background: #fff7ed; color: #c2410c; }
+        .dark .group-flour .group-icon { background: rgba(154, 52, 18, 0.2); color: #fdba74; }
+        
+        .group-sponge .group-icon { background: #f0fdf4; color: #15803d; }
+        .dark .group-sponge .group-icon { background: rgba(21, 128, 61, 0.2); color: #86efac; }
+        
+        .group-wet .group-icon { background: #eff6ff; color: #1d4ed8; }
+        .dark .group-wet .group-icon { background: rgba(29, 78, 216, 0.2); color: #93c5fd; }
+        
+        .group-dry .group-icon { background: #f8fafc; color: #475569; }
+        .dark .group-dry .group-icon { background: #334155; color: #cbd5e1; }
+        
+        .group-aux .group-icon { background: #fefce8; color: #a16207; }
+        .dark .group-aux .group-icon { background: rgba(161, 98, 7, 0.2); color: #fde047; }
+
+        /* 列表行与输入 */
+        .list-row {
+            display: flex;
+            align-items: center;
+            padding: 14px 16px;
+            border-bottom: 1px solid #f8fafc;
+            transition: background-color 0.2s;
+            position: relative;
+            background: white;
+        }
+        .dark .list-row { 
+            border-bottom-color: #334155; 
+            background: #1e293b;
+        }
+        .list-row:last-child { border-bottom: none; }
+        .list-row:hover { background-color: #f8fafc; }
+        .dark .list-row:hover { background-color: #334155; }
+
+        .clean-input {
+            background: transparent;
+            border: none;
+            outline: none;
+            width: 100%;
+            color: inherit;
+            font-weight: 500;
+            font-size: 15px;
+        }
+        .clean-input::placeholder { color: #94a3b8; font-weight: normal; }
+        .clean-input:focus { 
+            border-bottom: 1px solid #ea580c; 
+            border-radius: 0; 
+        }
+
+        .amount-input {
+            background: transparent;
+            border: none;
+            outline: none;
+            text-align: right;
+            color: inherit;
+            font-weight: normal;
+        }
+        .amount-input::placeholder { color: #cbd5e1; }
+        .amount-input:focus { border-bottom: 1px solid #ea580c; border-radius: 0; }
+
+        /* 功能样式 */
+        .tutorial-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 9999; display: none;
+            /* Remove background here, let highlight handle it */
+        }
+        .tutorial-highlight {
+            position: absolute; 
+            border: 2px solid #ea580c; 
+            border-radius: 8px;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.75); 
+            z-index: 10000;
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            pointer-events: none; /* Allow clicks to pass through if needed, or block? usually block */
+        }
+        .tutorial-popup {
+            position: absolute; 
+            background: white; 
+            border-radius: 16px; 
+            padding: 24px;
+            z-index: 10001; 
+            width: 280px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        .tutorial-popup.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .dark .tutorial-popup { background: #1E293B; color: #F1F5F9; border: 1px solid #334155; }
+        
+        /* Pulse animation for highlight */
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.4), 0 0 0 9999px rgba(0, 0, 0, 0.75); }
+            70% { box-shadow: 0 0 0 10px rgba(234, 88, 12, 0), 0 0 0 9999px rgba(0, 0, 0, 0.75); }
+            100% { box-shadow: 0 0 0 0 rgba(234, 88, 12, 0), 0 0 0 9999px rgba(0, 0, 0, 0.75); }
+        }
+        .tutorial-highlight.active {
+            animation: pulse-border 2s infinite;
+        }
+        
+        /* Tutorial Magnification */
+        .tutorial-target-magnify {
+            transform: scale(1.8);
+            transform-origin: center;
+            z-index: 10002 !important;
+            position: relative;
+            background-color: #fff7ed; /* Light orange bg */
+            box-shadow: 0 0 20px rgba(234, 88, 12, 0.6);
+            border-radius: 6px;
+            color: #ea580c !important; /* Force orange text */
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: inline-block;
+            cursor: pointer;
+            padding: 2px 4px; /* Add some padding for better look */
+        }
+        .dark .tutorial-target-magnify {
+            background-color: #334155;
+            color: #fb923c !important;
+        }
+        
+        /* Force visible overflow for parents during tutorial to prevent clipping */
+        .tutorial-overflow-visible {
+            overflow: visible !important;
+        }
+        
+        /* 拖拽与滑动删除 */
+        .ingredient-item { touch-action: pan-y; overflow: hidden; }
+        .ingredient-item .delete-action {
+            position: absolute; right: -80px; top: 0; bottom: 0; width: 80px;
+            background: #ef4444; color: white; display: flex; align-items: center;
+            justify-content: center; transition: all 0.2s ease; cursor: pointer;
+            z-index: 10;
+        }
+        .ingredient-item[data-open="true"] .delete-action { right: 0; }
+        .ingredient-item[data-open="true"] .list-content { transform: translateX(-80px); }
+        .list-content {
+            display: flex; align-items: center; width: 100%; transition: transform 0.2s ease;
+        }
+
+        /* 同步状态 */
+        .sync-status-text {
+            font-size: 10px; padding: 1px 4px; border-radius: 4px; margin-top: 2px; display: inline-block;
+        }
+        .synced-text { color: #16a34a; background: #dcfce7; }
+        .not-synced-text { color: #ea580c; background: #ffedd5; }
+        .dark .synced-text { background: rgba(22, 163, 74, 0.2); }
+        .dark .not-synced-text { background: rgba(234, 88, 12, 0.2); }
+
+        /* 图片裁剪 */
+        .crop-container { max-width: 100%; max-height: 400px; }
+        .crop-preview { width: 120px; height: 120px; border-radius: 12px; overflow: hidden; }
+
+        /* SOP & Steps Refined */
+        .sop-card {
+            background: white; border-radius: 12px; padding: 16px; margin-bottom: 12px;
+            border: 1px solid rgba(0,0,0,0.03); box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            transition: transform 0.2s ease;
+        }
+        .dark .sop-card { background: #1e293b; border-color: #334155; }
+        .sop-header {
+            display: flex; align-items: center; margin-bottom: 12px;
+        }
+        .sop-icon {
+            width: 32px; height: 32px; background: #fff7ed; color: #ea580c;
+            border-radius: 8px; display: flex; align-items: center; justify-content: center;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+        .dark .sop-icon { background: rgba(234, 88, 12, 0.15); color: #fb923c; }
+        
+        .sop-item-row {
+            padding: 8px 0;
+            border-bottom: 1px dashed #f0f0f0;
+        }
+        .dark .sop-item-row { border-bottom-color: #334155; }
+        .sop-item-row:last-child { border-bottom: none; }
+
+        .step-images {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .step-images img {
+            width: 100%;
+            height: 100%;
+            aspect-ratio: 1/1;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        
+        .dashed-border {
+            border: 1px dashed #e2e8f0;
+        }
+        .dark .dashed-border { border-color: #475569; }
+
+        .unit-text {
+            font-size: 12px !important;
+            font-weight: normal !important;
+            margin-left: 2px;
+            vertical-align: baseline;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body class="bg-[#f7f7f5] dark:bg-[#0f172a] min-h-screen">
+
+    <!-- 沉浸式头部 (Hero Header) -->
+    <header class="relative w-full h-72 bg-gray-200 group">
+        <!-- 封面图/上传触发 -->
+        <div class="w-full h-full relative cursor-pointer" onclick="document.getElementById('coverImage').click()">
+            <img src="https://images.unsplash.com/photo-1549931319-a545dcf3bc73?w=1200&h=800&fit=crop&q=90" 
+                 id="heroImage" 
+                 class="w-full h-full object-cover transition-transform duration-700 ease-out">
+            <div class="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/60"></div>
+            <!-- 上传提示 (无图或Hover时显示) -->
+            <div class="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div class="text-white text-center backdrop-blur-sm bg-black/30 p-3 rounded-xl">
+                    <i class="fas fa-camera text-2xl mb-1"></i>
+                    <div class="text-sm font-medium">更换封面</div>
+                </div>
+            </div>
+        </div>
+        <input type="file" id="coverImage" class="hidden" accept="image/*">
+
+        <!-- 顶部浮动按钮 -->
+        <button onclick="window.location.href='../../../ERPSHOUJI/shouye/shouye-mobile.html'" class="absolute top-4 left-4 w-10 h-10 bg-black/30 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-black/50 transition-colors z-20">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+
+        <div class="absolute top-4 right-4 flex space-x-3 z-20">
+            <button onclick="startTutorial()" class="w-10 h-10 bg-black/30 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-black/50 transition-colors" title="新手引导">
+                <i class="fas fa-info"></i>
+            </button>
+            <button onclick="openCamera()" class="w-10 h-10 bg-black/30 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-black/50 transition-colors" title="拍照识别">
+                <i class="fas fa-camera-retro"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- 主要内容区 (重叠式设计) -->
+    <main class="px-5 -mt-6 relative bg-white dark:bg-[#0f172a] rounded-t-3xl z-10 pt-6 min-h-[calc(100vh-280px)]">
+        
+        <!-- 标题与分类 (可编辑) -->
+        <div id="recipe-meta-section" class="mb-6">
+            <div class="mb-3">
+                <input type="text" id="recipeNameInput" placeholder="请输入配方名称" class="w-full text-2xl font-bold tracking-tight text-gray-900 dark:text-white bg-transparent border-b border-transparent focus:border-orange-500 outline-none pb-1 placeholder-gray-300 transition-colors" value="新建配方">
+            </div>
+            <div class="flex flex-wrap gap-2 items-center justify-between">
+                <div class="relative">
+                    <select id="categorySelect" onchange="handleCategoryChange(this)" class="tag-badge bg-orange-50 text-orange-600 border border-orange-100 dark:bg-orange-900/20 dark:text-orange-400 dark:border-none outline-none appearance-none pr-8 cursor-pointer shadow-sm">
+                        <option value="">选择分类</option>
+                        <option value="bread">面包类</option>
+                        <option value="cake">蛋糕类</option>
+                        <option value="drink">饮品类</option>
+                        <option value="other" selected>其他类别</option>
+                        <option value="new_category" class="font-bold text-orange-500 bg-orange-50">+ 新建分类</option>
+                    </select>
+                    <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-xs text-orange-400 pointer-events-none"></i>
+                </div>
+                
+                <!-- 模式切换开关 -->
+                <button id="modeToggleBtn" class="tag-badge bg-orange-50 text-orange-600 border border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-none transition-colors" onclick="toggleInputMode()">
+                    <i class="fas fa-box-open mr-1"></i> <span>关联库存</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 标签切换 -->
+        <div class="tab-group" id="tabGroup">
+            <div class="tab-item active" id="tab-btn-recipe" onclick="switchTab('recipe')">
+                <i class="fas fa-bread-slice"></i> 配方
+            </div>
+            <div class="tab-item" id="tab-btn-sop" onclick="switchTab('sop')">
+                <i class="fas fa-clipboard-list"></i> SOP
+            </div>
+            <div class="tab-item" id="tab-btn-step" onclick="switchTab('step')">
+                <i class="fas fa-list-ol"></i> 步骤
+            </div>
+        </div>
+
+        <!-- 配方内容区 -->
+        <div id="recipe-section" class="pb-24">
+            <!-- 动态生成的分组容器 -->
+            <div class="ingredient-group-card group-flour">
+                <div class="group-header">
+                    <div class="flex items-center">
+                        <div class="group-icon"><i class="fas fa-wheat-awn"></i></div>
+                        <div class="group-title">面粉</div>
+                    </div>
+                    <button class="text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-orange-100 transition" onclick="addIngredient('flour')">
+                        <i class="fas fa-plus mr-1"></i>添加
+                    </button>
+                </div>
+                <div id="flourIngredients" class="space-y-0"></div>
+            </div>
+
+            <div class="ingredient-group-card group-sponge">
+                <div class="group-header">
+                    <div class="flex items-center">
+                        <div class="group-icon"><i class="fas fa-seedling"></i></div>
+                        <div class="group-title">种面</div>
+                    </div>
+                    <button class="text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-green-100 transition" onclick="addIngredient('starter')">
+                        <i class="fas fa-plus mr-1"></i>添加
+                    </button>
+                </div>
+                <div id="starterIngredients" class="space-y-0"></div>
+            </div>
+
+            <div class="ingredient-group-card group-dry">
+                <div class="group-header">
+                    <div class="flex items-center">
+                        <div class="group-icon"><i class="fas fa-cube"></i></div>
+                        <div class="group-title">干料</div>
+                    </div>
+                    <button class="text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-gray-200 transition" onclick="addIngredient('dry')">
+                        <i class="fas fa-plus mr-1"></i>添加
+                    </button>
+                </div>
+                <div id="dryIngredients" class="space-y-0"></div>
+            </div>
+
+            <div class="ingredient-group-card group-wet">
+                <div class="group-header">
+                    <div class="flex items-center">
+                        <div class="group-icon"><i class="fas fa-droplet"></i></div>
+                        <div class="group-title">湿料</div>
+                    </div>
+                    <button class="text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-blue-100 transition" onclick="addIngredient('wet')">
+                        <i class="fas fa-plus mr-1"></i>添加
+                    </button>
+                </div>
+                <div id="wetIngredients" class="space-y-0"></div>
+            </div>
+
+            <div class="ingredient-group-card group-aux">
+                <div class="group-header">
+                    <div class="flex items-center">
+                        <div class="group-icon"><i class="fas fa-mortar-pestle"></i></div>
+                        <div class="group-title">辅料</div>
+                    </div>
+                    <button class="text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-yellow-100 transition" onclick="addIngredient('aux')">
+                        <i class="fas fa-plus mr-1"></i>添加
+                    </button>
+                </div>
+                <div id="auxIngredients" class="space-y-0"></div>
+            </div>
+
+            <div class="ingredient-group-card border-l-4 border-l-orange-500">
+                <div class="group-header">
+                    <div class="flex items-center">
+                        <div class="group-icon bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400"><i class="fas fa-bread-slice"></i></div>
+                        <div class="group-title">基础面团</div>
+                    </div>
+                    <button class="text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-orange-100 transition" onclick="addIngredient('base')">
+                        <i class="fas fa-plus mr-1"></i>添加
+                    </button>
+                </div>
+                <div id="baseIngredients" class="space-y-0"></div>
+                <!-- 统计 -->
+                <div id="baseSingleStats" class="group-stats p-3 bg-gray-50 dark:bg-slate-800/50 flex justify-between items-center text-xs text-gray-500 hidden">
+                    <div id="baseSingleWeightDiv">单重: <span id="baseSingleWeight" class="group-weight font-bold text-gray-800 dark:text-white">0g</span></div>
+                    <div id="baseSingleCostDiv">成本: <span id="baseSingleCost" class="group-cost font-bold text-orange-600">¥0.00</span></div>
+                </div>
+            </div>
+
+            <!-- 变化款添加按钮 -->
+            <button id="addVariationGroupBtn" class="w-full py-3 border-2 border-dashed border-gray-300 dark:border-slate-600 rounded-xl text-gray-500 hover:border-orange-500 hover:text-orange-500 transition flex items-center justify-center font-medium" onclick="createVariationGroup()">
+                <i class="fas fa-plus-circle mr-2"></i> 添加变化款
+            </button>
+        </div>
+
+        <!-- SOP Section -->
+        <div id="sop-section" class="hidden pb-24">
+            <div id="sopStepsList" class="space-y-3"></div>
+            <button id="addSopStepBtn" class="w-full mt-4 py-3 bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 rounded-xl font-medium flex items-center justify-center hover:bg-orange-100 transition" onclick="addSopStep()">
+                <i class="fas fa-plus mr-2"></i> 添加SOP步骤
+            </button>
+            
+            <div class="sop-card mt-4">
+                <div class="flex items-center gap-2 mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    <i class="fas fa-sticky-note text-orange-500"></i> SOP备注
+                </div>
+                <textarea id="sopRemark" class="w-full p-3 bg-gray-50 dark:bg-slate-800 rounded-lg border-none outline-none text-sm resize-none" rows="3" placeholder="输入注意事项..."></textarea>
+                <div class="text-right text-xs text-gray-400 mt-1" id="sopRemarkCount">0/100</div>
+            </div>
+        </div>
+
+        <!-- Step Section -->
+        <div id="step-section" class="hidden pb-24">
+            <div id="stepsList" class="space-y-4"></div>
+            <button class="w-full mt-4 py-3 bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 rounded-xl font-medium flex items-center justify-center hover:bg-orange-100 transition" onclick="addStep()">
+                <i class="fas fa-plus mr-2"></i> 添加制作步骤
+            </button>
+        </div>
+    </main>
+
+    <!-- 底部固定栏 -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#1e293b] border-t border-gray-100 dark:border-slate-700 p-4 z-50 flex items-center justify-between shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+        <div class="flex items-center gap-4">
+            <div>
+                <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">总成本</div>
+                <div class="flex items-baseline gap-1">
+                    <span class="text-xl font-bold text-orange-600 dark:text-orange-400 leading-none" id="totalCost">0.00</span>
+                    <span class="text-xs text-orange-600 dark:text-orange-400 font-medium">¥</span>
+                </div>
+            </div>
+            <div class="h-8 w-px bg-gray-200 dark:bg-slate-600"></div>
+            <div>
+                <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">总重量</div>
+                <div class="text-lg font-bold text-gray-800 dark:text-white leading-none"><span id="totalWeight">0</span><span class="text-xs font-normal ml-0.5 text-gray-400">g</span></div>
+            </div>
+        </div>
+        <button id="saveBtn" class="bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-3 rounded-full font-bold shadow-lg shadow-orange-500/30 active:scale-95 transition-transform">
+            保存配方
+        </button>
+    </div>
+
+    <!-- 模态框 (保持功能但更新样式) -->
+    <!-- 材料搜索 -->
+    <div id="material-popup" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-[#1e293b] w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[80vh]">
+            <!-- Header -->
+            <div class="p-4 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center bg-white dark:bg-[#1e293b] z-10">
+                <h3 class="font-bold text-lg text-gray-800 dark:text-white">选择配料</h3>
+                <button onclick="closeMaterialSearch()" class="w-8 h-8 rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <!-- Search Bar -->
+            <div class="p-4 bg-gray-50 dark:bg-slate-800/50">
+                <div class="relative flex gap-2">
+                    <div class="relative flex-1">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" id="custom-material-input" placeholder="搜索材料..." class="w-full pl-10 pr-4 py-2.5 rounded-xl border-none outline-none bg-white dark:bg-slate-700 shadow-sm" oninput="filterMaterialAndRecipes(this.value)">
+                    </div>
+                    <button id="external-new-material-btn" onclick="window.location.href='/Users/tobias/Desktop/yuanixngtu/ERPSHOUJI/cailiao/cailiao-xinjianye.html?from=recipe_creation'" class="hidden px-3 py-2 bg-orange-50 text-orange-600 rounded-xl text-sm font-medium hover:bg-orange-100 whitespace-nowrap transition-colors border border-orange-100 dark:border-none dark:bg-orange-900/20 dark:text-orange-400">
+                        <i class="fas fa-plus mr-1"></i>新建材料
+                    </button>
+                </div>
+            </div>
+
+            <!-- Content Area (Sidebar + List) -->
+            <div class="flex flex-1 overflow-hidden relative">
+                <!-- Sidebar (Categories) -->
+                <div class="w-24 bg-gray-50 dark:bg-slate-800 overflow-y-auto border-r border-gray-100 dark:border-slate-700 flex-shrink-0" id="material-category-list">
+                    <!-- Categories injected by JS -->
+                </div>
+                
+                <!-- Main List -->
+                <div class="flex-1 overflow-y-auto bg-white dark:bg-[#1e293b] relative" id="material-popup-list">
+                    <!-- Items injected by JS -->
+                </div>
+            </div>
+
+            <!-- Bottom Tabs -->
+            <div class="flex border-t border-gray-100 dark:border-slate-700 bg-white dark:bg-[#1e293b]">
+                <button id="materials-tab" class="flex-1 py-3 text-sm font-medium text-orange-600 border-t-2 border-orange-600 bg-orange-50/50 dark:bg-orange-900/10 transition-colors" onclick="switchMaterialTab('materials')">
+                    <i class="fas fa-cubes mr-1"></i> 材料库
+                </button>
+                <button id="recipes-tab" class="flex-1 py-3 text-sm font-medium text-gray-500 border-t-2 border-transparent hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors" onclick="switchMaterialTab('recipes')">
+                    <i class="fas fa-book-open mr-1"></i> 引用配方
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 单位选择 -->
+    <div id="unit-selector-popup" class="fixed inset-0 z-50 bg-black/30 hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white dark:bg-[#1e293b] p-4 rounded-xl shadow-xl min-w-[200px]">
+            <div class="font-bold mb-3 text-center text-gray-800 dark:text-white">选择单位</div>
+            <div id="unit-selector-list" class="grid grid-cols-3 gap-2 mb-3"></div>
+            <button onclick="closeUnitSelector()" class="w-full py-2 bg-gray-100 dark:bg-slate-700 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-200 transition">取消</button>
+        </div>
+    </div>
+
+    <!-- 新建材料弹窗 -->
+    <div id="newMaterialModal" class="fixed inset-0 z-50 bg-black/50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white dark:bg-[#1e293b] w-full max-w-sm rounded-2xl p-6 shadow-2xl">
+            <h3 class="font-bold text-lg mb-4 text-gray-800 dark:text-white">新建材料</h3>
+            <div class="space-y-3">
+                <input id="newMaterialName" class="w-full p-3 rounded-xl bg-gray-50 dark:bg-slate-700 border-none outline-none text-gray-800 dark:text-white" placeholder="材料名称">
+                <select id="newMaterialCategory" class="w-full p-3 rounded-xl bg-gray-50 dark:bg-slate-700 border-none outline-none text-gray-800 dark:text-white"></select>
+                <input id="newMaterialPrice" type="number" class="w-full p-3 rounded-xl bg-gray-50 dark:bg-slate-700 border-none outline-none text-gray-800 dark:text-white" placeholder="价格 (元/100g)">
+                <div id="unitCheckboxes" class="grid grid-cols-4 gap-2 text-sm text-gray-700 dark:text-gray-300"></div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="closeNewMaterialModal()" class="flex-1 py-2.5 bg-gray-100 dark:bg-slate-700 rounded-xl text-gray-600 dark:text-gray-300">取消</button>
+                <button onclick="confirmNewMaterial()" class="flex-1 py-2.5 bg-orange-500 text-white rounded-xl font-medium shadow-lg shadow-orange-500/30">确认添加</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新建分类弹窗 -->
+    <div id="newCategoryModal" class="fixed inset-0 z-50 bg-black/50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white dark:bg-[#1e293b] w-full max-w-sm rounded-2xl p-6 shadow-2xl">
+            <h3 class="font-bold text-lg mb-4 text-gray-800 dark:text-white">新建配方分类</h3>
+            <div class="space-y-3">
+                <input id="newCategoryName" class="w-full p-3 rounded-xl bg-gray-50 dark:bg-slate-700 border-none outline-none text-gray-800 dark:text-white" placeholder="输入分类名称 (如: 甜点类)">
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="closeNewCategoryModal()" class="flex-1 py-2.5 bg-gray-100 dark:bg-slate-700 rounded-xl text-gray-600 dark:text-gray-300">取消</button>
+                <button onclick="confirmNewCategory()" class="flex-1 py-2.5 bg-orange-500 text-white rounded-xl font-medium shadow-lg shadow-orange-500/30">确认创建</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 裁剪弹窗 -->
+    <div id="cropModal" class="fixed inset-0 z-50 bg-black/80 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-[#1e293b] w-full max-w-lg rounded-2xl p-4">
+            <div class="crop-container mb-4 bg-black rounded-lg overflow-hidden flex justify-center items-center h-64">
+                <img id="cropImage" class="max-w-full max-h-full">
+            </div>
+            <div class="flex gap-3">
+                <button onclick="closeCropModal()" class="flex-1 py-2 bg-gray-100 dark:bg-slate-700 rounded-lg text-gray-600 dark:text-gray-300">取消</button>
+                <button onclick="confirmCrop()" class="flex-1 py-2 bg-orange-500 text-white rounded-lg">确认裁剪</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 百分比编辑弹窗 -->
+    <div id="percentEditModal" class="fixed inset-0 z-50 bg-black/50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white dark:bg-[#1e293b] w-full max-w-xs rounded-2xl p-6 shadow-2xl">
+            <h3 class="font-bold text-lg mb-4 text-center text-gray-800 dark:text-white">修改百分比</h3>
+            <div class="relative mb-6">
+                <input id="percentInput" type="number" class="w-full text-center text-3xl font-bold text-orange-600 bg-transparent border-b-2 border-orange-100 focus:border-orange-500 outline-none pb-2" placeholder="0">
+                <span class="absolute right-4 bottom-3 text-gray-400 font-bold">%</span>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="closePercentModal()" class="flex-1 py-2.5 bg-gray-100 dark:bg-slate-700 rounded-xl text-gray-600 dark:text-gray-300">取消</button>
+                <button onclick="confirmPercentChange()" class="flex-1 py-2.5 bg-orange-500 text-white rounded-xl font-medium shadow-lg shadow-orange-500/30">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 引导 & 其他辅助元素 (Overlay) -->
+    <div id="tutorialOverlay" class="tutorial-overlay">
+        <div id="tutorialHighlight" class="tutorial-highlight active"></div>
+        <div id="tutorialPopup" class="tutorial-popup">
+            <div class="flex justify-between items-start mb-4">
+                <h3 id="tutorialTitle" class="font-bold text-lg text-gray-900 dark:text-white leading-tight"></h3>
+                <span id="tutorialStepIndicator" class="text-xs font-medium text-orange-500 bg-orange-50 dark:bg-orange-900/20 px-2 py-1 rounded-full whitespace-nowrap ml-2"></span>
+            </div>
+            
+            <p id="tutorialContent" class="text-sm text-gray-600 dark:text-gray-300 mb-6 leading-relaxed"></p>
+            
+            <div class="flex gap-3">
+                <button id="tutorialPrevBtn" class="px-4 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition-colors" onclick="previousTutorialStep()">上一步</button>
+                <button id="tutorialNextBtn" class="flex-1 px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white text-sm font-bold rounded-xl shadow-lg shadow-orange-500/30 hover:shadow-orange-500/40 active:scale-95 transition-all" onclick="nextTutorialStep()">下一步</button>
+                <button id="tutorialFinishBtn" class="flex-1 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white text-sm font-bold rounded-xl shadow-lg shadow-green-500/30 hover:shadow-green-500/40 active:scale-95 transition-all hidden" onclick="endTutorial()">开始使用</button>
+            </div>
+            
+            <button class="absolute top-0 right-0 p-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors" onclick="endTutorial()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- 核心数据 ---
+        const savedRecipes = {
+            '经典白吐司': { category: '吐司类', ingredients: [{name:'高筋面粉',amount:500,unit:'g'},{name:'牛奶',amount:300,unit:'ml'}] },
+            '全麦面包': { category: '欧包类', ingredients: [{name:'全麦粉',amount:400,unit:'g'},{name:'水',amount:280,unit:'ml'}] }
+        };
+        
+        const materialPrices = {
+            '高筋面粉': { price: 0.8, units: ['g','kg'], category: '面粉类', spec: '25kg', packPrice: 200 },
+            '低筋面粉': { price: 0.9, units: ['g','kg'], category: '面粉类', spec: '25kg', packPrice: 225 },
+            '全麦粉': { price: 1.2, units: ['g','kg'], category: '面粉类', spec: '1kg', packPrice: 12 },
+            '牛奶': { price: 1.2, units: ['ml','L'], category: '液体类', spec: '1L', packPrice: 12 },
+            '水': { price: 0, units: ['g','ml'], category: '液体类', spec: '-', packPrice: 0 },
+            '鸡蛋': { price: 1.5, units: ['g','个'], category: '液体类', spec: '30个', packPrice: 45 },
+            '白砂糖': { price: 0.6, units: ['g','kg'], category: '干料类', spec: '5kg', packPrice: 30 },
+            '盐': { price: 0.2, units: ['g'], category: '干料类', spec: '500g', packPrice: 2 },
+            '干酵母': { price: 5.0, units: ['g'], category: '干料类', spec: '500g', packPrice: 25 },
+            '黄油': { price: 8.0, units: ['g','kg'], category: '油脂类', spec: '25kg', packPrice: 2000 },
+        };
+        
+        const materialCategories = ['面粉类', '液体类', '干料类', '油脂类', '其他'];
+        const standardUnits = ['g', 'ml', 'kg', 'L', '个', 'tsp', 'tbsp'];
+
+        // --- 全局状态 ---
+        let currentEditingInput = null;
+        let currentEditingUnitBtn = null;
+        let cropper = null;
+        let currentEditingPercentField = null; // Track which percent field is being edited
+        let isLibraryMode = true; // Default to Library Mode
+
+        // --- 核心渲染函数 ---
+
+        // 添加原料行
+        function addIngredient(type) {
+            let container = document.getElementById(`${type}Ingredients`);
+            
+            // 变化款处理
+            if(type.startsWith('base') && type !== 'base' && !container) {
+                // 如果是动态变化款，需要确保容器存在
+                // 这里假设变化款容器已经由 createVariationGroup 创建
+            }
+            
+            let nameValue = '';
+            let nameReadOnly = false;
+            // 基础面团和变化款面团的第一行默认值
+            if((type==='base' || type.startsWith('base')) && container.children.length===0) {
+                nameValue = '基础面团';
+                nameReadOnly = true;
+            }
+
+            // Determine percentage field style based on type
+            let percentClass = 'percent-field text-[10px] text-orange-500/70 font-medium cursor-pointer hover:text-orange-600 hover:bg-orange-50 px-1 rounded transition-all';
+            let percentAttrs = 'onclick="editPercent(this)" title="点击修改百分比"';
+
+            if (type === 'flour' || type.startsWith('base')) {
+                percentClass = 'percent-field text-[10px] text-gray-400 font-medium px-1';
+                percentAttrs = '';
+            }
+
+            const div = document.createElement('div');
+            div.className = 'list-row ingredient-item group relative overflow-hidden';
+            div.setAttribute('data-open', 'false');
+            
+            div.innerHTML = `
+                <div class="list-content w-full flex items-center">
+                    <div class="drag-handle text-gray-300 mr-2 cursor-grab active:cursor-grabbing hover:text-orange-500 transition-colors flex items-center justify-center w-6 py-2">
+                        <i class="fas fa-grip-vertical text-xs"></i>
+                    </div>
+                    
+                    <div class="flex-1 relative mr-2">
+                        <input type="text" class="clean-input name-input ${nameReadOnly?'text-gray-500 cursor-not-allowed':''}" 
+                               placeholder="材料名称" value="${nameValue}" 
+                               ${nameReadOnly?'readonly':''} 
+                               onclick="handleInputClick(this)"
+                               oninput="updateAutoFields(this)"
+                               readonly> <!-- Default to readonly for JS control, but we toggle it -->
+                        <div class="sync-status-text synced-text hidden">已同步</div>
+                        <div class="sync-status-text not-synced-text hidden">未同步</div>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-2">
+                        <input type="number" class="amount-input w-20" placeholder="0" oninput="updateAutoFields(this)">
+                        <button class="unit-btn text-xs font-medium bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-300 px-2 h-7 min-w-[32px] rounded-lg flex items-center justify-center hover:bg-orange-100 hover:text-orange-600 dark:hover:bg-slate-600 transition" onclick="showUnitSelector(this)">g <i class="fas fa-caret-down ml-1 text-[10px] opacity-50"></i></button>
+                    </div>
+
+                    <div class="text-right min-w-[50px] ml-2">
+                        <div class="cost-field text-xs font-medium text-gray-400">¥0.00</div>
+                        <div class="${percentClass}" ${percentAttrs}>0%</div>
+                    </div>
+                </div>
+
+                <!-- 滑动删除按钮 -->
+                <div class="delete-action" onclick="deleteIngredientItem(this)">
+                    <i class="fas fa-trash-alt text-lg"></i>
+                </div>
+            `;
+            
+            container.appendChild(div);
+            
+            // 初始化功能
+            initSwipeDelete(div);
+            
+            // Sortable update
+            if(container.sortable) container.sortable.destroy();
+            container.sortable = new Sortable(container, { 
+                group: 'ingredients', // 允许跨容器拖拽
+                handle: '.drag-handle', 
+                animation: 150, 
+                ghostClass: 'bg-gray-50',
+                onEnd: updateAllAutoFields 
+            });
+            
+            // Initialize input state based on current mode
+            const input = div.querySelector('.name-input');
+            if(input) {
+                if(nameReadOnly) {
+                    input.readOnly = true;
+                } else {
+                    input.readOnly = isLibraryMode; // If library mode, readonly (trigger popup). If free, editable.
+                }
+            }
+        }
+
+        // 模式切换逻辑
+        function toggleInputMode() {
+            isLibraryMode = !isLibraryMode;
+            const btn = document.getElementById('modeToggleBtn');
+            const span = btn.querySelector('span');
+            const icon = btn.querySelector('i');
+            
+            if(isLibraryMode) {
+                // Switch to Library Mode
+                btn.classList.remove('bg-gray-100', 'text-gray-500', 'border-gray-200');
+                btn.classList.add('bg-orange-50', 'text-orange-600', 'border-orange-200');
+                span.innerText = '关联库存';
+                icon.className = 'fas fa-box-open mr-1';
+            } else {
+                // Switch to Free Entry Mode
+                btn.classList.add('bg-gray-100', 'text-gray-500', 'border-gray-200');
+                btn.classList.remove('bg-orange-50', 'text-orange-600', 'border-orange-200');
+                span.innerText = '自由录入';
+                icon.className = 'fas fa-edit mr-1';
+            }
+            
+            // Update all existing inputs
+            document.querySelectorAll('.name-input').forEach(input => {
+                // Skip inputs that are permanently readonly (like "Base Dough")
+                if(input.value === '基础面团' || input.value === '变化款面团') return;
+                
+                input.readOnly = isLibraryMode;
+            });
+        }
+        
+        function handleInputClick(input) {
+            // If it's a permanent readonly field (Base Dough headers), ignore
+            if(input.value === '基础面团' || input.value === '变化款面团') return;
+            
+            if(isLibraryMode) {
+                showMaterialSearch(input);
+            }
+            // If Free Mode, do nothing (browser handles focus)
+        }
+
+        // 创建变化款分组
+        function createVariationGroup() {
+            const timestamp = Date.now();
+            const type = `base_variation_${timestamp}`;
+            const containerId = `${type}Ingredients`;
+            
+            const btn = document.getElementById('addVariationGroupBtn');
+            const wrapper = document.createElement('div');
+            wrapper.className = 'ingredient-group-card border-l-4 border-l-orange-500 relative group/card';
+            
+            wrapper.innerHTML = `
+                <div class="group-header">
+                    <div class="flex items-center">
+                        <div class="group-icon bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400">
+                            <i class="fas fa-bread-slice"></i>
+                        </div>
+                        <input type="text" class="group-title bg-transparent border-b border-transparent focus:border-orange-500 outline-none w-40 transition-colors placeholder-gray-400" value="变化款面团" placeholder="输入分组名称" onclick="this.select()">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <!-- Removed delete button for header -->
+                        <button class="text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-orange-100 transition" onclick="addIngredient('${type}')">
+                            <i class="fas fa-plus mr-1"></i>添加
+                        </button>
+                    </div>
+                </div>
+                <div id="${containerId}" class="space-y-0"></div>
+                <!-- 统计 (隐藏，可根据需要显示) -->
+                <div class="group-stats p-3 bg-gray-50 dark:bg-slate-800/50 flex justify-between items-center text-xs text-gray-500 hidden">
+                    <div>单重: <span class="group-weight font-bold text-gray-800 dark:text-white">0g</span></div>
+                    <div>成本: <span class="group-cost font-bold text-orange-600">¥0.00</span></div>
+                </div>
+            `;
+            
+            // Insert before the button
+            btn.parentNode.insertBefore(wrapper, btn);
+            
+            // Add initial ingredient (the dough itself)
+            addIngredient(type);
+        }
+
+        // --- 逻辑功能 (保持原有逻辑) ---
+
+        function updateAutoFields(input) {
+            const row = input.closest('.list-row');
+            const qtyInput = row.querySelector('input[type="number"]');
+            const nameInput = row.querySelector('.name-input');
+            const costField = row.querySelector('.cost-field');
+            const percentField = row.querySelector('.percent-field');
+            const unitBtn = row.querySelector('.unit-btn');
+
+            const qty = parseFloat(qtyInput.value) || 0;
+            const unit = unitBtn.innerText.trim();
+            const name = nameInput.value.trim();
+
+            // 计算成本
+            let cost = 0;
+            if (materialPrices[name]) {
+                const priceInfo = materialPrices[name];
+                let weightInG = qty;
+                if(unit === 'kg') weightInG = qty * 1000;
+                // 简化的单位转换
+                cost = (weightInG / 100) * priceInfo.price;
+            }
+            costField.innerText = '¥' + cost.toFixed(2);
+
+            updateTotalWeight();
+            updatePercentages();
+        }
+        
+        function updateAllAutoFields() {
+            document.querySelectorAll('.ingredient-item').forEach(row => {
+                const input = row.querySelector('input[type="number"]');
+                if(input) updateAutoFields(input);
+            });
+        }
+
+        function updateTotalWeight() {
+            let total = 0;
+            let totalCost = 0;
+            document.querySelectorAll('.ingredient-item').forEach(row => {
+                const qtyInput = row.querySelector('input[type="number"]');
+                const costField = row.querySelector('.cost-field');
+                const unitBtn = row.querySelector('.unit-btn');
+                
+                if (qtyInput) {
+                    let qty = parseFloat(qtyInput.value) || 0;
+                    if(unitBtn.innerText.trim() === 'kg') qty *= 1000; // 简单处理
+                    total += qty;
+                }
+                if (costField) {
+                    totalCost += parseFloat(costField.innerText.replace('¥','')) || 0;
+                }
+            });
+            document.getElementById('totalWeight').textContent = total.toFixed(0);
+            document.getElementById('totalCost').textContent = totalCost.toFixed(2);
+            
+            // 更新分组统计
+            updateGroupStats();
+        }
+
+        function updateGroupStats() {
+            // 查找所有包含 group-stats 的卡片
+            document.querySelectorAll('.ingredient-group-card').forEach(card => {
+                const statsDiv = card.querySelector('.group-stats');
+                if (!statsDiv) return; // 如果没有统计栏（例如面粉、干料等普通分组可能没有），则跳过
+
+                const ingredientsContainer = card.querySelector('[id$="Ingredients"]'); // 查找 ID 以 Ingredients 结尾的容器
+                if (!ingredientsContainer) return;
+
+                const rows = ingredientsContainer.querySelectorAll('.ingredient-item');
+                const count = rows.length;
+
+                if (count >= 2) {
+                    statsDiv.classList.remove('hidden');
+                    
+                    // 计算该组的总重量和总成本
+                    let groupWeight = 0;
+                    let groupCost = 0;
+                    
+                    rows.forEach(row => {
+                        const qtyInput = row.querySelector('input[type="number"]');
+                        const unitBtn = row.querySelector('.unit-btn');
+                        const costField = row.querySelector('.cost-field');
+                        
+                        if (qtyInput) {
+                            let qty = parseFloat(qtyInput.value) || 0;
+                            if (unitBtn && unitBtn.innerText.trim() === 'kg') qty *= 1000;
+                            groupWeight += qty;
+                        }
+                        
+                        if (costField) {
+                            // costField.innerText 格式通常是 "¥12.50"
+                            const costText = costField.innerText.replace('¥', '').trim();
+                            groupCost += parseFloat(costText) || 0;
+                        }
+                    });
+                    
+                    // 更新显示
+                    const weightSpan = statsDiv.querySelector('.group-weight');
+                    const costSpan = statsDiv.querySelector('.group-cost');
+                    
+                    if (weightSpan) weightSpan.textContent = groupWeight.toFixed(0) + 'g';
+                    if (costSpan) costSpan.textContent = '¥' + groupCost.toFixed(2);
+                    
+                } else {
+                    statsDiv.classList.add('hidden');
+                }
+            });
+        }
+
+        function updatePercentages() {
+            // 1. 标准组：以面粉总量为100% (Baker's Percentage)
+            let flourTotal = 0;
+            const flourContainer = document.getElementById('flourIngredients');
+            if(flourContainer) {
+                flourContainer.querySelectorAll('.ingredient-item').forEach(row => {
+                    const qtyInput = row.querySelector('input[type="number"]');
+                    const unitBtn = row.querySelector('.unit-btn');
+                    if(qtyInput) {
+                        let qty = parseFloat(qtyInput.value) || 0;
+                        if(unitBtn && unitBtn.innerText.trim() === 'kg') qty *= 1000;
+                        flourTotal += qty;
+                    }
+                });
+            }
+
+            // 更新标准组百分比
+            const standardGroupIds = ['flourIngredients', 'starterIngredients', 'wetIngredients', 'dryIngredients', 'auxIngredients'];
+            standardGroupIds.forEach(id => {
+                const container = document.getElementById(id);
+                if(!container) return;
+                
+                container.querySelectorAll('.ingredient-item').forEach(row => {
+                     const qtyInput = row.querySelector('input[type="number"]');
+                     const percentField = row.querySelector('.percent-field');
+                     const unitBtn = row.querySelector('.unit-btn');
+                     
+                     if(qtyInput && percentField) {
+                         if (flourTotal > 0) {
+                             let qty = parseFloat(qtyInput.value) || 0;
+                             if(unitBtn.innerText.trim() === 'kg') qty *= 1000;
+                             const pct = (qty / flourTotal * 100).toFixed(1);
+                             percentField.innerText = pct + '%';
+                         } else {
+                             percentField.innerText = '0%';
+                         }
+                     }
+                });
+            });
+
+            // 2. 基础面团和变化款组：以该组第一项为100% (自包含逻辑)
+            document.querySelectorAll('.ingredient-group-card').forEach(card => {
+                const container = card.querySelector('[id$="Ingredients"]');
+                if(!container) return;
+                
+                const containerId = container.id;
+                // 跳过标准组
+                if(standardGroupIds.includes(containerId)) return;
+                
+                const rows = container.querySelectorAll('.ingredient-item');
+                if(rows.length === 0) return;
+                
+                // 获取第一项作为基准 (100%)
+                let baseWeight = 0;
+                const firstRow = rows[0];
+                const firstQtyInput = firstRow.querySelector('input[type="number"]');
+                const firstUnitBtn = firstRow.querySelector('.unit-btn');
+                
+                if(firstQtyInput) {
+                     baseWeight = parseFloat(firstQtyInput.value) || 0;
+                     if(firstUnitBtn && firstUnitBtn.innerText.trim() === 'kg') baseWeight *= 1000;
+                }
+                
+                // 更新该组所有行的百分比
+                rows.forEach(row => {
+                     const qtyInput = row.querySelector('input[type="number"]');
+                     const percentField = row.querySelector('.percent-field');
+                     const unitBtn = row.querySelector('.unit-btn');
+                     
+                     if(qtyInput && percentField) {
+                         if (baseWeight > 0) {
+                             let qty = parseFloat(qtyInput.value) || 0;
+                             if(unitBtn.innerText.trim() === 'kg') qty *= 1000;
+                             
+                             // 第一项固定为 100% (如果是基于自身)
+                             // 其他项计算相对于第一项的百分比
+                             const pct = (qty / baseWeight * 100).toFixed(1);
+                             percentField.innerText = pct + '%';
+                         } else {
+                             percentField.innerText = '0%';
+                         }
+                     }
+                });
+            });
+        }
+
+        // 百分比反算逻辑
+        function editPercent(el) {
+            const row = el.closest('.ingredient-item');
+            const container = row.parentElement;
+            
+            // 检查是否允许编辑：
+            // 1. 面粉组不允许 (作为基准)
+            // 2. 基础面团和变化款的第一行不允许 (作为基准)
+            if(container.id === 'flourIngredients') {
+                alert('面粉百分比由配方总量决定，无法直接修改');
+                return;
+            }
+            
+            if(container.id.startsWith('base') || container.id.startsWith('base_variation')) {
+                const rows = container.querySelectorAll('.ingredient-item');
+                if(rows[0] === row) {
+                    alert('基准面团百分比固定为100%，无法修改');
+                    return;
+                }
+            }
+            
+            currentEditingPercentField = el;
+            const currentVal = parseFloat(el.innerText) || 0;
+            document.getElementById('percentInput').value = currentVal;
+            document.getElementById('percentEditModal').classList.remove('hidden');
+            document.getElementById('percentInput').focus();
+        }
+        
+        function closePercentModal() {
+            document.getElementById('percentEditModal').classList.add('hidden');
+            currentEditingPercentField = null;
+        }
+        
+        function confirmPercentChange() {
+            if(!currentEditingPercentField) return;
+            
+            const newPercent = parseFloat(document.getElementById('percentInput').value);
+            if(isNaN(newPercent) || newPercent < 0) {
+                alert('请输入有效的百分比');
+                return;
+            }
+            
+            const row = currentEditingPercentField.closest('.ingredient-item');
+            const container = row.parentElement;
+            const qtyInput = row.querySelector('input[type="number"]');
+            const unitBtn = row.querySelector('.unit-btn');
+            
+            // 计算基准重量
+            let baseWeight = 0;
+            
+            // 判断基准类型
+            const standardGroupIds = ['flourIngredients', 'starterIngredients', 'wetIngredients', 'dryIngredients', 'auxIngredients'];
+            
+            if(standardGroupIds.includes(container.id)) {
+                // 标准组：基准为总面粉重
+                const flourContainer = document.getElementById('flourIngredients');
+                if(flourContainer) {
+                    flourContainer.querySelectorAll('.ingredient-item').forEach(r => {
+                        const q = r.querySelector('input[type="number"]');
+                        const u = r.querySelector('.unit-btn');
+                        if(q) {
+                            let val = parseFloat(q.value) || 0;
+                            if(u && u.innerText === 'kg') val *= 1000;
+                            baseWeight += val;
+                        }
+                    });
+                }
+            } else {
+                // 基础面团/变化款组：基准为该组第一行
+                const firstRow = container.querySelectorAll('.ingredient-item')[0];
+                if(firstRow) {
+                    const q = firstRow.querySelector('input[type="number"]');
+                    const u = firstRow.querySelector('.unit-btn');
+                    if(q) {
+                        baseWeight = parseFloat(q.value) || 0;
+                        if(u && u.innerText === 'kg') baseWeight *= 1000;
+                    }
+                }
+            }
+            
+            if(baseWeight > 0) {
+                // 反算新重量: NewWeight = BaseWeight * (NewPercent / 100)
+                let newWeight = baseWeight * (newPercent / 100);
+                
+                // 根据当前单位调整数值
+                if(unitBtn.innerText.trim() === 'kg') {
+                    newWeight = newWeight / 1000;
+                    qtyInput.value = newWeight.toFixed(3);
+                } else {
+                    // g, ml 等
+                    qtyInput.value = newWeight.toFixed(1);
+                }
+                
+                // 触发更新
+                updateAutoFields(qtyInput);
+            } else {
+                alert('基准重量为0，无法计算');
+            }
+            
+            closePercentModal();
+        }
+
+        // --- 交互功能 ---
+
+        // Tab切换
+        function switchTab(tab) {
+            ['recipe', 'sop', 'step'].forEach(t => {
+                const btn = document.getElementById(`tab-btn-${t}`);
+                const section = document.getElementById(`recipe-section`); 
+                // 注意：这里原逻辑可能是分开的section ID
+                // 修正：根据HTML结构，recipe-section是配方，sop-section是SOP，step-section是步骤
+                
+                const targetSection = t === 'recipe' ? document.getElementById('recipe-section') : 
+                                      document.getElementById(`${t}-section`);
+                
+                if (t === tab) {
+                    btn.classList.add('active');
+                    targetSection.classList.remove('hidden');
+                } else {
+                    btn.classList.remove('active');
+                    if(targetSection) targetSection.classList.add('hidden');
+                }
+            });
+            
+            // Meta section toggle
+            const meta = document.getElementById('recipe-meta-section');
+            if(meta) meta.style.display = tab === 'recipe' ? 'block' : 'none';
+        }
+
+        // 滑动删除初始化
+        function initSwipeDelete(el) {
+            let startX, currentX;
+            const threshold = 50;
+            
+            el.addEventListener('touchstart', e => {
+                startX = e.touches[0].clientX;
+                // 关闭其他已打开的项
+                document.querySelectorAll('.ingredient-item[data-open="true"]').forEach(item => {
+                    if(item !== el) item.setAttribute('data-open', 'false');
+                });
+            }, {passive: true});
+            
+            el.addEventListener('touchmove', e => {
+                currentX = e.touches[0].clientX;
+                const diff = startX - currentX;
+                if(diff > 0 && diff < 100) { // 向左滑
+                    // 可以添加跟随手指的逻辑，这里简化
+                }
+            }, {passive: true});
+            
+            el.addEventListener('touchend', e => {
+                const diff = startX - currentX;
+                if (diff > threshold) {
+                    el.setAttribute('data-open', 'true');
+                } else if (diff < -threshold) {
+                    el.setAttribute('data-open', 'false');
+                }
+            });
+        }
+
+        function deleteIngredientItem(btn) {
+            const row = btn.parentElement;
+            const container = row.parentElement;
+            const card = container.closest('.ingredient-group-card');
+            
+            row.remove();
+            updateTotalWeight();
+            
+            // Check if it's a variation group (id starts with base_variation)
+            if (container.id.startsWith('base_variation')) {
+                // If container is empty, remove the entire card
+                if (container.children.length === 0) {
+                    if(card) card.remove();
+                    updateTotalWeight(); // Update again after removing card
+                }
+            }
+        }
+
+        // Sync new materials from localStorage
+        function syncNewMaterials() {
+            const stored = localStorage.getItem('temp_new_materials');
+            if (stored) {
+                try {
+                    const materials = JSON.parse(stored);
+                    materials.forEach(m => {
+                        if (m.name && !materialPrices[m.name]) {
+                            // Calculate unit cost if possible, otherwise use pack price as fallback for now
+                            // Note: Existing logic uses price per 100g. 
+                            // Here we store raw data and let the user beware, or we could calculate if we parse the spec.
+                            // For now, we store packPrice separately.
+                            materialPrices[m.name] = {
+                                price: parseFloat(m.price) || 0, // Caution: this might be interpreted as unit cost by calculation logic
+                                units: m.units || ['g'],
+                                category: m.category || '其他',
+                                spec: m.specification || '',
+                                packPrice: parseFloat(m.price) || 0
+                            };
+                        }
+                    });
+                } catch(e) {
+                    console.error('Error syncing materials', e);
+                }
+            }
+        }
+
+        // 弹窗相关
+        function showMaterialSearch(input) {
+            currentEditingInput = input;
+            syncNewMaterials();
+            document.getElementById('material-popup').classList.remove('hidden');
+            
+            // Ensure correct tab state
+            const isRecipeTab = document.getElementById('recipes-tab').classList.contains('text-orange-600');
+            switchMaterialTab(isRecipeTab ? 'recipes' : 'materials');
+        }
+        function closeMaterialSearch() {
+            document.getElementById('material-popup').classList.add('hidden');
+        }
+        
+        function showUnitSelector(btn) {
+            currentEditingUnitBtn = btn;
+            const list = document.getElementById('unit-selector-list');
+            list.innerHTML = '';
+            standardUnits.forEach(u => {
+                const b = document.createElement('button');
+                b.className = 'py-2 bg-gray-50 dark:bg-slate-700 rounded hover:bg-orange-100 hover:text-orange-600 transition';
+                b.innerText = u;
+                b.onclick = () => {
+                    currentEditingUnitBtn.innerHTML = `${u} <i class="fas fa-caret-down ml-1 text-[10px] opacity-50"></i>`;
+                    closeUnitSelector();
+                    updateAutoFields(currentEditingUnitBtn);
+                };
+                list.appendChild(b);
+            });
+            document.getElementById('unit-selector-popup').classList.remove('hidden');
+        }
+        function closeUnitSelector() {
+            document.getElementById('unit-selector-popup').classList.add('hidden');
+        }
+
+        // 渲染材料列表
+        function renderMaterialList(filter='') {
+            const list = document.getElementById('material-popup-list');
+            const cats = document.getElementById('material-category-list');
+            list.innerHTML = '';
+            cats.innerHTML = '';
+            
+            // 渲染分类
+            materialCategories.forEach(c => {
+                const div = document.createElement('div');
+                div.className = 'p-3 text-sm text-gray-600 dark:text-gray-400 hover:bg-white dark:hover:bg-slate-700 cursor-pointer';
+                div.innerText = c;
+                div.onclick = () => {
+                     // 简单筛选逻辑
+                     renderMaterialListItems(filter, c);
+                };
+                cats.appendChild(div);
+            });
+            
+            renderMaterialListItems(filter);
+        }
+        
+        function renderMaterialListItems(filter, category) {
+            const list = document.getElementById('material-popup-list');
+            list.innerHTML = '';
+            
+            // Check active tab
+            const isRecipeTab = document.getElementById('recipes-tab').classList.contains('text-orange-600');
+            
+            if (isRecipeTab) {
+                // Render Recipes
+                Object.keys(savedRecipes).forEach(k => {
+                    const info = savedRecipes[k];
+                    // Recipe category filtering if needed (currently savedRecipes has category property)
+                    // if(category && info.category !== category) return; 
+                    if(filter && !k.includes(filter)) return;
+                    
+                    const div = document.createElement('div');
+                    div.className = 'p-3 border-b border-gray-100 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer flex justify-between items-center';
+                    div.innerHTML = `
+                        <div>
+                            <div class="font-medium text-gray-800 dark:text-white">${k}</div>
+                            <div class="text-xs text-gray-400">${info.category}</div>
+                        </div>
+                        <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                    `;
+                    div.onclick = () => {
+                        // When a recipe is selected, we might want to import its ingredients
+                        // For now, let's just populate the name
+                        if(currentEditingInput) {
+                            currentEditingInput.value = k; // Or handle import logic
+                            updateAutoFields(currentEditingInput);
+                        }
+                        closeMaterialSearch();
+                    };
+                    list.appendChild(div);
+                });
+            } else {
+                // Render Materials
+                Object.keys(materialPrices).forEach(k => {
+                    const info = materialPrices[k];
+                    if(category && info.category !== category) return;
+                    if(filter && !k.includes(filter)) return;
+                    
+                    const div = document.createElement('div');
+                    div.className = 'p-3 border-b border-gray-100 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer flex justify-between items-center';
+                    
+                    // Format: Name  Spec/Price
+                    let displayPrice = '';
+                    if (info.spec && info.packPrice !== undefined) {
+                        displayPrice = `<span class="text-xs text-gray-500">${info.spec} / ¥${info.packPrice}</span>`;
+                    } else {
+                         displayPrice = `<span class="text-xs text-gray-400">¥${info.price}/100g</span>`;
+                    }
+                    
+                    div.innerHTML = `<span class="text-gray-800 dark:text-white">${k}</span> ${displayPrice}`;
+                    div.onclick = () => {
+                        if(currentEditingInput) {
+                            currentEditingInput.value = k;
+                            updateAutoFields(currentEditingInput);
+                        }
+                        closeMaterialSearch();
+                    };
+                    list.appendChild(div);
+                });
+            }
+        }
+        
+        function filterMaterialAndRecipes(val) {
+            // Re-render based on current tab and filter
+            const activeCategory = document.querySelector('#material-category-list .text-orange-600'); 
+            // Note: Category selection logic needs to be aware of tabs too
+            renderMaterialListItems(val); 
+        }
+        
+        // 新建材料
+        function confirmCustomMaterial() {
+            const val = document.getElementById('custom-material-input').value;
+            if(val) {
+                document.getElementById('newMaterialName').value = val;
+                // Populate categories
+                const catSelect = document.getElementById('newMaterialCategory');
+                catSelect.innerHTML = '';
+                materialCategories.forEach(c => {
+                    catSelect.add(new Option(c, c));
+                });
+                
+                document.getElementById('newMaterialModal').classList.remove('hidden');
+                closeMaterialSearch();
+            }
+        }
+        function closeNewMaterialModal() { document.getElementById('newMaterialModal').classList.add('hidden'); }
+        function confirmNewMaterial() {
+            const name = document.getElementById('newMaterialName').value;
+            const price = document.getElementById('newMaterialPrice').value;
+            if(name) {
+                materialPrices[name] = { price: price||0, units:['g'], category: '其他' };
+                if(currentEditingInput) {
+                    currentEditingInput.value = name;
+                    updateAutoFields(currentEditingInput);
+                }
+                closeNewMaterialModal();
+            }
+        }
+
+        // 图片处理
+        document.getElementById('coverImage').addEventListener('change', function(e){
+            const file = e.target.files[0];
+            if(file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.getElementById('cropImage').src = e.target.result;
+                    document.getElementById('cropModal').classList.remove('hidden');
+                    if(cropper) cropper.destroy();
+                    cropper = new Cropper(document.getElementById('cropImage'), { aspectRatio: 3/2, viewMode: 1 });
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        function closeCropModal() { document.getElementById('cropModal').classList.add('hidden'); }
+        function confirmCrop() {
+            if(cropper) {
+                const canvas = cropper.getCroppedCanvas();
+                document.getElementById('heroImage').src = canvas.toDataURL();
+                closeCropModal();
+            }
+        }
+        
+        // 主题切换
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            document.getElementById('themeIcon').innerText = isDark ? '☀️' : '🌙';
+        }
+        
+        // 初始化
+        window.addEventListener('DOMContentLoaded', function() {
+            ['flour','starter','dry','wet','aux','base'].forEach(type => addIngredient(type));
+            
+            // Add default SOP and Steps with placeholders from detail page
+            defaultSOPs.forEach(sop => addSopStep(sop));
+            defaultSteps.forEach(step => addStep(step));
+            
+            if(localStorage.getItem('theme')==='dark') {
+                document.documentElement.classList.add('dark');
+                document.getElementById('themeIcon').innerText = '☀️';
+            }
+            
+            // 点击外部关闭滑动菜单
+            document.addEventListener('click', (e) => {
+                if(!e.target.closest('.ingredient-item')) {
+                    document.querySelectorAll('.ingredient-item[data-open="true"]').forEach(item => {
+                        item.setAttribute('data-open', 'false');
+                    });
+                }
+            });
+        });
+
+        // 占位函数
+        // function openCategoryModal() { alert('分类管理功能开发中'); } // Removed
+        function openCamera() { alert('拍照识别功能开发中'); }
+        function openShareModal() { alert('分享功能开发中'); }
+        
+        // --- 分类管理逻辑 ---
+        let lastSelectedCategory = 'other'; // Default selected
+
+        function handleCategoryChange(select) {
+            if(select.value === 'new_category') {
+                document.getElementById('newCategoryModal').classList.remove('hidden');
+                document.getElementById('newCategoryName').value = '';
+                document.getElementById('newCategoryName').focus();
+                // Reset select to previous value until confirmed
+                select.value = lastSelectedCategory; 
+            } else {
+                lastSelectedCategory = select.value;
+            }
+        }
+
+        function closeNewCategoryModal() {
+            document.getElementById('newCategoryModal').classList.add('hidden');
+        }
+
+        function confirmNewCategory() {
+            const name = document.getElementById('newCategoryName').value.trim();
+            if(name) {
+                const select = document.getElementById('categorySelect');
+                // Check if already exists
+                let exists = false;
+                for(let i=0; i<select.options.length; i++) {
+                    if(select.options[i].text === name) {
+                        exists = true;
+                        select.value = select.options[i].value;
+                        lastSelectedCategory = select.value;
+                        break;
+                    }
+                }
+
+                if(!exists) {
+                    // Create new option
+                    // Generate a simple ID or use name as value
+                    const value = 'cat_' + Date.now();
+                    const option = new Option(name, value);
+                    
+                    // Insert before the last option (which is "+ 新建分类")
+                    const newOptionIndex = select.options.length - 1;
+                    select.add(option, newOptionIndex);
+                    
+                    // Select the new option
+                    select.value = value;
+                    lastSelectedCategory = value;
+                }
+                
+                closeNewCategoryModal();
+            }
+        }
+
+        function switchMaterialTab(t) {
+            const btn1 = document.getElementById('materials-tab');
+            const btn2 = document.getElementById('recipes-tab');
+            const catList = document.getElementById('material-category-list');
+            const newBtn = document.getElementById('external-new-material-btn');
+            
+            if(t==='materials') {
+                btn1.classList.add('border-orange-600','text-orange-600');
+                btn1.classList.remove('text-gray-500');
+                btn2.classList.remove('border-orange-600','text-orange-600');
+                
+                if(newBtn) newBtn.classList.remove('hidden');
+                
+                // Show Material Categories
+                catList.innerHTML = '';
+                materialCategories.forEach(c => {
+                    const div = document.createElement('div');
+                    div.className = 'p-3 text-sm text-gray-600 dark:text-gray-400 hover:bg-white dark:hover:bg-slate-700 cursor-pointer';
+                    div.innerText = c;
+                    div.onclick = () => renderMaterialListItems('', c);
+                    catList.appendChild(div);
+                });
+            } else {
+                btn2.classList.add('border-orange-600','text-orange-600');
+                btn2.classList.remove('text-gray-500');
+                btn1.classList.remove('border-orange-600','text-orange-600');
+                
+                if(newBtn) newBtn.classList.add('hidden');
+
+                // Show Recipe Categories
+                catList.innerHTML = '';
+                const recipeCats = ['吐司类', '欧包类', '甜点类', '其他'];
+                recipeCats.forEach(c => {
+                    const div = document.createElement('div');
+                    div.className = 'p-3 text-sm text-gray-600 dark:text-gray-400 hover:bg-white dark:hover:bg-slate-700 cursor-pointer';
+                    div.innerText = c;
+                    // Filter logic for recipes would go here
+                    div.onclick = () => { /* Filter recipes by category */ }; 
+                    catList.appendChild(div);
+                });
+            }
+            
+            // Re-render list
+            renderMaterialListItems();
+        }
+        
+        // 教程逻辑
+        const tutorialSteps = [
+            {
+                target: 'header',
+                title: '设置封面',
+                content: '点击顶部区域上传一张诱人的面包成品图，支持缩放和裁剪，让您的配方更具吸引力。'
+            },
+            {
+                target: '#recipeNameInput',
+                title: '配方名称',
+                content: '给您的面包起个好听的名字（必填），方便日后在列表中快速查找。'
+            },
+            {
+                target: '#categorySelect',
+                title: '配方分类',
+                content: '选择面包种类（如吐司、欧包等），此为必填项，便于后续管理和筛选。'
+            },
+            {
+                target: '#modeToggleBtn',
+                title: '关联库存模式',
+                content: '开启后可直接选择库存中的材料，系统将自动计算精准成本；关闭则为自由录入模式，适合快速记录。'
+            },
+            {
+                target: '#tabGroup',
+                title: '功能切换',
+                content: '在这里切换“配方原料”、“SOP操作流程”和“制作步骤”，全面管理您的配方细节。'
+            },
+            {
+                target: '.ingredient-group-card.group-flour',
+                title: '添加原料',
+                content: '点击各分组（面粉、液体等）右上角的“添加”按钮，快速增加所需的原料。'
+            },
+            {
+                target: '.unit-btn',
+                title: '单位切换',
+                content: '点击数字后面的单位（如g），可以切换为kg、ml、个等，系统会自动换算价格。'
+            },
+            {
+                target: '.drag-handle',
+                title: '自由排序',
+                content: '长按列表项左侧的“拖拽图标”，上下拖动即可调整原料顺序，方便您整理配方结构。'
+            },
+            {
+                target: '.ingredient-item',
+                title: '快捷删除',
+                content: '在原料行上“向左滑动”，即可显示删除按钮，快速移除不需要的原料。'
+            },
+            {
+                target: '.group-dry .percent-field',
+                title: '百分比反算',
+                content: '点击干料、湿料等分组的百分比数字，可以直接输入新的百分比，系统会自动反算所需的原料重量，研发调整更高效！'
+            },
+            {
+                target: '#baseIngredients .ingredient-item:first-child .amount-input',
+                title: '基础面团',
+                content: '输入单份面团的分割重量（如：分割成90g一个面团，这里就填90）。'
+            },
+            {
+                target: '#addVariationGroupBtn',
+                title: '多面团模式',
+                content: '如果分割时不止90g还有其他重量（比如120g），创建变化款可以更高效生产操作，支持独立计算。'
+            },
+            {
+                target: '.fixed.bottom-0',
+                title: '实时统计',
+                content: '底部实时显示配方总重量和预估总成本，确认无误后点击“保存配方”即可完成创建。'
+            }
+        ];
+
+        let currentTutorialIndex = 0;
+
+        function startTutorial() {
+            currentTutorialIndex = 0;
+            document.getElementById('tutorialOverlay').style.display = 'block';
+            updateTutorialState();
+        }
+
+        function endTutorial() {
+            document.getElementById('tutorialOverlay').style.display = 'none';
+            // Clean up magnification
+            document.querySelectorAll('.tutorial-target-magnify').forEach(el => {
+                el.classList.remove('tutorial-target-magnify');
+            });
+        }
+
+        function nextTutorialStep() {
+            if (currentTutorialIndex < tutorialSteps.length - 1) {
+                currentTutorialIndex++;
+                updateTutorialState();
+            } else {
+                endTutorial();
+            }
+        }
+
+        function previousTutorialStep() {
+            if (currentTutorialIndex > 0) {
+                currentTutorialIndex--;
+                updateTutorialState();
+            }
+        }
+
+        function updateTutorialState() {
+            const step = tutorialSteps[currentTutorialIndex];
+            const targetEl = document.querySelector(step.target);
+            
+            // Clean up previous magnification if any
+            document.querySelectorAll('.tutorial-target-magnify').forEach(el => {
+                el.classList.remove('tutorial-target-magnify');
+            });
+            
+            if (!targetEl) {
+                // Skip if element not found (e.g. dynamic content missing)
+                nextTutorialStep();
+                return;
+            }
+
+            // Scroll to element with some padding
+            targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // Apply magnification if it's the percentage field step
+            if (step.title === '百分比反算') {
+                // Find all percent fields that are visible and magnify the first one or all
+                // For tutorial, targetEl is the specific target. Magnify it.
+                // We might need to magnify the parent container slightly or just the text
+                targetEl.classList.add('tutorial-target-magnify');
+            }
+
+            // Update Text
+            document.getElementById('tutorialTitle').innerText = step.title;
+            document.getElementById('tutorialContent').innerText = step.content;
+            document.getElementById('tutorialStepIndicator').innerText = `${currentTutorialIndex + 1}/${tutorialSteps.length}`;
+
+            // Button States
+            const prevBtn = document.getElementById('tutorialPrevBtn');
+            const nextBtn = document.getElementById('tutorialNextBtn');
+            const finishBtn = document.getElementById('tutorialFinishBtn');
+
+            prevBtn.style.visibility = currentTutorialIndex === 0 ? 'hidden' : 'visible';
+            
+            if (currentTutorialIndex === tutorialSteps.length - 1) {
+                nextBtn.classList.add('hidden');
+                finishBtn.classList.remove('hidden');
+            } else {
+                nextBtn.classList.remove('hidden');
+                finishBtn.classList.add('hidden');
+            }
+
+            // Calculate Position
+            setTimeout(() => {
+                const rect = targetEl.getBoundingClientRect();
+                const highlight = document.getElementById('tutorialHighlight');
+                const popup = document.getElementById('tutorialPopup');
+                
+                // Highlight Position
+                highlight.style.width = rect.width + 8 + 'px';
+                highlight.style.height = rect.height + 8 + 'px';
+                highlight.style.top = rect.top - 4 + 'px';
+                highlight.style.left = rect.left - 4 + 'px';
+
+                // Popup Position Logic
+                const popupRect = popup.getBoundingClientRect();
+                const viewportHeight = window.innerHeight;
+                
+                // Check space below
+                if (rect.bottom + popupRect.height + 20 < viewportHeight) {
+                    popup.style.top = rect.bottom + 16 + 'px';
+                } else {
+                    // Place above if no space below
+                    popup.style.top = rect.top - popupRect.height - 16 + 'px';
+                }
+                
+                // Horizontal centering
+                let left = rect.left + (rect.width / 2) - (popupRect.width / 2);
+                
+                // Edge constraints
+                if (left < 10) left = 10;
+                if (left + popupRect.width > window.innerWidth - 10) {
+                    left = window.innerWidth - popupRect.width - 10;
+                }
+                
+                popup.style.left = left + 'px';
+                
+                // Trigger visibility for transition
+                popup.classList.add('visible');
+            }, 300); // Wait for scroll
+        }
+        
+        // 步骤逻辑 (SOP & Step)
+        const defaultSOPs = [
+            { title: '和面标准', icon: 'fa-cog', rows: [['水温', '4-6℃'], ['初始慢速', '3-5分钟'], ['中速揉面', '5-8分钟'], ['出面温度', '24-26℃']] },
+            { title: '成型标准', icon: 'fa-hand-holding', rows: [['分割重量', '60g/个'], ['松弛时间', '15-20分钟'], ['预整形', '滚圆'], ['包馅', '20g/个'], ['最终成型', '橄榄形']] },
+            { title: '发酵标准', icon: 'fa-seedling', rows: [['温度', '28-30℃'], ['湿度', '75-80%'], ['时间', '60-90分钟']] },
+            { title: '烤制标准', icon: 'fa-fire', rows: [['预热温度', '200℃'], ['上火温度', '210℃'], ['下火温度', '190℃'], ['开关风门', '关闭'], ['烤制时间', '35-40分钟']] },
+            { title: '烤后装饰', icon: 'fa-magic', rows: [['表面处理', '刷黄油'], ['保湿', '喷水'], ['装饰', '撒糖粉'], ['冷却', '网架晾凉']] },
+            { title: '二次加工', icon: 'fa-utensils', rows: [['去皮', '切除四边'], ['夹馅', '涂抹果酱'], ['注馅', '注入奶油']] },
+            { title: '包装标准', icon: 'fa-box-open', rows: [['袋子尺寸', '15x20cm'], ['包装方式', '真空包装'], ['保鲜气体', '充氮气'], ['保鲜剂', '脱氧剂'], ['装箱规格', '20袋/箱']] }
+        ];
+
+        const defaultSteps = [
+            { title: '和面', content: '将面粉、糖、盐放入搅拌缸，加入牛奶和鸡蛋，搅拌至无干粉。' },
+            { title: '揉面', content: '揉至面团光滑，加入软化的黄油，继续揉至扩展阶段。' },
+            { title: '一发', content: '发酵至2倍大，手指戳洞不回缩。' },
+            { title: '烘烤', content: '180度烘烤35分钟，表面金黄。' }
+        ];
+
+        function addSopStep(data = null) {
+             const list = document.getElementById('sopStepsList');
+             const div = document.createElement('div');
+             div.className = 'sop-card';
+             // Generate a unique ID for the rows container to append new rows
+             const rowsContainerId = 'sop-rows-' + Date.now() + Math.random().toString(36).substr(2, 5);
+             
+             const iconClass = data ? data.icon : 'fa-list-ul';
+             const titlePlaceholder = data ? data.title : '标准名称 (如:和面)';
+             
+             let rowsHtml = '';
+             if (data && data.rows) {
+                 data.rows.forEach(row => {
+                     rowsHtml += `
+                        <div class="sop-item-row flex gap-2 items-center group/row">
+                            <input class="flex-1 bg-transparent border-b border-gray-100 dark:border-slate-700 p-1 text-sm outline-none text-gray-600 dark:text-gray-400" placeholder="${row[0]}">
+                            <input class="flex-1 bg-transparent border-b border-gray-100 dark:border-slate-700 p-1 text-sm outline-none font-medium text-gray-900 dark:text-white text-right" placeholder="${row[1]}">
+                            <button onclick="this.closest('.sop-item-row').remove()" class="text-gray-300 hover:text-red-400 px-1 opacity-0 group-hover/row:opacity-100 transition-opacity"><i class="fas fa-times"></i></button>
+                        </div>
+                     `;
+                 });
+             } else {
+                 rowsHtml = `
+                    <div class="sop-item-row flex gap-2 items-center group/row">
+                        <input class="flex-1 bg-transparent border-b border-gray-100 dark:border-slate-700 p-1 text-sm outline-none text-gray-600 dark:text-gray-400" placeholder="参数项 (如:温度)">
+                        <input class="flex-1 bg-transparent border-b border-gray-100 dark:border-slate-700 p-1 text-sm outline-none font-medium text-gray-900 dark:text-white text-right" placeholder="标准值 (如:26度)">
+                        <button onclick="this.closest('.sop-item-row').remove()" class="text-gray-300 hover:text-red-400 px-1 opacity-0 group-hover/row:opacity-100 transition-opacity"><i class="fas fa-times"></i></button>
+                    </div>
+                 `;
+             }
+
+             div.innerHTML = `
+                <div class="sop-header justify-between">
+                     <div class="flex items-center">
+                        <div class="sop-icon"><i class="fas ${iconClass}"></i></div>
+                        <input class="font-bold text-gray-800 dark:text-white bg-transparent outline-none w-full" placeholder="${titlePlaceholder}">
+                     </div>
+                     <button onclick="this.closest('.sop-card').remove()" class="text-red-400 text-sm ml-2"><i class="fas fa-trash"></i></button>
+                </div>
+                <div id="${rowsContainerId}" class="space-y-1">
+                    ${rowsHtml}
+                </div>
+                <button class="w-full mt-2 py-2 text-xs text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors dashed-border" onclick="addSopParameter('${rowsContainerId}')">
+                    <i class="fas fa-plus mr-1"></i> 添加参数
+                </button>
+             `;
+             list.appendChild(div);
+        }
+
+        function addSopParameter(containerId) {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
+            div.className = 'sop-item-row flex gap-2 items-center group/row';
+            div.innerHTML = `
+                <input class="flex-1 bg-transparent border-b border-gray-100 dark:border-slate-700 p-1 text-sm outline-none text-gray-600 dark:text-gray-400" placeholder="参数项">
+                <input class="flex-1 bg-transparent border-b border-gray-100 dark:border-slate-700 p-1 text-sm outline-none font-medium text-gray-900 dark:text-white text-right" placeholder="标准值">
+                <button onclick="this.closest('.sop-item-row').remove()" class="text-gray-300 hover:text-red-400 px-1 opacity-0 group-hover/row:opacity-100 transition-opacity"><i class="fas fa-times"></i></button>
+            `;
+            container.appendChild(div);
+        }
+        
+        function addStep(data = null) {
+            const list = document.getElementById('stepsList');
+            const stepNum = list.children.length + 1;
+            const div = document.createElement('div');
+            div.className = 'sop-card group';
+            
+            const titlePlaceholder = data ? data.title : '步骤名称 (如:和面)';
+            const contentPlaceholder = data ? data.content : '在此描述制作步骤细节...';
+            
+            div.innerHTML = `
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-semibold text-gray-800 dark:text-white flex items-center gap-2 flex-1">
+                        <div class="w-8 h-8 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-lg flex items-center justify-center text-sm font-bold">${stepNum}</div>
+                        <input class="bg-transparent outline-none border-b border-transparent focus:border-orange-500 transition-colors w-full font-semibold" placeholder="${titlePlaceholder}">
+                    </h3>
+                    <div class="flex items-center gap-2">
+                        <button onclick="this.closest('.sop-card').remove(); updateStepNumbers();" class="text-red-400 hover:text-red-600 p-1 opacity-0 group-hover:opacity-100 transition-opacity" title="删除步骤">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="step-content">
+                    <textarea class="w-full bg-gray-50 dark:bg-slate-800/50 p-3 rounded-xl border-none outline-none resize-none text-sm min-h-[80px] mb-3 text-gray-600 dark:text-gray-300" placeholder="${contentPlaceholder}"></textarea>
+                    <div class="step-images grid grid-cols-4 gap-2">
+                        <!-- Upload Button -->
+                        <button class="aspect-square bg-gray-50 dark:bg-slate-800 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 border-2 border-dashed border-gray-200 dark:border-slate-600 transition-all" onclick="triggerStepImageUpload(this)">
+                            <i class="fas fa-camera mb-1"></i>
+                            <span class="text-[10px]">添加图片</span>
+                        </button>
+                    </div>
+                    <input type="file" class="hidden" accept="image/*" onchange="handleStepImageUpload(this)">
+                </div>
+            `;
+            list.appendChild(div);
+        }
+
+        function updateStepNumbers() {
+            const list = document.getElementById('stepsList');
+            Array.from(list.children).forEach((card, index) => {
+                const numBadge = card.querySelector('.w-8.h-8');
+                if(numBadge) numBadge.innerText = index + 1;
+            });
+        }
+
+        function triggerStepImageUpload(btn) {
+            const fileInput = btn.closest('.step-content').querySelector('input[type="file"]');
+            fileInput.click();
+        }
+
+        function handleStepImageUpload(input) {
+            if(input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const imgContainer = document.createElement('div');
+                    imgContainer.className = 'relative aspect-square group/img';
+                    imgContainer.innerHTML = `
+                        <img src="${e.target.result}" class="w-full h-full object-cover rounded-lg">
+                        <button onclick="this.closest('div').remove()" class="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover/img:opacity-100 transition-opacity">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+                    // Insert before the upload button
+                    const btn = input.previousElementSibling.querySelector('button');
+                    input.previousElementSibling.insertBefore(imgContainer, btn);
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1880 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>配方详情</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config = { darkMode: 'class' }</script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* CSS Variables for Font Scaling */
+        :root {
+            --font-scale: 1;
+            --base-font-size: 15px;
+            --amount-font-size: 16px;
+            --percent-font-size: 12px;
+            --step-font-size: 14px;
+        }
+
+        /* Dynamic Font Sizing Rules */
+        .ingredient-name, 
+        .sop-card p,
+        .sop-card .font-medium, 
+        .sop-card .font-bold
+        {
+            font-size: calc(var(--base-font-size) * var(--text-font-scale, var(--font-scale))) !important;
+            line-height: 1.5;
+        }
+
+        /* Group titles should scale but maintain hierarchy - scale factor slightly reduced or base increased */
+        .group-title {
+            font-size: calc(var(--base-font-size) * 1.2 * var(--text-font-scale, var(--font-scale))) !important; /* 20% larger than base */
+            line-height: 1.5;
+        }
+        
+        .amount-display,
+        .ingredient-amount-col .amount-display,
+        #baseDoughWeight, #additionalWeight,
+        #variation1DoughWeight, #variation2DoughWeight, #variation3DoughWeight,
+        #variation2ChocolateWeight, #variation3CranberryWeight, #variation3WalnutWeight
+        {
+            font-size: calc(var(--amount-font-size) * var(--number-font-scale, var(--font-scale))) !important;
+            font-weight: normal !important;
+        }
+        
+        .ingredient-percent {
+            font-size: calc(var(--percent-font-size) * var(--number-font-scale, var(--font-scale))) !important;
+        }
+
+        /* Unit Text - Fixed Size, Does NOT Scale */
+        .unit-text {
+            font-size: 12px !important;
+            font-weight: normal !important;
+            margin-left: 2px;
+            vertical-align: baseline;
+            opacity: 0.7;
+        }
+
+        /* 基础样式调整 */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            padding-bottom: 90px; /* Space for sticky footer */
+        }
+
+        /* 隐藏滚动条 */
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* 标签样式 */
+        .tag-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 12px;
+            border-radius: 9999px; /* Pill shape */
+            font-size: 13px;
+            font-weight: 500;
+            margin-right: 8px;
+            transition: all 0.2s ease;
+        }
+        .tag-primary { background: #fff7ed; color: #ea580c; border: 1px solid rgba(234, 88, 12, 0.1); }
+        .dark .tag-primary { background: rgba(234, 88, 12, 0.15); color: #fb923c; border: none; }
+        .tag-gray { background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; }
+        .dark .tag-gray { background: #334155; color: #cbd5e1; border: none; }
+
+        /* Tab样式 */
+        .tab-group {
+            display: flex;
+            background: #f1f5f9;
+            padding: 4px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+        }
+        .dark .tab-group { background: #1e293b; }
+        
+        .tab-item {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 0;
+            border-radius: 12px;
+            color: #64748b;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid transparent;
+        }
+        .dark .tab-item { color: #94a3b8; }
+
+        .tab-item.active {
+            background: white;
+            color: #ea580c; /* Orange-600 */
+            font-weight: 600;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            border-color: rgba(0,0,0,0.02);
+        }
+        .dark .tab-item.active {
+            background: #334155;
+            color: #fb923c; /* Orange-400 */
+        }
+        
+        .tab-item i { margin-right: 6px; font-size: 14px; }
+
+        /* 材料列表样式 */
+        .ingredient-group-card {
+            background: white;
+            border-radius: 16px;
+            padding: 0;
+            margin-bottom: 16px;
+            border: 1px solid rgba(0,0,0,0.03);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            overflow: hidden;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .dark .ingredient-group-card {
+            background: #1e293b;
+            border-color: #334155;
+            box-shadow: none;
+        }
+
+        .group-header {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            background: #ffffff !important;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .dark .group-header {
+            background: #0f172a !important;
+            border-color: #334155;
+        }
+
+        .group-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-size: 13px;
+        }
+        .group-title {
+            font-weight: 600;
+            font-size: 16px;
+            color: #1e293b;
+            letter-spacing: -0.01em;
+        }
+        .dark .group-title { color: #f1f5f9; }
+
+        /* 分组颜色 - More pastel/refined */
+        .group-flour .group-icon { background: #fff7ed; color: #c2410c; }
+        .dark .group-flour .group-icon { background: rgba(154, 52, 18, 0.2); color: #fdba74; }
+        
+        .group-sponge .group-icon { background: #f0fdf4; color: #15803d; }
+        .dark .group-sponge .group-icon { background: rgba(21, 128, 61, 0.2); color: #86efac; }
+        
+        .group-wet .group-icon { background: #eff6ff; color: #1d4ed8; }
+        .dark .group-wet .group-icon { background: rgba(29, 78, 216, 0.2); color: #93c5fd; }
+        
+        .group-dry .group-icon { background: #f8fafc; color: #475569; }
+        .dark .group-dry .group-icon { background: #334155; color: #cbd5e1; }
+        
+        .group-aux .group-icon { background: #fefce8; color: #a16207; }
+        .dark .group-aux .group-icon { background: rgba(161, 98, 7, 0.2); color: #fde047; }
+
+        /* 列表行样式 */
+        .list-row {
+            display: flex;
+            align-items: center;
+            padding: 14px 16px;
+            border-bottom: 1px solid #f8fafc;
+            transition: background-color 0.2s;
+        }
+        .dark .list-row { border-bottom-color: #334155; }
+        .list-row:last-child { border-bottom: none; }
+        .list-row:hover { background-color: #f8fafc; }
+        .dark .list-row:hover { background-color: #334155; }
+
+        /* 模拟复选框 */
+        .fake-checkbox {
+            width: 22px;
+            height: 22px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            margin-right: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .dark .fake-checkbox { border-color: #4b5563; }
+        
+        .ingredient-item.checked .fake-checkbox {
+            background-color: #f97316;
+            border-color: #f97316;
+            transform: scale(1.05);
+        }
+        .ingredient-item.checked .fake-checkbox i {
+            display: block;
+            color: white;
+            font-size: 12px;
+        }
+        .fake-checkbox i { display: none; }
+
+        .ingredient-name {
+            font-weight: 500;
+            color: #334151;
+            font-size: 15px;
+        }
+        .dark .ingredient-name { color: #e2e8f0; }
+        
+        .ingredient-item.checked .ingredient-name {
+            color: #94a3b8;
+        }
+
+        .ingredient-amount-col { text-align: right; }
+        .ingredient-percent { font-size: 12px; color: #9ca3af; margin-top: 2px; }
+
+        /* Status text style - Visible on check */
+        .ingredient-status-text {
+            display: none; /* Default hidden */
+            font-size: 12px;
+            color: #16a34a; /* Green-600 */
+            margin-left: 8px; /* Corrected to margin-left */
+            font-weight: 500;
+            background: #dcfce7;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        
+        .ingredient-item.checked .ingredient-status-text {
+            display: inline-block !important; /* Force visible when checked */
+        }
+        
+        /* Gray out the whole row when checked */
+        .ingredient-item.checked {
+            background-color: #f3f4f6; /* Gray-100 */
+            opacity: 0.7;
+        }
+        .dark .ingredient-item.checked {
+            background-color: #334155; /* Slate-700 */
+            opacity: 0.6;
+        }
+        
+        /* Adjust layout for checked state */
+        .ingredient-item.checked .ingredient-name,
+        .ingredient-item.checked .amount-display {
+            color: #94a3b8 !important;
+        }
+
+        /* SOP & Steps 样式 - Refined to match new card style */
+        .sop-card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid rgba(0,0,0,0.03);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            margin-bottom: 12px;
+            transition: transform 0.2s ease;
+        }
+        .dark .sop-card {
+            background: #1e293b;
+            border-color: #334155;
+            box-shadow: none;
+        }
+        .sop-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .sop-icon {
+            width: 32px;
+            height: 32px;
+            background: #fff7ed;
+            color: #ea580c;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+        }
+        .dark .sop-icon {
+            background: rgba(234, 88, 12, 0.15);
+            color: #fb923c;
+        }
+        .sop-item-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px dashed #f0f0f0;
+            font-size: 14px;
+        }
+        .dark .sop-item-row {
+            border-bottom-color: #334155;
+        }
+        .sop-item-row:last-child { border-bottom: none; }
+
+        .step-images {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            transition: all 0.3s ease;
+            margin-top: 12px;
+        }
+        .step-images.expanded { 
+            grid-template-columns: 1fr; 
+        }
+        .step-images.expanded img {
+            aspect-ratio: 16/9;
+            width: 100%;
+            height: auto;
+        }
+        .step-images img {
+            border-radius: 8px;
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+        }
+
+        /* 动画类 */
+        .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* 强制刷新暗黑模式 */
+        .dark-force-refresh {}
+    </style>
+</head>
+<body class="bg-[#f7f7f5] dark:bg-[#0f172a] min-h-screen">
+
+    <!-- 沉浸式头部 -->
+    <header class="relative w-full h-72 bg-gray-200">
+        <!-- 封面图 -->
+        <img src="https://images.unsplash.com/photo-1549931319-a545dcf3bc73?w=1200&h=800&fit=crop&q=90" 
+             id="heroImage" 
+             class="w-full h-full object-cover transition-transform duration-700 ease-out">
+        <div class="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/60"></div>
+
+        <!-- 返回按钮 -->
+        <button onclick="checkExitConfirmation()" class="absolute top-4 left-4 w-10 h-10 bg-black/30 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-black/50 transition-colors z-20">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+
+        <!-- 右上角操作区 -->
+        <div class="absolute top-4 right-4 flex space-x-3 z-20">
+            <div class="relative">
+                <button onclick="toggleShareMenu()" class="w-10 h-10 bg-black/30 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-black/50 transition-colors">
+                    <i class="fas fa-share-alt"></i>
+                </button>
+                <!-- 分享菜单下拉 -->
+                <div id="shareMenuDropdown" class="absolute right-0 top-12 bg-white dark:bg-[#334155] rounded-xl shadow-2xl border border-slate-200 dark:border-slate-600 p-2 z-30 hidden min-w-[160px]">
+                    <button class="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-[#475569] text-gray-800 dark:text-slate-100 text-sm flex items-center transition" onclick="publishToResources()">
+                        <i class="fas fa-globe-asia mr-3 text-orange-500"></i>分享到社区
+                    </button>
+                    <button class="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-[#475569] text-gray-800 dark:text-slate-100 text-sm flex items-center transition" onclick="shareToWeChat()">
+                        <i class="fab fa-weixin mr-3 text-green-500"></i>分享到微信
+                    </button>
+                </div>
+            </div>
+            <button onclick="toggleMoreMenu()" class="w-10 h-10 bg-black/30 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-black/50 transition-colors">
+                <i class="fas fa-ellipsis-v"></i>
+            </button>
+        </div>
+
+        <!-- 更多菜单下拉 (保持原有结构) -->
+        <div id="moreMenuDropdown" class="absolute right-4 top-16 bg-white dark:bg-[#334155] rounded-xl shadow-2xl border border-slate-200 dark:border-slate-600 p-2 z-30 hidden min-w-[160px]">
+            <button class="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-[#475569] text-gray-800 dark:text-slate-100 text-sm flex items-center transition" onclick="togglePercentages()">
+                <i class="fas fa-percentage mr-3 text-purple-600 dark:text-purple-400"></i><span id="percentageButtonText">查看百分比</span>
+            </button>
+            <button class="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-[#475569] text-gray-800 dark:text-slate-100 text-sm flex items-center transition" onclick="editRecipe()">
+                <i class="fas fa-edit mr-3 text-purple-600 dark:text-purple-400"></i>编辑配方
+            </button>
+            <button class="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-[#475569] text-gray-800 dark:text-slate-100 text-sm flex items-center transition" onclick="duplicateRecipe()">
+                <i class="fas fa-copy mr-3 text-purple-600 dark:text-purple-400"></i>复制配方
+            </button>
+            <button class="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-[#475569] text-gray-800 dark:text-slate-100 text-sm flex items-center transition" onclick="printRecipe()">
+                <i class="fas fa-print mr-3 text-purple-600 dark:text-purple-400"></i>打印配方
+            </button>
+            <button class="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-[#475569] text-gray-800 dark:text-slate-100 text-sm flex items-center transition" onclick="showAutoStockOutModal()">
+                <i class="fas fa-dolly mr-3 text-purple-600 dark:text-purple-400"></i>生产制作
+            </button>
+            <button class="w-full text-left px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 text-sm flex items-center transition mt-1" onclick="deleteRecipe()">
+                <i class="fas fa-trash mr-3"></i>删除配方
+            </button>
+            <button class="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-[#475569] text-gray-800 dark:text-slate-100 text-sm flex items-center transition" onclick="showFontSizeModal()">
+                <i class="fas fa-text-height mr-3 text-purple-600 dark:text-purple-400"></i>调整字体
+            </button>
+            <div class="border-t border-gray-100 dark:border-gray-600 my-1"></div>
+            <button class="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-[#475569] text-gray-800 dark:text-slate-100 text-sm flex items-center transition" onclick="toggleTheme()">
+                <span id="themeIcon" class="mr-3 text-lg w-4 text-center">🌙</span>切换主题
+            </button>
+        </div>
+    </header>
+
+    <!-- 主要内容区 (重叠式设计) -->
+    <main class="px-5 -mt-6 relative bg-white dark:bg-[#0f172a] rounded-t-3xl z-10 pt-6 min-h-[calc(100vh-280px)]">
+        
+        <!-- 标题与信息 -->
+        <div class="mb-6">
+            <div class="flex items-center justify-between mb-3">
+                <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white leading-tight cursor-pointer flex items-center gap-2" onclick="toggleRecipeInfo()">
+                    经典白吐司
+                    <i id="infoToggleIcon" class="fas fa-chevron-right text-sm text-gray-400 dark:text-gray-500 transition-transform duration-300"></i>
+                </h1>
+                
+                <div class="flex items-center gap-2">
+                    <!-- Title Stepper (Hidden by default) -->
+                    <div id="titleStepper" class="hidden items-center bg-gray-100 dark:bg-slate-700 rounded-lg p-1 animate-fadeIn">
+                        <button class="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-orange-600 dark:text-gray-400" onclick="adjustProduction('base', -1)">
+                            <i class="fas fa-minus text-xs"></i>
+                        </button>
+                        <span id="titleProductionDisplay" class="w-8 text-center font-bold text-gray-900 dark:text-white text-sm">1</span>
+                        <button class="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-orange-600 dark:text-gray-400" onclick="adjustProduction('base', 1)">
+                            <i class="fas fa-plus text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- Collapsible Info Container (Default Hidden) -->
+            <div id="recipeInfoContainer" class="hidden overflow-hidden transition-all duration-300 origin-top">
+                <div class="flex flex-wrap gap-2 mb-4 animate-fadeIn">
+                    <span class="tag-badge tag-primary" onclick="showCategoryInfo(event)">面包类</span>
+                    <span class="tag-badge tag-gray"><i class="far fa-clock mr-1"></i> <span id="dynamicTimeDisplay">4小时</span></span>
+                    <span class="tag-badge tag-gray"><i class="fas fa-fire mr-1"></i> <span id="dynamicCalorieDisplay">280千卡</span></span>
+                </div>
+                <p class="text-gray-500 dark:text-gray-400 text-sm leading-relaxed animate-fadeIn">经典白吐司，组织细腻，奶香浓郁，适合作为早餐主食。</p>
+            </div>
+        </div>
+
+        <!-- 标签切换 -->
+        <div class="tab-group" id="tabGroup">
+            <div class="tab-item active" id="tab-btn-recipe" onclick="switchTab('recipe')">
+                <i class="fas fa-bread-slice"></i> 配方
+            </div>
+            <div class="tab-item" id="tab-btn-sop" onclick="switchTab('sop')">
+                <i class="fas fa-clipboard-list"></i> SOP
+            </div>
+            <div class="tab-item" id="tab-btn-step" onclick="switchTab('step')">
+                <i class="fas fa-list-ol"></i> 步骤
+            </div>
+        </div>
+
+        <!-- 配方内容区 -->
+        <div id="recipe-section" class="pb-20">
+            <!-- 面粉分组 -->
+            <div class="ingredient-group-card group-flour">
+                <div class="group-header">
+                    <div class="group-icon"><i class="fas fa-wheat-awn"></i></div>
+                    <div class="group-title">面粉</div>
+                </div>
+                <div class="space-y-0">
+                    <div class="list-row ingredient-item cursor-pointer" onclick="toggleIngredientStatus(this)">
+                        <div class="fake-checkbox"><i class="fas fa-check"></i></div>
+                        <div class="flex-1 flex items-center">
+                            <div class="ingredient-name mr-2">高筋面粉</div>
+                            <div class="ingredient-status-text">已入料</div>
+                        </div>
+                        <div class="ingredient-amount-col">
+                            <div class="amount-display text-gray-900 dark:text-white" data-base-amount="500">500<span class="unit-text">g</span></div>
+                            <div class="ingredient-percent percentage-text">100%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 种面分组 -->
+            <div class="ingredient-group-card group-sponge">
+                <div class="group-header">
+                    <div class="group-icon"><i class="fas fa-seedling"></i></div>
+                    <div class="group-title">种面</div>
+                </div>
+                <div class="space-y-0">
+                    <div class="list-row ingredient-item cursor-pointer" onclick="toggleIngredientStatus(this)">
+                        <div class="fake-checkbox"><i class="fas fa-check"></i></div>
+                        <div class="flex-1 flex items-center">
+                            <div class="ingredient-name mr-2">自制种面</div>
+                            <div class="ingredient-status-text">已入料</div>
+                        </div>
+                        <div class="ingredient-amount-col">
+                            <div class="amount-display text-gray-900 dark:text-white" data-base-amount="120">120<span class="unit-text">g</span></div>
+                            <div class="ingredient-percent percentage-text">24%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 干料分组 -->
+            <div class="ingredient-group-card group-dry">
+                <div class="group-header">
+                    <div class="group-icon"><i class="fas fa-cube"></i></div>
+                    <div class="group-title">干料</div>
+                </div>
+                <div class="space-y-0">
+                    <div class="list-row ingredient-item cursor-pointer" onclick="toggleIngredientStatus(this)">
+                        <div class="fake-checkbox"><i class="fas fa-check"></i></div>
+                        <div class="flex-1 flex items-center">
+                            <div class="ingredient-name mr-2">白砂糖</div>
+                            <div class="ingredient-status-text">已入料</div>
+                        </div>
+                        <div class="ingredient-amount-col">
+                            <div class="amount-display text-gray-900 dark:text-white" data-base-amount="50">50<span class="unit-text">g</span></div>
+                            <div class="ingredient-percent percentage-text">10%</div>
+                        </div>
+                    </div>
+                    <div class="list-row ingredient-item cursor-pointer" onclick="toggleIngredientStatus(this)">
+                        <div class="fake-checkbox"><i class="fas fa-check"></i></div>
+                        <div class="flex-1 flex items-center">
+                            <div class="ingredient-name mr-2">盐</div>
+                            <div class="ingredient-status-text">已入料</div>
+                        </div>
+                        <div class="ingredient-amount-col">
+                            <div class="amount-display text-gray-900 dark:text-white" data-base-amount="8">8<span class="unit-text">g</span></div>
+                            <div class="ingredient-percent percentage-text">1.6%</div>
+                        </div>
+                    </div>
+                    <div class="list-row ingredient-item cursor-pointer" onclick="toggleIngredientStatus(this)">
+                        <div class="fake-checkbox"><i class="fas fa-check"></i></div>
+                        <div class="flex-1 flex items-center">
+                            <div class="ingredient-name mr-2">干酵母</div>
+                            <div class="ingredient-status-text">已入料</div>
+                        </div>
+                        <div class="ingredient-amount-col">
+                            <div class="amount-display text-gray-900 dark:text-white" data-base-amount="5">5<span class="unit-text">g</span></div>
+                            <div class="ingredient-percent percentage-text">1%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 湿料分组 -->
+            <div class="ingredient-group-card group-wet">
+                <div class="group-header">
+                    <div class="group-icon"><i class="fas fa-droplet"></i></div>
+                    <div class="group-title">湿料</div>
+                </div>
+                <div class="space-y-0">
+                    <div class="list-row ingredient-item cursor-pointer" onclick="toggleIngredientStatus(this)">
+                        <div class="fake-checkbox"><i class="fas fa-check"></i></div>
+                        <div class="flex-1 flex items-center">
+                            <div class="ingredient-name mr-2">牛奶</div>
+                            <div class="ingredient-status-text">已入料</div>
+                        </div>
+                        <div class="ingredient-amount-col">
+                            <div class="amount-display text-gray-900 dark:text-white" data-base-amount="300">300<span class="unit-text">ml</span></div>
+                            <div class="ingredient-percent percentage-text">60%</div>
+                        </div>
+                    </div>
+                    <div class="list-row ingredient-item cursor-pointer" onclick="toggleIngredientStatus(this)">
+                        <div class="fake-checkbox"><i class="fas fa-check"></i></div>
+                        <div class="flex-1 flex items-center">
+                            <div class="ingredient-name mr-2">鸡蛋</div>
+                            <div class="ingredient-status-text">已入料</div>
+                        </div>
+                        <div class="ingredient-amount-col">
+                            <div class="amount-display text-gray-900 dark:text-white" data-base-amount="50">50<span class="unit-text">g</span></div>
+                            <div class="ingredient-percent percentage-text">10%</div>
+                        </div>
+                    </div>
+                    <div class="list-row ingredient-item cursor-pointer" onclick="toggleIngredientStatus(this)">
+                        <div class="fake-checkbox"><i class="fas fa-check"></i></div>
+                        <div class="flex-1 flex items-center">
+                            <div class="ingredient-name mr-2">糖浆配方</div>
+                            <div class="ingredient-status-text">已入料</div>
+                        </div>
+                        <div class="ingredient-amount-col">
+                            <div class="amount-display text-gray-900 dark:text-white" data-base-amount="80">80<span class="unit-text">g</span></div>
+                            <div class="ingredient-percent percentage-text">16%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 辅料分组 -->
+            <div class="ingredient-group-card group-aux">
+                <div class="group-header">
+                    <div class="group-icon"><i class="fas fa-mortar-pestle"></i></div>
+                    <div class="group-title">辅料</div>
+                </div>
+                <div class="space-y-0">
+                    <div class="list-row ingredient-item cursor-pointer" onclick="toggleIngredientStatus(this)">
+                        <div class="fake-checkbox"><i class="fas fa-check"></i></div>
+                        <div class="flex-1 flex items-center">
+                            <div class="ingredient-name mr-2">黄油</div>
+                            <div class="ingredient-status-text">已入料</div>
+                        </div>
+                        <div class="ingredient-amount-col">
+                            <div class="amount-display text-gray-900 dark:text-white" data-base-amount="30">30<span class="unit-text">g</span></div>
+                            <div class="ingredient-percent percentage-text">6%</div>
+                        </div>
+                    </div>
+                    <div class="list-row ingredient-item cursor-pointer" onclick="toggleIngredientStatus(this)">
+                        <div class="fake-checkbox"><i class="fas fa-check"></i></div>
+                        <div class="flex-1 flex items-center">
+                            <div class="ingredient-name mr-2">芝麻</div>
+                            <div class="ingredient-status-text">已入料</div>
+                        </div>
+                        <div class="ingredient-amount-col">
+                            <div class="amount-display text-gray-900 dark:text-white" data-base-amount="10">10<span class="unit-text">g</span></div>
+                            <div class="ingredient-percent percentage-text">2%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 基础面团 (Custom Card) -->
+            <div id="card-base" class="ingredient-group-card border-l-4 border-l-orange-500">
+                <div class="group-header justify-between">
+                    <div class="flex items-center">
+                        <div class="group-icon bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400"><i class="fas fa-bread-slice"></i></div>
+                        <div class="group-title">基础面团</div>
+                    </div>
+                    <div id="baseCardControls" class="flex items-center gap-2">
+                        <span class="text-xs text-gray-500 dark:text-gray-400">数量:</span>
+                        <div class="flex items-center bg-white dark:bg-slate-700 rounded border border-gray-200 dark:border-slate-600">
+                            <button class="px-2 py-0.5 text-gray-400 hover:text-orange-600" onclick="adjustProduction('base', -1)">-</button>
+                            <span id="baseProduction" class="px-1 text-sm font-bold min-w-[20px] text-center" onclick="editProduction('base')">1</span>
+                            <button class="px-2 py-0.5 text-gray-400 hover:text-orange-600" onclick="adjustProduction('base', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-0">
+                    <div class="list-row">
+                        <span class="flex-1 font-medium text-gray-700 dark:text-gray-300">基础面团</span>
+                        <div class="text-right">
+                            <div class="amount-display text-gray-900 dark:text-white" id="baseDoughWeight">943<span class="unit-text">g</span></div>
+                            <div class="text-xs text-gray-400">成本: ￥<span id="baseDoughCost">4.20</span></div>
+                        </div>
+                    </div>
+                    <div class="list-row">
+                        <span class="flex-1 font-medium text-gray-700 dark:text-gray-300 flex items-center">
+                            酥菠萝皮
+                        </span>
+                        <div class="text-right">
+                            <div class="amount-display text-gray-900 dark:text-white" id="additionalWeight">150<span class="unit-text">g</span></div>
+                            <div class="text-xs text-gray-400">成本: ￥<span id="additionalCost">2.80</span></div>
+                        </div>
+                    </div>
+                    <!-- Unified Footer -->
+                    <div class="p-4 bg-gray-50 dark:bg-slate-800/50 flex justify-between items-center border-t border-gray-100 dark:border-slate-700">
+                        <div>
+                            <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">总成本</div>
+                            <div class="flex items-baseline gap-1">
+                                 <span class="text-xl font-bold text-orange-600 dark:text-orange-400 leading-none" id="baseTotalCost">7.00</span>
+                                 <span class="text-xs text-orange-600 dark:text-orange-400 font-medium">¥</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">总重量</div>
+                            <div class="text-lg font-bold text-gray-700 dark:text-gray-200"><span id="baseTotalWeight">1090</span><span class="text-xs font-normal ml-0.5 text-gray-400">g</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 变化款1 -->
+            <div id="card-var1" class="ingredient-group-card border-l-4 border-l-orange-500">
+                <div class="group-header justify-between">
+                    <div class="flex items-center">
+                        <div class="group-title text-gray-900 dark:text-white">经典白吐司砖</div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-gray-500">数量:</span>
+                        <div class="flex items-center bg-white dark:bg-slate-700 rounded border border-gray-200 dark:border-slate-600">
+                            <button class="px-2 py-0.5 text-gray-400 hover:text-orange-600" onclick="adjustProduction('variation1', -1)">-</button>
+                            <span id="variation1Production" class="px-1 text-sm font-bold min-w-[20px] text-center" onclick="editProduction('variation1')">2</span>
+                            <button class="px-2 py-0.5 text-gray-400 hover:text-orange-600" onclick="adjustProduction('variation1', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-0">
+                    <div class="list-row">
+                        <span class="flex-1 font-medium text-gray-700 dark:text-gray-300">基础面团</span>
+                        <div class="text-right">
+                            <div class="amount-display text-gray-900 dark:text-white" id="variation1DoughWeight">500<span class="unit-text">g</span></div>
+                            <div class="text-xs text-gray-400">成本: ￥<span id="variation1DoughCost">2.22</span></div>
+                        </div>
+                    </div>
+                    <!-- Unified Footer -->
+                    <div class="p-4 bg-gray-50 dark:bg-slate-800/50 flex justify-between items-center border-t border-gray-100 dark:border-slate-700">
+                        <div>
+                            <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">总成本</div>
+                            <div class="flex items-baseline gap-1">
+                                 <span class="text-xl font-bold text-orange-600 dark:text-orange-400 leading-none" id="variation1TotalCost">4.44</span>
+                                 <span class="text-xs text-orange-600 dark:text-orange-400 font-medium">¥</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">总重量</div>
+                            <div class="text-lg font-bold text-gray-700 dark:text-gray-200"><span id="variation1TotalWeight">1000</span><span class="text-xs font-normal ml-0.5 text-gray-400">g</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 变化款2 -->
+            <div id="card-var2" class="ingredient-group-card border-l-4 border-l-orange-500">
+                <div class="group-header justify-between">
+                    <div class="flex items-center">
+                        <div class="group-title text-gray-900 dark:text-white">巧克力吐司</div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-gray-500">数量:</span>
+                        <div class="flex items-center bg-white dark:bg-slate-700 rounded border border-gray-200 dark:border-slate-600">
+                            <button class="px-2 py-0.5 text-gray-400 hover:text-orange-600" onclick="adjustProduction('variation2', -1)">-</button>
+                            <span id="variation2Production" class="px-1 text-sm font-bold min-w-[20px] text-center" onclick="editProduction('variation2')">3</span>
+                            <button class="px-2 py-0.5 text-gray-400 hover:text-orange-600" onclick="adjustProduction('variation2', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-0">
+                    <div class="list-row">
+                        <span class="flex-1 font-medium text-gray-700 dark:text-gray-300">基础面团</span>
+                        <div class="text-right">
+                            <div class="amount-display text-gray-900 dark:text-white" id="variation2DoughWeight">350<span class="unit-text">g</span></div>
+                            <div class="text-xs text-gray-400">成本: ￥<span id="variation2DoughCost">1.55</span></div>
+                        </div>
+                    </div>
+                    <div class="list-row">
+                        <span class="flex-1 font-medium text-gray-700 dark:text-gray-300">巧克力粒</span>
+                        <div class="text-right">
+                            <div class="amount-display text-gray-900 dark:text-white" id="variation2ChocolateWeight">50<span class="unit-text">g</span></div>
+                            <div class="text-xs text-gray-400">成本: ￥<span id="variation2ChocolateCost">1.20</span></div>
+                        </div>
+                    </div>
+                    <!-- Unified Footer -->
+                    <div class="p-4 bg-gray-50 dark:bg-slate-800/50 flex justify-between items-center border-t border-gray-100 dark:border-slate-700">
+                        <div>
+                            <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">总成本</div>
+                            <div class="flex items-baseline gap-1">
+                                 <span class="text-xl font-bold text-orange-600 dark:text-orange-400 leading-none" id="variation2TotalCost">8.25</span>
+                                 <span class="text-xs text-orange-600 dark:text-orange-400 font-medium">¥</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">总重量</div>
+                            <div class="text-lg font-bold text-gray-700 dark:text-gray-200"><span id="variation2TotalWeight">1200</span><span class="text-xs font-normal ml-0.5 text-gray-400">g</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 变化款3 -->
+            <div id="card-var3" class="ingredient-group-card border-l-4 border-l-orange-500">
+                <div class="group-header justify-between">
+                    <div class="flex items-center">
+                        <div class="group-title text-gray-900 dark:text-white">蔓越莓吐司</div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-gray-500">数量:</span>
+                        <div class="flex items-center bg-white dark:bg-slate-700 rounded border border-gray-200 dark:border-slate-600">
+                            <button class="px-2 py-0.5 text-gray-400 hover:text-orange-600" onclick="adjustProduction('variation3', -1)">-</button>
+                            <span id="variation3Production" class="px-1 text-sm font-bold min-w-[20px] text-center" onclick="editProduction('variation3')">1</span>
+                            <button class="px-2 py-0.5 text-gray-400 hover:text-orange-600" onclick="adjustProduction('variation3', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-0">
+                    <div class="list-row">
+                        <span class="flex-1 font-medium text-gray-700 dark:text-gray-300">基础面团</span>
+                        <div class="text-right">
+                            <div class="amount-display text-gray-900 dark:text-white" id="variation3DoughWeight">480<span class="unit-text">g</span></div>
+                            <div class="text-xs text-gray-400">成本: ￥<span id="variation3DoughCost">2.13</span></div>
+                        </div>
+                    </div>
+                    <div class="list-row">
+                        <span class="flex-1 font-medium text-gray-700 dark:text-gray-300">蔓越莓干</span>
+                        <div class="text-right">
+                            <div class="amount-display text-gray-900 dark:text-white" id="variation3CranberryWeight">80<span class="unit-text">g</span></div>
+                            <div class="text-xs text-gray-400">成本: ￥<span id="variation3CranberryCost">3.60</span></div>
+                        </div>
+                    </div>
+                    <div class="list-row">
+                        <span class="flex-1 font-medium text-gray-700 dark:text-gray-300 flex items-center">
+                            核桃配方
+                        </span>
+                        <div class="text-right">
+                            <div class="amount-display text-gray-900 dark:text-white" id="variation3WalnutWeight">40<span class="unit-text">g</span></div>
+                            <div class="text-xs text-gray-400">成本: ￥<span id="variation3WalnutCost">2.40</span></div>
+                        </div>
+                    </div>
+                    <!-- Unified Footer -->
+                    <div class="p-4 bg-gray-50 dark:bg-slate-800/50 flex justify-between items-center border-t border-gray-100 dark:border-slate-700">
+                        <div>
+                            <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">总成本</div>
+                            <div class="flex items-baseline gap-1">
+                                 <span class="text-xl font-bold text-orange-600 dark:text-orange-400 leading-none" id="variation3TotalCost">8.13</span>
+                                 <span class="text-xs text-orange-600 dark:text-orange-400 font-medium">¥</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">总重量</div>
+                            <div class="text-lg font-bold text-gray-700 dark:text-gray-200"><span id="variation3TotalWeight">600</span><span class="text-xs font-normal ml-0.5 text-gray-400">g</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SOP Section -->
+        <div id="sop-section" class="hidden pb-20">
+             <div class="space-y-4">
+                 <!-- 和面标准 -->
+                 <div class="sop-card">
+                     <div class="sop-header">
+                         <div class="sop-icon"><i class="fas fa-cog"></i></div>
+                         <span class="font-bold text-gray-800 dark:text-white">和面标准</span>
+                     </div>
+                     <div class="space-y-1">
+                         <div class="sop-item-row">
+                             <span class="text-gray-500 dark:text-gray-400">水温</span>
+                             <span class="font-medium text-gray-900 dark:text-white">4-6℃</span>
+                         </div>
+                         <div class="sop-item-row">
+                             <span class="text-gray-500 dark:text-gray-400">初始慢速</span>
+                             <span class="font-medium text-gray-900 dark:text-white">3-5分钟</span>
+                         </div>
+                         <div class="sop-item-row">
+                             <span class="text-gray-500 dark:text-gray-400">中速揉面</span>
+                             <span class="font-medium text-gray-900 dark:text-white">5-8分钟</span>
+                         </div>
+                         <div class="sop-item-row">
+                             <span class="text-gray-500 dark:text-gray-400">出面温度</span>
+                             <span class="font-medium text-gray-900 dark:text-white">24-26℃</span>
+                         </div>
+                     </div>
+                 </div>
+
+                 <!-- 成型标准 -->
+                 <div class="sop-card">
+                     <div class="sop-header">
+                         <div class="sop-icon"><i class="fas fa-hand-holding"></i></div>
+                         <span class="font-bold text-gray-800 dark:text-white">成型标准</span>
+                     </div>
+                     <div class="space-y-1">
+                         <div class="sop-item-row">
+                             <span class="text-gray-500 dark:text-gray-400">分割重量</span>
+                             <span class="font-medium text-gray-900 dark:text-white">60g/个</span>
+                         </div>
+                         <div class="sop-item-row">
+                             <span class="text-gray-500 dark:text-gray-400">松弛时间</span>
+                             <span class="font-medium text-gray-900 dark:text-white">15-20分钟</span>
+                         </div>
+                         <div class="sop-item-row">
+                             <span class="text-gray-500 dark:text-gray-400">预整形</span>
+                             <span class="font-medium text-gray-900 dark:text-white">滚圆</span>
+                         </div>
+                         <div class="sop-item-row">
+                             <span class="text-gray-500 dark:text-gray-400">包馅</span>
+                             <span class="font-medium text-gray-900 dark:text-white">20g/个</span>
+                         </div>
+                         <div class="sop-item-row">
+                             <span class="text-gray-500 dark:text-gray-400">最终成型</span>
+                             <span class="font-medium text-gray-900 dark:text-white">橄榄形</span>
+                         </div>
+                     </div>
+                 </div>
+                 
+                 <!-- 发酵标准 -->
+                 <div class="sop-card">
+                     <div class="sop-header">
+                         <div class="sop-icon"><i class="fas fa-seedling"></i></div>
+                         <span class="font-bold text-gray-800 dark:text-white">发酵标准</span>
+                     </div>
+                     <div class="space-y-1">
+                         <div class="sop-item-row">
+                             <span class="text-gray-500 dark:text-gray-400">温度</span>
+                             <span class="font-medium text-gray-900 dark:text-white">28-30℃</span>
+                         </div>
+                         <div class="sop-item-row">
+                             <span class="text-gray-500 dark:text-gray-400">湿度</span>
+                             <span class="font-medium text-gray-900 dark:text-white">75-80%</span>
+                         </div>
+                         <div class="sop-item-row">
+                             <span class="text-gray-500 dark:text-gray-400">时间</span>
+                             <span class="font-medium text-gray-900 dark:text-white">60-90分钟</span>
+                         </div>
+                     </div>
+                 </div>
+
+                 <!-- 烤制标准 -->
+                 <div class="sop-card">
+                     <div class="sop-header">
+                         <div class="sop-icon"><i class="fas fa-fire"></i></div>
+                         <span class="font-bold text-gray-800 dark:text-white">烤制标准</span>
+                     </div>
+                     <div class="space-y-1">
+                         <div class="sop-item-row">
+                             <span class="text-gray-500 dark:text-gray-400">预热温度</span>
+                             <span class="font-medium text-gray-900 dark:text-white">200℃</span>
+                         </div>
+                         <div class="sop-item-row">
+                             <span class="text-gray-500 dark:text-gray-400">上火温度</span>
+                             <span class="font-medium text-gray-900 dark:text-white">210℃</span>
+                         </div>
+                         <div class="sop-item-row">
+                             <span class="text-gray-500 dark:text-gray-400">下火温度</span>
+                             <span class="font-medium text-gray-900 dark:text-white">190℃</span>
+                         </div>
+                         <div class="sop-item-row">
+                             <span class="text-gray-500 dark:text-gray-400">开关风门</span>
+                             <span class="font-medium text-gray-900 dark:text-white">关闭</span>
+                         </div>
+                         <div class="sop-item-row">
+                             <span class="text-gray-500 dark:text-gray-400">烤制时间</span>
+                             <span class="font-medium text-gray-900 dark:text-white">35-40分钟</span>
+                         </div>
+                     </div>
+                 </div>
+
+                 <!-- 烤后装饰 -->
+                 <div class="sop-card">
+                     <div class="sop-header">
+                         <div class="sop-icon"><i class="fas fa-magic"></i></div>
+                         <span class="font-bold text-gray-800 dark:text-white">烤后装饰</span>
+                     </div>
+                     <div class="space-y-1">
+                         <div class="sop-item-row">
+                             <span class="text-gray-500 dark:text-gray-400">表面处理</span>
+                             <span class="font-medium text-gray-900 dark:text-white">刷黄油</span>
+                         </div>
+                         <div class="sop-item-row">
+                             <span class="text-gray-500 dark:text-gray-400">保湿</span>
+                             <span class="font-medium text-gray-900 dark:text-white">喷水</span>
+                         </div>
+                         <div class="sop-item-row">
+                             <span class="text-gray-500 dark:text-gray-400">装饰</span>
+                             <span class="font-medium text-gray-900 dark:text-white">撒糖粉</span>
+                         </div>
+                         <div class="sop-item-row">
+                             <span class="text-gray-500 dark:text-gray-400">冷却</span>
+                             <span class="font-medium text-gray-900 dark:text-white">网架晾凉</span>
+                         </div>
+                     </div>
+                 </div>
+
+                 <!-- 二次加工 -->
+                 <div class="sop-card">
+                     <div class="sop-header">
+                         <div class="sop-icon"><i class="fas fa-utensils"></i></div>
+                         <span class="font-bold text-gray-800 dark:text-white">二次加工</span>
+                     </div>
+                     <div class="space-y-1">
+                         <div class="sop-item-row">
+                             <span class="text-gray-500 dark:text-gray-400">去皮</span>
+                             <span class="font-medium text-gray-900 dark:text-white">切除四边</span>
+                         </div>
+                         <div class="sop-item-row">
+                             <span class="text-gray-500 dark:text-gray-400">夹馅</span>
+                             <span class="font-medium text-gray-900 dark:text-white">涂抹果酱</span>
+                         </div>
+                         <div class="sop-item-row">
+                             <span class="text-gray-500 dark:text-gray-400">注馅</span>
+                             <span class="font-medium text-gray-900 dark:text-white">注入奶油</span>
+                         </div>
+                     </div>
+                 </div>
+
+                 <!-- 包装标准 -->
+                 <div class="sop-card">
+                     <div class="sop-header">
+                         <div class="sop-icon"><i class="fas fa-box-open"></i></div>
+                         <span class="font-bold text-gray-800 dark:text-white">包装标准</span>
+                     </div>
+                     <div class="space-y-1">
+                         <div class="sop-item-row">
+                             <span class="text-gray-500 dark:text-gray-400">袋子尺寸</span>
+                             <span class="font-medium text-gray-900 dark:text-white">15x20cm</span>
+                         </div>
+                         <div class="sop-item-row">
+                             <span class="text-gray-500 dark:text-gray-400">包装方式</span>
+                             <span class="font-medium text-gray-900 dark:text-white">真空包装</span>
+                         </div>
+                         <div class="sop-item-row">
+                             <span class="text-gray-500 dark:text-gray-400">保鲜气体</span>
+                             <span class="font-medium text-gray-900 dark:text-white">充氮气</span>
+                         </div>
+                         <div class="sop-item-row">
+                             <span class="text-gray-500 dark:text-gray-400">保鲜剂</span>
+                             <span class="font-medium text-gray-900 dark:text-white">脱氧剂</span>
+                         </div>
+                         <div class="sop-item-row">
+                             <span class="text-gray-500 dark:text-gray-400">装箱规格</span>
+                             <span class="font-medium text-gray-900 dark:text-white">20袋/箱</span>
+                         </div>
+                     </div>
+                 </div>
+             </div>
+        </div>
+
+        <!-- Step Section -->
+        <div id="step-section" class="hidden pb-20">
+             <div class="space-y-4">
+                 <!-- Step 1 -->
+                 <div class="sop-card">
+                     <div class="flex items-center justify-between mb-3">
+                         <h3 class="font-semibold text-gray-800 dark:text-white flex items-center gap-2">
+                             <div class="w-8 h-8 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-lg flex items-center justify-center text-sm font-bold">1</div>
+                             和面
+                         </h3>
+                         <div class="flex items-center gap-2">
+                             <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1" onclick="toggleStepImages(this)" title="展开/收起图片">
+                                 <i class="fas fa-list"></i>
+                             </button>
+                         </div>
+                     </div>
+                     <div class="step-content">
+                         <p class="text-gray-600 dark:text-gray-300 text-sm leading-relaxed mb-3">将面粉、糖、盐放入搅拌缸，加入牛奶和鸡蛋，搅拌至无干粉。</p>
+                         <div class="step-images expanded">
+                             <div class="relative">
+                                 <img src="https://images.unsplash.com/photo-1506459225024-1428097a7e18?w=400&h=400&fit=crop" class="rounded-lg object-cover">
+                                 <button class="absolute bottom-2 right-2 bg-black bg-opacity-60 text-white rounded-full p-2 hover:bg-opacity-80 transition-all w-8 h-8 flex items-center justify-center" onclick="showStepImage(this)">
+                                     <i class="fas fa-search-plus text-xs"></i>
+                                 </button>
+                             </div>
+                         </div>
+                     </div>
+                 </div>
+
+                 <!-- Step 2 -->
+                 <div class="sop-card">
+                     <div class="flex items-center justify-between mb-3">
+                         <h3 class="font-semibold text-gray-800 dark:text-white flex items-center gap-2">
+                             <div class="w-8 h-8 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-lg flex items-center justify-center text-sm font-bold">2</div>
+                             揉面
+                         </h3>
+                         <div class="flex items-center gap-2">
+                             <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1" onclick="toggleStepImages(this)" title="展开/收起图片">
+                                 <i class="fas fa-list"></i>
+                             </button>
+                         </div>
+                     </div>
+                     <div class="step-content">
+                         <p class="text-gray-600 dark:text-gray-300 text-sm leading-relaxed mb-3">揉至面团光滑，加入软化的黄油，继续揉至扩展阶段。</p>
+                         <div class="step-images expanded">
+                             <div class="relative">
+                                 <img src="https://images.unsplash.com/photo-1589367920969-ab8e050bbb04?w=400&h=400&fit=crop" class="rounded-lg object-cover">
+                                 <button class="absolute bottom-2 right-2 bg-black bg-opacity-60 text-white rounded-full p-2 hover:bg-opacity-80 transition-all w-8 h-8 flex items-center justify-center" onclick="showStepImage(this)">
+                                     <i class="fas fa-search-plus text-xs"></i>
+                                 </button>
+                             </div>
+                             <div class="relative">
+                                 <img src="https://images.unsplash.com/photo-1600326145552-327f74b9c189?w=400&h=400&fit=crop" class="rounded-lg object-cover">
+                                 <button class="absolute bottom-2 right-2 bg-black bg-opacity-60 text-white rounded-full p-2 hover:bg-opacity-80 transition-all w-8 h-8 flex items-center justify-center" onclick="showStepImage(this)">
+                                     <i class="fas fa-search-plus text-xs"></i>
+                                 </button>
+                             </div>
+                         </div>
+                     </div>
+                 </div>
+
+                 <!-- Step 3 -->
+                 <div class="sop-card">
+                     <div class="flex items-center justify-between mb-3">
+                         <h3 class="font-semibold text-gray-800 dark:text-white flex items-center gap-2">
+                             <div class="w-8 h-8 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-lg flex items-center justify-center text-sm font-bold">3</div>
+                             一发
+                         </h3>
+                         <div class="flex items-center gap-2">
+                             <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1" onclick="toggleStepImages(this)" title="展开/收起图片">
+                                 <i class="fas fa-list"></i>
+                             </button>
+                         </div>
+                     </div>
+                     <div class="step-content">
+                         <p class="text-gray-600 dark:text-gray-300 text-sm leading-relaxed mb-3">发酵至2倍大，手指戳洞不回缩。</p>
+                         <div class="step-images expanded">
+                             <div class="relative">
+                                 <img src="https://images.unsplash.com/photo-1612200058850-8e661d819ded?w=400&h=400&fit=crop" class="rounded-lg object-cover">
+                                 <button class="absolute bottom-2 right-2 bg-black bg-opacity-60 text-white rounded-full p-2 hover:bg-opacity-80 transition-all w-8 h-8 flex items-center justify-center" onclick="showStepImage(this)">
+                                     <i class="fas fa-search-plus text-xs"></i>
+                                 </button>
+                             </div>
+                         </div>
+                     </div>
+                 </div>
+                 
+                 <!-- Step 4 -->
+                 <div class="sop-card">
+                     <div class="flex items-center justify-between mb-3">
+                         <h3 class="font-semibold text-gray-800 dark:text-white flex items-center gap-2">
+                             <div class="w-8 h-8 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-lg flex items-center justify-center text-sm font-bold">4</div>
+                             烘烤
+                         </h3>
+                         <div class="flex items-center gap-2">
+                             <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1" onclick="toggleStepImages(this)" title="展开/收起图片">
+                                 <i class="fas fa-list"></i>
+                             </button>
+                         </div>
+                     </div>
+                     <div class="step-content">
+                         <p class="text-gray-600 dark:text-gray-300 text-sm leading-relaxed mb-3">180度烘烤35分钟，表面金黄。</p>
+                         <div class="step-images expanded">
+                             <div class="relative">
+                                 <img src="https://images.unsplash.com/photo-1506459225024-1428097a7e18?w=400&h=400&fit=crop" class="rounded-lg object-cover">
+                                 <button class="absolute bottom-2 right-2 bg-black bg-opacity-60 text-white rounded-full p-2 hover:bg-opacity-80 transition-all w-8 h-8 flex items-center justify-center" onclick="showStepImage(this)">
+                                     <i class="fas fa-search-plus text-xs"></i>
+                                 </button>
+                             </div>
+                         </div>
+                     </div>
+                 </div>
+             </div>
+        </div>
+
+    </main>
+
+    <!-- 底部统计条 (Sticky) -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md dark:bg-[#1e293b]/90 border-t border-gray-100 dark:border-slate-700 p-4 z-40 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)]">
+        <div class="max-w-md mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-orange-100 to-orange-50 dark:from-orange-900/30 dark:to-orange-800/20 text-orange-500 flex items-center justify-center shadow-sm">
+                    <i class="fas fa-coins text-xl"></i>
+                </div>
+                <div>
+                    <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-0.5">预估成本</div>
+                    <div class="flex items-baseline gap-0.5">
+                        <span class="amount-display text-2xl font-bold text-orange-600 dark:text-orange-400 leading-none" id="totalCost">11.44</span>
+                        <span class="text-sm font-medium text-orange-600 dark:text-orange-400">¥</span>
+                    </div>
+                </div>
+            </div>
+            <div class="text-right">
+                <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-0.5">总重量</div>
+                <div class="amount-display text-xl text-gray-900 dark:text-white font-medium" id="overallTotalWeight">2090<span class="unit-text text-sm text-gray-500 ml-1">g</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mode Toggle Button (Debug/Temporary) -->
+    <button onclick="toggleRecipeMode()" class="fixed bottom-24 right-4 z-50 bg-black/80 text-white px-4 py-2 rounded-full text-xs font-bold shadow-lg backdrop-blur-sm border border-white/20 hover:bg-black transition-all flex items-center">
+        <i class="fas fa-exchange-alt mr-2"></i>切换模式
+    </button>
+
+    <!-- Font Size Adjustment Modal -->
+    <div id="fontSizeModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 hidden transition-opacity duration-300" onclick="if(event.target === this) closeFontSizeModal()">
+        <div class="bg-white dark:bg-[#1E293B] w-full sm:w-[400px] sm:rounded-2xl rounded-t-2xl p-6 shadow-2xl transform transition-transform duration-300 translate-y-full sm:translate-y-0" id="fontSizeModalContent">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">调整字体大小</h3>
+                <button onclick="closeFontSizeModal()" class="w-8 h-8 rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-500 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <!-- Text Size Slider -->
+            <div class="mb-6">
+                <div class="flex justify-between items-end mb-3 px-2">
+                    <span class="text-sm font-bold text-gray-700 dark:text-gray-300">文字大小</span>
+                    <span class="text-sm font-bold text-orange-600 dark:text-orange-400" id="currentTextSizeLabel">标准</span>
+                </div>
+                <input type="range" min="1" max="6" value="1" step="1" id="textSizeSlider" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-orange-500 dark:bg-gray-700" oninput="previewTextSize(this.value)">
+                <div class="flex justify-between mt-2 px-1">
+                    <div class="w-1 h-2 bg-gray-300 dark:bg-gray-600 rounded"></div>
+                    <div class="w-1 h-2 bg-gray-300 dark:bg-gray-600 rounded"></div>
+                    <div class="w-1 h-2 bg-gray-300 dark:bg-gray-600 rounded"></div>
+                    <div class="w-1 h-2 bg-gray-300 dark:bg-gray-600 rounded"></div>
+                    <div class="w-1 h-2 bg-gray-300 dark:bg-gray-600 rounded"></div>
+                    <div class="w-1 h-2 bg-gray-300 dark:bg-gray-600 rounded"></div>
+                </div>
+            </div>
+
+            <!-- Number Size Slider -->
+            <div class="mb-8">
+                <div class="flex justify-between items-end mb-3 px-2">
+                    <span class="text-sm font-bold text-gray-700 dark:text-gray-300">数字大小</span>
+                    <span class="text-sm font-bold text-orange-600 dark:text-orange-400" id="currentNumberSizeLabel">标准</span>
+                </div>
+                <input type="range" min="1" max="6" value="1" step="1" id="numberSizeSlider" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-orange-500 dark:bg-gray-700" oninput="previewNumberSize(this.value)">
+                <div class="flex justify-between mt-2 px-1">
+                    <div class="w-1 h-2 bg-gray-300 dark:bg-gray-600 rounded"></div>
+                    <div class="w-1 h-2 bg-gray-300 dark:bg-gray-600 rounded"></div>
+                    <div class="w-1 h-2 bg-gray-300 dark:bg-gray-600 rounded"></div>
+                    <div class="w-1 h-2 bg-gray-300 dark:bg-gray-600 rounded"></div>
+                    <div class="w-1 h-2 bg-gray-300 dark:bg-gray-600 rounded"></div>
+                    <div class="w-1 h-2 bg-gray-300 dark:bg-gray-600 rounded"></div>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 dark:bg-slate-800 rounded-xl p-4 mb-6">
+                <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">预览效果：</p>
+                <div class="flex items-center justify-between py-2 border-b border-dashed border-gray-200 dark:border-slate-700">
+                    <span class="flex-1 font-medium text-gray-700 dark:text-gray-300 ingredient-name-preview transition-all duration-200">高筋面粉</span>
+                    <div class="text-right">
+                        <div class="amount-display text-gray-900 dark:text-white ingredient-amount-preview transition-all duration-200">500<span class="unit-text">g</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="saveFontSize()" class="w-full py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl font-bold shadow-lg shadow-orange-200 dark:shadow-none hover:from-orange-600 hover:to-orange-700 transition-all">
+                确认调整
+            </button>
+        </div>
+    </div>
+
+    <!-- Modals (Original) -->
+    <div id="shareConfirmModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white dark:bg-[#1E293B] rounded-2xl p-6 max-w-sm mx-4 shadow-2xl">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-exclamation-triangle text-orange-500 text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-[#1E293B] dark:text-slate-100 mb-2">分享配方至平台</h3>
+                <p class="text-slate-600 dark:text-slate-400 text-sm mb-6">将您的精心配方分享给更多烘焙爱好者，获得点赞和关注。</p>
+                <div class="flex gap-3">
+                    <button class="flex-1 px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition" onclick="closeShareConfirm()">取消</button>
+                    <button class="flex-1 px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl hover:from-orange-600 hover:to-red-600 transition" onclick="confirmShare()">确认分享</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="shareToFriendModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white dark:bg-[#1E293B] rounded-2xl p-6 max-w-md mx-4 w-[90%] shadow-2xl">
+            <div class="flex justify-between items-center mb-5">
+                <h3 class="text-lg font-bold text-[#1E293B] dark:text-slate-100">分享配方</h3>
+                <button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl" onclick="closeShareToFriend()"><i class="fas fa-times"></i></button>
+            </div>
+            <p class="text-slate-600 dark:text-slate-400 text-sm mb-6" id="share-description">选择要分享到的平台</p>
+            <div class="grid grid-cols-4 gap-4 mb-6">
+                <div class="flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-all" onclick="shareViaMethod('wechat')">
+                    <div class="w-14 h-14 bg-green-500 rounded-full flex items-center justify-center text-white"><i class="fab fa-weixin text-xl"></i></div>
+                    <span class="text-xs text-slate-600 dark:text-slate-400">微信</span>
+                </div>
+                <div class="flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-all" onclick="shareViaMethod('link')">
+                    <div class="w-14 h-14 bg-gray-500 rounded-full flex items-center justify-center text-white"><i class="fas fa-link text-xl"></i></div>
+                    <span class="text-xs text-slate-600 dark:text-slate-400">复制链接</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 图片全屏预览 -->
+    <div id="fullImageModal" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 hidden" onclick="this.classList.add('hidden')">
+        <img src="" alt="配方大图" class="max-w-[90vw] max-h-[90vh] object-contain rounded-xl">
+        <button class="absolute top-4 right-4 bg-white bg-opacity-20 text-white rounded-full p-3 hover:bg-opacity-40 transition-all" onclick="event.stopPropagation(); this.parentElement.classList.add('hidden')">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+
+    <!-- Original JS Scripts -->
+    <script>
+        // 步骤图片交互逻辑
+        function toggleStepImages(btn) {
+            const card = btn.closest('.sop-card');
+            const imagesGrid = card.querySelector('.step-images');
+            
+            if (imagesGrid) {
+                imagesGrid.classList.toggle('expanded');
+                const icon = btn.querySelector('i');
+                if (imagesGrid.classList.contains('expanded')) {
+                    icon.classList.remove('fa-th-large');
+                    icon.classList.add('fa-list');
+                } else {
+                    icon.classList.remove('fa-list');
+                    icon.classList.add('fa-th-large');
+                }
+            }
+        }
+
+        function showStepImage(btn) {
+            const img = btn.previousElementSibling; 
+            const src = img.src;
+            const modal = document.getElementById('fullImageModal');
+            const modalImg = modal.querySelector('img');
+            
+            modalImg.src = src;
+            modal.classList.remove('hidden');
+        }
+
+        // Font Size Adjustment Logic
+        let initialTextLevel = 1;
+        let initialNumberLevel = 1;
+
+        function showFontSizeModal() {
+            const modal = document.getElementById('fontSizeModal');
+            const content = document.getElementById('fontSizeModalContent');
+            const savedText = parseInt(localStorage.getItem('recipeTextSizeLevel') || '1');
+            const savedNumber = parseInt(localStorage.getItem('recipeNumberSizeLevel') || '1');
+            
+            initialTextLevel = savedText;
+            initialNumberLevel = savedNumber;
+            
+            document.getElementById('textSizeSlider').value = savedText;
+            document.getElementById('numberSizeSlider').value = savedNumber;
+            
+            previewTextSize(savedText);
+            previewNumberSize(savedNumber);
+            
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                content.classList.remove('translate-y-full');
+            }, 10);
+            
+            // Close menu if open
+            if (!document.getElementById('moreMenuDropdown').classList.contains('hidden')) {
+                toggleMoreMenu();
+            }
+        }
+
+        function closeFontSizeModal() {
+            const modal = document.getElementById('fontSizeModal');
+            const content = document.getElementById('fontSizeModalContent');
+            
+            content.classList.add('translate-y-full');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                // Revert to initial if not saved (assuming saveFontSize handles the save)
+                // Actually, since we update live, we should revert if not saved.
+                // But saveFontSize calls this function too.
+                // So we need to check if we should revert.
+                // Simplified approach: Always revert to what's in localStorage when closing without saving?
+                // But saveFontSize updates localStorage before calling this.
+                // So we can just re-apply from localStorage.
+                const savedText = parseInt(localStorage.getItem('recipeTextSizeLevel') || '1');
+                const savedNumber = parseInt(localStorage.getItem('recipeNumberSizeLevel') || '1');
+                applyTextSize(savedText);
+                applyNumberSize(savedNumber);
+            }, 300);
+        }
+
+        function getLevelLabel(level) {
+            const labels = ['标准', '中', '大', '加大', '特大', '最大'];
+            return labels[level - 1] || '标准';
+        }
+
+        function previewTextSize(level) {
+            document.getElementById('currentTextSizeLabel').textContent = getLevelLabel(level);
+            const scale = 1 + (level - 1) * 0.1;
+            
+            // Update preview
+            const previewName = document.querySelector('.ingredient-name-preview');
+            if (previewName) previewName.style.fontSize = `calc(15px * ${scale})`;
+            
+            // Live update
+            document.documentElement.style.setProperty('--text-font-scale', scale);
+        }
+
+        function previewNumberSize(level) {
+            document.getElementById('currentNumberSizeLabel').textContent = getLevelLabel(level);
+            const scale = 1 + (level - 1) * 0.1;
+            
+            // Update preview
+            const previewAmount = document.querySelector('.ingredient-amount-preview');
+            if (previewAmount) previewAmount.style.fontSize = `calc(16px * ${scale})`;
+            
+            // Live update
+            document.documentElement.style.setProperty('--number-font-scale', scale);
+        }
+
+        function saveFontSize() {
+            const textLevel = document.getElementById('textSizeSlider').value;
+            const numberLevel = document.getElementById('numberSizeSlider').value;
+            
+            localStorage.setItem('recipeTextSizeLevel', textLevel);
+            localStorage.setItem('recipeNumberSizeLevel', numberLevel);
+            
+            closeFontSizeModal();
+        }
+        
+        function applyTextSize(level) {
+            const scale = 1 + (level - 1) * 0.1;
+            document.documentElement.style.setProperty('--text-font-scale', scale);
+        }
+
+        function applyNumberSize(level) {
+            const scale = 1 + (level - 1) * 0.1;
+            document.documentElement.style.setProperty('--number-font-scale', scale);
+        }
+
+        // Initialize Font Size on Load
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedText = parseInt(localStorage.getItem('recipeTextSizeLevel') || '1');
+            const savedNumber = parseInt(localStorage.getItem('recipeNumberSizeLevel') || '1');
+            applyTextSize(savedText);
+            applyNumberSize(savedNumber);
+        });
+
+        // Global State
+        let hasModifiedIngredients = false;
+        let moreMenuOpen = false;
+        let showPercentages = false;
+        
+        // Tab Switcher
+        function switchTab(tab) {
+            const tabs = ['recipe', 'sop', 'step'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-btn-${t}`);
+                const section = document.getElementById(`${t}-section`);
+                
+                if (t === tab) {
+                    btn.classList.add('active');
+                    section.classList.remove('hidden');
+                } else {
+                    btn.classList.remove('active');
+                    section.classList.add('hidden');
+                }
+            });
+        }
+
+        // Toggle Ingredient Status (Modified for new UI)
+        function toggleIngredientStatus(element) {
+            // Find checkbox and status text
+            const checkbox = element.querySelector('.fake-checkbox');
+            const statusText = element.querySelector('.ingredient-status-text');
+            const name = element.querySelector('.ingredient-name');
+            
+            // Toggle 'checked' class on the parent row
+            if (element.classList.contains('checked')) {
+                element.classList.remove('checked');
+                // Hide status text (logic)
+                if(statusText) statusText.classList.remove('visible');
+            } else {
+                element.classList.add('checked');
+                // Show status text (logic)
+                if(statusText) statusText.classList.add('visible');
+            }
+            
+            updateRecipeProportions();
+        }
+
+        // Keep all original logic functions...
+        function editProduction(type) {
+            const element = document.getElementById(`${type}Production`);
+            const currentValue = parseInt(element.textContent) || 0;
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.min = '0';
+            input.max = '99';
+            input.value = currentValue;
+            input.className = 'w-8 text-center text-sm font-normal border-none outline-none bg-transparent';
+            
+            const originalContent = element.innerHTML;
+            element.innerHTML = '';
+            element.appendChild(input);
+            input.focus();
+            
+            function finishEdit() {
+                const newValue = Math.max(0, Math.min(99, parseInt(input.value) || 0));
+                element.innerHTML = newValue;
+                adjustProduction(type, 0);
+            }
+            
+            input.addEventListener('blur', finishEdit);
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') finishEdit();
+            });
+            input.addEventListener('click', function(e) { e.stopPropagation(); });
+        }
+
+        function adjustProduction(type, delta) {
+            const element = document.getElementById(`${type}Production`);
+            const currentValue = parseInt(element.textContent) || 0;
+            const newValue = Math.max(0, Math.min(99, currentValue + delta));
+            element.textContent = newValue;
+            
+            if (type === 'base') {
+                const baseWeight = 1093 * newValue;
+                const baseCost = 7.00 * newValue;
+                
+                document.getElementById('baseTotalWeight').innerHTML = formatWeight(baseWeight).replace(/(g|ml)/, '<span class="unit-text">$1</span>');
+                document.getElementById('baseTotalCost').textContent = baseCost.toFixed(2);
+                
+                document.getElementById('baseDoughWeight').innerHTML = formatWeight(943 * newValue).replace(/(g|ml)/, '<span class="unit-text">$1</span>');
+                document.getElementById('baseDoughCost').textContent = (4.20 * newValue).toFixed(2);
+                document.getElementById('additionalWeight').innerHTML = formatWeight(150 * newValue).replace(/(g|ml)/, '<span class="unit-text">$1</span>');
+                document.getElementById('additionalCost').textContent = (2.80 * newValue).toFixed(2);
+            } else if (type === 'variation1') {
+                const unitDough = 500;
+                const unitCost = 2.22;
+                
+                document.getElementById('variation1DoughWeight').innerHTML = formatWeight(unitDough * newValue).replace(/(g|ml)/, '<span class="unit-text">$1</span>');
+                document.getElementById('variation1DoughCost').textContent = (unitCost * newValue).toFixed(2);
+                document.getElementById('variation1TotalWeight').innerHTML = formatWeight(unitDough * newValue).replace(/(g|ml)/, '<span class="unit-text">$1</span>');
+                document.getElementById('variation1TotalCost').textContent = (unitCost * newValue).toFixed(2);
+            } else if (type === 'variation2') {
+                const unitDough = 350;
+                const unitChoc = 50;
+                const unitDoughCost = 1.55;
+                const unitChocCost = 1.20;
+                
+                const totalWeight = (unitDough + unitChoc) * newValue;
+                const totalCost = (unitDoughCost + unitChocCost) * newValue;
+                
+                document.getElementById('variation2DoughWeight').innerHTML = formatWeight(unitDough * newValue).replace(/(g|ml)/, '<span class="unit-text">$1</span>');
+                document.getElementById('variation2DoughCost').textContent = (unitDoughCost * newValue).toFixed(2);
+                document.getElementById('variation2ChocolateWeight').innerHTML = formatWeight(unitChoc * newValue).replace(/(g|ml)/, '<span class="unit-text">$1</span>');
+                document.getElementById('variation2ChocolateCost').textContent = (unitChocCost * newValue).toFixed(2);
+                document.getElementById('variation2TotalWeight').innerHTML = formatWeight(totalWeight).replace(/(g|ml)/, '<span class="unit-text">$1</span>');
+                document.getElementById('variation2TotalCost').textContent = totalCost.toFixed(2);
+            } else if (type === 'variation3') {
+                const unitDough = 480;
+                const unitCran = 80;
+                const unitWalnut = 40;
+                const c1 = 2.13;
+                const c2 = 3.60;
+                const c3 = 2.40;
+                
+                const totalWeight = (unitDough + unitCran + unitWalnut) * newValue;
+                const totalCost = (c1 + c2 + c3) * newValue;
+                
+                document.getElementById('variation3DoughWeight').innerHTML = formatWeight(unitDough * newValue).replace(/(g|ml)/, '<span class="unit-text">$1</span>');
+                document.getElementById('variation3DoughCost').textContent = (c1 * newValue).toFixed(2);
+                document.getElementById('variation3CranberryWeight').innerHTML = formatWeight(unitCran * newValue).replace(/(g|ml)/, '<span class="unit-text">$1</span>');
+                document.getElementById('variation3CranberryCost').textContent = (c2 * newValue).toFixed(2);
+                document.getElementById('variation3WalnutWeight').innerHTML = formatWeight(unitWalnut * newValue).replace(/(g|ml)/, '<span class="unit-text">$1</span>');
+                document.getElementById('variation3WalnutCost').textContent = (c3 * newValue).toFixed(2);
+                document.getElementById('variation3TotalWeight').innerHTML = formatWeight(totalWeight).replace(/(g|ml)/, '<span class="unit-text">$1</span>');
+                document.getElementById('variation3TotalCost').textContent = totalCost.toFixed(2);
+            }
+            
+            updateRecipeProportions();
+            updateOverallSummary();
+        }
+
+        function updateRecipeProportions() {
+            // Simplified proportion logic
+            const baseValue = parseInt(document.getElementById('baseProduction')?.textContent || 0);
+            const var1 = parseInt(document.getElementById('variation1Production')?.textContent || 0);
+            const var2 = parseInt(document.getElementById('variation2Production')?.textContent || 0);
+            const var3 = parseInt(document.getElementById('variation3Production')?.textContent || 0);
+            
+            const total = baseValue + var1 + var2 + var3;
+            const multiplier = total > 0 ? total : 1;
+            
+            document.querySelectorAll('.ingredient-amount-col .amount-display').forEach(el => {
+                const base = parseFloat(el.getAttribute('data-base-amount'));
+                if (base) {
+                    el.innerHTML = formatWeight(base * multiplier).replace(/(g|ml)/, '<span class="unit-text">$1</span>');
+                }
+            });
+        }
+
+        function updateOverallSummary() {
+             const baseQty = parseInt(document.getElementById('baseProduction')?.textContent || 0);
+             const var1Qty = parseInt(document.getElementById('variation1Production')?.textContent || 0);
+             const var2Qty = parseInt(document.getElementById('variation2Production')?.textContent || 0);
+             const var3Qty = parseInt(document.getElementById('variation3Production')?.textContent || 0);
+
+             const baseWeight = (943 + 150) * baseQty;
+             const baseCost = 7.00 * baseQty;
+             
+             const var1Weight = 500 * var1Qty;
+             const var1Cost = 2.22 * var1Qty; 
+             
+             const var2Weight = (350+50) * var2Qty;
+             const var2Cost = (1.55+1.20) * var2Qty;
+             
+             const var3Weight = (480+80+40) * var3Qty;
+             const var3Cost = (2.13+3.60+2.40) * var3Qty;
+             
+             const totalWeight = baseWeight + var1Weight + var2Weight + var3Weight;
+             const totalCost = baseCost + var1Cost + var2Cost + var3Cost;
+             
+             document.getElementById('overallTotalWeight').innerHTML = formatWeight(totalWeight).replace(/(g|ml)/, '<span class="unit-text">$1</span>');
+             document.getElementById('totalCost').textContent = totalCost.toFixed(2);
+        }
+
+        function formatWeight(weight) {
+            // Always return grams as per user request
+            return Math.round(weight) + 'g';
+        }
+
+        function toggleMoreMenu() {
+            const dropdown = document.getElementById('moreMenuDropdown');
+            dropdown.classList.toggle('hidden');
+            // Close share menu if open
+            if (!document.getElementById('shareMenuDropdown').classList.contains('hidden')) {
+                toggleShareMenu();
+            }
+        }
+
+        function toggleShareMenu() {
+            const dropdown = document.getElementById('shareMenuDropdown');
+            dropdown.classList.toggle('hidden');
+            // Close more menu if open
+            if (!document.getElementById('moreMenuDropdown').classList.contains('hidden')) {
+                toggleMoreMenu();
+            }
+        }
+
+        function shareToWeChat() {
+            // Mock WeChat share
+            alert('正在调起微信分享...');
+            toggleShareMenu();
+        }
+
+        // Toggle Percentages
+        function togglePercentages() {
+            showPercentages = !showPercentages;
+            const btnText = document.getElementById('percentageButtonText');
+            
+            document.querySelectorAll('.percentage-text').forEach(el => {
+                el.style.display = showPercentages ? 'block' : 'none';
+            });
+            
+            if(showPercentages) {
+                btnText.textContent = '隐藏百分比';
+            } else {
+                btnText.textContent = '查看百分比';
+            }
+            toggleMoreMenu();
+        }
+
+        // Theme Toggle
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+        }
+
+        // Navigation
+        function checkExitConfirmation() {
+            // if (hasModifiedIngredients) ...
+            history.back();
+        }
+
+        // Mock Share
+        function shareRecipe() {
+            document.getElementById('shareToFriendModal').classList.remove('hidden');
+        }
+        function closeShareToFriend() {
+            document.getElementById('shareToFriendModal').classList.add('hidden');
+        }
+        function shareViaMethod(method) {
+            closeShareToFriend();
+            // alert('Shared via ' + method);
+        }
+
+        // Auto Stock Out Mock
+        function showAutoStockOutModal() {
+            alert('生产制作功能模块');
+        }
+
+        // Mode Toggle Logic
+        let isSingleMode = false;
+        
+        function toggleRecipeMode() {
+            isSingleMode = !isSingleMode;
+            const titleStepper = document.getElementById('titleStepper');
+            const baseCardControls = document.getElementById('baseCardControls');
+            const varCards = ['card-base', 'card-var1', 'card-var2', 'card-var3'];
+            
+            if (isSingleMode) {
+                // Single Mode: Show Title Stepper, Hide Variations (including Base Card)
+                titleStepper.classList.remove('hidden');
+                titleStepper.classList.add('flex');
+                
+                varCards.forEach(id => {
+                    const card = document.getElementById(id);
+                    if (card) card.classList.add('hidden');
+                });
+                
+                // Reset Variations to 0 for calculation accuracy in single mode
+                // Note: We don't actually change the values to 0 to preserve state if toggled back,
+                // but for visual "Single Mode", we might want to just focus on Base.
+                // However, updateOverallSummary sums them all. 
+                // If we want "Single Mode" to reflect ONLY base, we should probably force recalculate 
+                // ignoring others? Or just assume the user won't look at the total cost if they are hidden?
+                // Let's keep it simple: just hide them. The total cost at bottom will still include them 
+                // if they have non-zero values.
+                // To be cleaner, we could temporarily set them to 0. 
+                // But let's just leave it. The user wants to see the "Effect".
+                
+            } else {
+                // Multi Mode: Hide Title Stepper, Show Variations
+                titleStepper.classList.add('hidden');
+                titleStepper.classList.remove('flex');
+                
+                varCards.forEach(id => {
+                    const card = document.getElementById(id);
+                    if (card) card.classList.remove('hidden');
+                });
+                
+                // Ensure baseCardControls is visible when card is shown (if it was hidden separately before)
+                if (baseCardControls) baseCardControls.classList.remove('hidden');
+            }
+        }
+        
+        // Enhance adjustProduction to sync Title Stepper
+        const originalAdjustProduction = adjustProduction;
+        adjustProduction = function(type, delta) {
+            originalAdjustProduction(type, delta);
+            
+            if (type === 'base') {
+                const element = document.getElementById(`${type}Production`);
+                const newValue = element.textContent;
+                const titleDisplay = document.getElementById('titleProductionDisplay');
+                if (titleDisplay) titleDisplay.textContent = newValue;
+            }
+        };
+        
+        // Initial State
+        document.addEventListener('DOMContentLoaded', () => {
+             updateRecipeProportions();
+             calculateSOPTime(); // Calculate time on load
+             calculateRecipeCalories(); // Calculate calories on load
+             // Hide percentages initially
+             document.querySelectorAll('.percentage-text').forEach(el => el.style.display = 'none');
+        });
+
+        // Time Calculation Logic
+        function calculateSOPTime() {
+            let totalMinutes = 0;
+            const timeKeywords = ['分钟', '小时'];
+            const sopRows = document.querySelectorAll('.sop-item-row');
+            
+            sopRows.forEach(row => {
+                const label = row.querySelector('span:first-child')?.textContent || '';
+                const value = row.querySelector('span:last-child')?.textContent || '';
+                
+                // Check if label implies a time duration (e.g., 慢速, 揉面, 松弛, 发酵, 烤制, 时间)
+                // Filter out temperature (e.g. 26度) or other non-time fields
+                const isTimeField = /时间|慢速|揉面|松弛|发酵|烤制/.test(label) && /分钟|小时/.test(value);
+                
+                if (isTimeField) {
+                    // Parse value like "3-5分钟" -> take max 5
+                    // "60-90分钟" -> take max 90
+                    // "1小时" -> 60
+                    let minutes = 0;
+                    
+                    // Normalize to minutes
+                    if (value.includes('小时')) {
+                         const hours = parseFloat(value) || 0;
+                         minutes = hours * 60;
+                    } else {
+                         // Extract numbers
+                         const numbers = value.match(/\d+/g);
+                         if (numbers) {
+                             // Take the largest number found (conservative estimate)
+                             minutes = Math.max(...numbers.map(n => parseInt(n)));
+                         }
+                    }
+                    totalMinutes += minutes;
+                }
+            });
+            
+            // Convert totalMinutes to hours/min string
+            let timeString = '';
+            if (totalMinutes >= 60) {
+                const h = Math.floor(totalMinutes / 60);
+                const m = totalMinutes % 60;
+                timeString = m > 0 ? `${h}小时${m}分` : `${h}小时`;
+            } else {
+                timeString = `${totalMinutes}分钟`;
+            }
+            
+            const display = document.getElementById('dynamicTimeDisplay');
+            if(display) display.textContent = timeString;
+        }
+
+        // Calorie Calculation Logic
+        // Database of kcal per 100g
+        const calorieDB = {
+            '高筋面粉': 364,
+            '低筋面粉': 364,
+            '全麦粉': 352,
+            '自制种面': 200, // Estimated (flour+water)
+            '牛奶': 65,
+            '鸡蛋': 143,
+            '糖浆配方': 300, // Estimated
+            '白砂糖': 400,
+            '盐': 0,
+            '干酵母': 325,
+            '黄油': 717,
+            '芝麻': 573,
+            '酥菠萝皮': 450, // Estimated
+            '巧克力粒': 500,
+            '蔓越莓干': 320,
+            '核桃配方': 654
+        };
+
+        function calculateRecipeCalories() {
+            let totalCalories = 0;
+            let totalRawWeight = 0;
+            
+            // Scan all ingredient rows
+            const ingredientRows = document.querySelectorAll('.ingredient-item, .list-row');
+            
+            ingredientRows.forEach(row => {
+                const nameEl = row.querySelector('.ingredient-name, .font-medium');
+                const amountEl = row.querySelector('.amount-display');
+                
+                if (nameEl && amountEl) {
+                    // Extract name (remove extra whitespace)
+                    let name = nameEl.textContent.trim();
+                    // Handle complex names or children
+                    if (name.includes('基础面团')) return; // Skip composite summaries to avoid double counting if individual ingredients are listed. 
+                    // Wait, this page lists base ingredients separately.
+                    // But "Base Dough" card lists summary.
+                    // Actually, the structure has:
+                    // 1. Flour/Sponge/Wet/Dry/Aux groups (Individual ingredients for Base Dough)
+                    // 2. "Base Dough" card (Summary)
+                    // 3. Variations (Summary + Add-ons)
+                    
+                    // We should ONLY count the Raw Ingredients from the groups (Flour, Sponge, Wet, Dry, Aux).
+                    // And IF variations are active, add their add-ons.
+                    // BUT, the current page structure lists ingredients for "Base Dough".
+                    // The "Variations" are separate cards that imply "Base Dough + Add-ons".
+                    // If we want "280kcal" (per 100g), it should be relatively constant for the base dough.
+                    // Let's calculate for the currently displayed ingredients in the Groups.
+                    
+                    // Filter: Only process rows inside .ingredient-group-card that are NOT the summary cards
+                    // The summary cards have id="card-base", "card-var1", etc.
+                    // The raw ingredient groups are "group-flour", "group-sponge", etc.
+                    const parentCard = row.closest('.ingredient-group-card');
+                    if (!parentCard) return;
+                    
+                    if (parentCard.id && parentCard.id.startsWith('card-')) return; // Skip summary cards
+                    
+                    // Get base amount (from data attribute to avoid parsed/scaled values drifting)
+                    const baseAmount = parseFloat(amountEl.getAttribute('data-base-amount')) || 0;
+                    
+                    // Lookup calories
+                    // Try exact match or partial
+                    let kcalPer100 = 0;
+                    for (const [key, val] of Object.entries(calorieDB)) {
+                        if (name.includes(key)) {
+                            kcalPer100 = val;
+                            break;
+                        }
+                    }
+                    
+                    // Fallback for unknown
+                    if (kcalPer100 === 0 && baseAmount > 0) {
+                        console.warn('Unknown ingredient for calories:', name);
+                        kcalPer100 = 200; // Default fallback
+                    }
+                    
+                    totalCalories += (baseAmount * kcalPer100) / 100;
+                    totalRawWeight += baseAmount;
+                }
+            });
+            
+            if (totalRawWeight > 0) {
+                // Baking loss ~10-15%. Cooked weight is less than raw weight.
+                // Energy is conserved (mostly).
+                // So Kcal/100g Cooked = Total Kcal / (Raw Weight * 0.9) * 100
+                const cookedWeight = totalRawWeight * 0.9;
+                const kcalPer100g = (totalCalories / cookedWeight) * 100;
+                
+                const display = document.getElementById('dynamicCalorieDisplay');
+                if(display) display.textContent = Math.round(kcalPer100g) + '千卡';
+            }
+        }
+
+        // Toggle Recipe Info Logic
+        function toggleRecipeInfo() {
+            const container = document.getElementById('recipeInfoContainer');
+            const icon = document.getElementById('infoToggleIcon');
+            
+            if (container.classList.contains('hidden')) {
+                container.classList.remove('hidden');
+                icon.classList.replace('fa-chevron-right', 'fa-chevron-down');
+            } else {
+                container.classList.add('hidden');
+                icon.classList.replace('fa-chevron-down', 'fa-chevron-right');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,611 @@
+/* 统一UI组件样式库 - 基于烘焙主题 */
+
+/* ===== 基础变量 ===== */
+:root {
+    /* 烘焙主题色彩系统 */
+    --baking-primary-50: #FEF7ED;
+    --baking-primary-100: #FDEDD3;
+    --baking-primary-200: #FAD5A5;
+    --baking-primary-300: #F6B76D;
+    --baking-primary-400: #F19332;
+    --baking-primary-500: #ED7A0A;
+    --baking-primary-600: #DE6005;
+    --baking-primary-700: #B84808;
+    --baking-primary-800: #943A0E;
+    --baking-primary-900: #78310F;
+    
+    /* 辅助色系 - 面包金黄色 */
+    --baking-secondary-50: #FFFBEB;
+    --baking-secondary-100: #FEF3C7;
+    --baking-secondary-200: #FDE68A;
+    --baking-secondary-300: #FCD34D;
+    --baking-secondary-400: #FBBF24;
+    --baking-secondary-500: #F59E0B;
+    --baking-secondary-600: #D97706;
+    --baking-secondary-700: #B45309;
+    --baking-secondary-800: #92400E;
+    --baking-secondary-900: #78350F;
+    
+    /* 状态色系 */
+    --status-success: #10B981;
+    --status-success-light: #D1FAE5;
+    --status-warning: #F59E0B;
+    --status-warning-light: #FEF3C7;
+    --status-error: #EF4444;
+    --status-error-light: #FEE2E2;
+    --status-info: #3B82F6;
+    --status-info-light: #DBEAFE;
+    
+    /* 中性色系 */
+    --neutral-50: #F8FAFC;
+    --neutral-100: #F1F5F9;
+    --neutral-200: #E2E8F0;
+    --neutral-300: #CBD5E1;
+    --neutral-400: #94A3B8;
+    --neutral-500: #64748B;
+    --neutral-600: #475569;
+    --neutral-700: #334155;
+    --neutral-800: #1E293B;
+    --neutral-900: #0F172A;
+    
+    /* 字体系统 */
+    --font-family-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-family-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+    
+    /* 字体大小 */
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-base: 1rem;
+    --text-lg: 1.125rem;
+    --text-xl: 1.25rem;
+    --text-2xl: 1.5rem;
+    --text-3xl: 1.875rem;
+    
+    /* 间距系统 */
+    --spacing-1: 0.25rem;
+    --spacing-2: 0.5rem;
+    --spacing-3: 0.75rem;
+    --spacing-4: 1rem;
+    --spacing-5: 1.25rem;
+    --spacing-6: 1.5rem;
+    --spacing-8: 2rem;
+    --spacing-10: 2.5rem;
+    --spacing-12: 3rem;
+    
+    /* 圆角系统 */
+    --radius-sm: 0.25rem;
+    --radius-md: 0.375rem;
+    --radius-lg: 0.5rem;
+    --radius-xl: 0.75rem;
+    --radius-2xl: 1rem;
+    --radius-full: 9999px;
+    
+    /* 阴影系统 */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+/* ===== 按钮组件 ===== */
+.btn {
+    @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+/* 主要按钮 */
+.btn-primary {
+    background-color: var(--baking-primary-600);
+    color: white;
+    border: 1px solid var(--baking-primary-600);
+}
+
+.btn-primary:hover:not(:disabled) {
+    background-color: var(--baking-primary-700);
+    border-color: var(--baking-primary-700);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-primary:focus {
+    --tw-ring-color: var(--baking-primary-200);
+}
+
+/* 次要按钮 */
+.btn-secondary {
+    background-color: var(--baking-secondary-100);
+    color: var(--baking-secondary-800);
+    border: 1px solid var(--baking-secondary-200);
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background-color: var(--baking-secondary-200);
+    border-color: var(--baking-secondary-300);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+/* 危险按钮 */
+.btn-danger {
+    background-color: var(--status-error);
+    color: white;
+    border: 1px solid var(--status-error);
+}
+
+.btn-danger:hover:not(:disabled) {
+    background-color: #DC2626;
+    border-color: #DC2626;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+/* 成功按钮 */
+.btn-success {
+    background-color: var(--status-success);
+    color: white;
+    border: 1px solid var(--status-success);
+}
+
+.btn-success:hover:not(:disabled) {
+    background-color: #059669;
+    border-color: #059669;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+/* 幽灵按钮 */
+.btn-ghost {
+    background-color: transparent;
+    color: var(--neutral-600);
+    border: 1px solid var(--neutral-300);
+}
+
+.btn-ghost:hover:not(:disabled) {
+    background-color: var(--neutral-50);
+    border-color: var(--neutral-400);
+}
+
+/* 按钮尺寸 */
+.btn-sm {
+    @apply px-3 py-1.5 text-xs;
+}
+
+.btn-lg {
+    @apply px-6 py-3 text-base;
+}
+
+.btn-xl {
+    @apply px-8 py-4 text-lg;
+}
+
+/* ===== 输入框组件 ===== */
+.input {
+    @apply w-full px-3 py-2 text-sm border rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1;
+    border-color: var(--neutral-300);
+    background-color: white;
+}
+
+.input:focus {
+    border-color: var(--baking-primary-500);
+    --tw-ring-color: var(--baking-primary-200);
+}
+
+.input:disabled {
+    background-color: var(--neutral-100);
+    color: var(--neutral-500);
+    cursor: not-allowed;
+}
+
+.input.error {
+    border-color: var(--status-error);
+    --tw-ring-color: var(--status-error-light);
+}
+
+/* ===== 卡片组件 ===== */
+.card {
+    @apply bg-white rounded-xl border shadow-sm transition-shadow;
+    border-color: var(--neutral-200);
+}
+
+.card:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.card-header {
+    @apply px-6 py-4 border-b;
+    border-color: var(--neutral-200);
+}
+
+.card-body {
+    @apply px-6 py-4;
+}
+
+.card-footer {
+    @apply px-6 py-4 border-t;
+    border-color: var(--neutral-200);
+}
+
+/* ===== 徽章组件 ===== */
+.badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.badge-primary {
+    background-color: var(--baking-primary-100);
+    color: var(--baking-primary-800);
+}
+
+.badge-secondary {
+    background-color: var(--baking-secondary-100);
+    color: var(--baking-secondary-800);
+}
+
+.badge-success {
+    background-color: var(--status-success-light);
+    color: var(--status-success);
+}
+
+.badge-warning {
+    background-color: var(--status-warning-light);
+    color: var(--status-warning);
+}
+
+.badge-error {
+    background-color: var(--status-error-light);
+    color: var(--status-error);
+}
+
+.badge-info {
+    background-color: var(--status-info-light);
+    color: var(--status-info);
+}
+
+/* ===== 标签组件 ===== */
+.tag {
+    @apply inline-flex items-center px-3 py-1 rounded-lg text-sm font-medium border;
+}
+
+.tag-removable {
+    @apply pr-1;
+}
+
+.tag-remove-btn {
+    @apply ml-2 w-4 h-4 rounded-full flex items-center justify-center text-xs hover:bg-black hover:bg-opacity-10 transition-colors;
+}
+
+/* ===== 警告框组件 ===== */
+.alert {
+    @apply p-4 rounded-lg border flex items-start space-x-3;
+}
+
+.alert-success {
+    background-color: var(--status-success-light);
+    border-color: var(--status-success);
+    color: var(--status-success);
+}
+
+.alert-warning {
+    background-color: var(--status-warning-light);
+    border-color: var(--status-warning);
+    color: var(--status-warning);
+}
+
+.alert-error {
+    background-color: var(--status-error-light);
+    border-color: var(--status-error);
+    color: var(--status-error);
+}
+
+.alert-info {
+    background-color: var(--status-info-light);
+    border-color: var(--status-info);
+    color: var(--status-info);
+}
+
+/* ===== 模态框组件 ===== */
+.modal-overlay {
+    @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4;
+}
+
+.modal {
+    @apply bg-white rounded-xl shadow-xl max-w-md w-full max-h-screen overflow-y-auto;
+}
+
+.modal-header {
+    @apply px-6 py-4 border-b flex items-center justify-between;
+    border-color: var(--neutral-200);
+}
+
+.modal-title {
+    @apply text-lg font-semibold;
+    color: var(--neutral-800);
+}
+
+.modal-close {
+    @apply w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors;
+}
+
+.modal-body {
+    @apply px-6 py-4;
+}
+
+.modal-footer {
+    @apply px-6 py-4 border-t flex items-center justify-end space-x-3;
+    border-color: var(--neutral-200);
+}
+
+/* ===== 表单组件 ===== */
+.form-group {
+    @apply mb-4;
+}
+
+.form-label {
+    @apply block text-sm font-medium mb-2;
+    color: var(--neutral-700);
+}
+
+.form-label.required::after {
+    content: ' *';
+    color: var(--status-error);
+}
+
+.form-error {
+    @apply text-sm mt-1;
+    color: var(--status-error);
+}
+
+.form-help {
+    @apply text-sm mt-1;
+    color: var(--neutral-500);
+}
+
+/* ===== 选择器组件 ===== */
+.select {
+    @apply w-full px-3 py-2 text-sm border rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 bg-white;
+    border-color: var(--neutral-300);
+}
+
+.select:focus {
+    border-color: var(--baking-primary-500);
+    --tw-ring-color: var(--baking-primary-200);
+}
+
+/* ===== 复选框和单选框 ===== */
+.checkbox, .radio {
+    @apply w-4 h-4 rounded border-2 transition-colors focus:ring-2 focus:ring-offset-1;
+    border-color: var(--neutral-300);
+}
+
+.checkbox:checked, .radio:checked {
+    background-color: var(--baking-primary-600);
+    border-color: var(--baking-primary-600);
+}
+
+.checkbox:focus, .radio:focus {
+    --tw-ring-color: var(--baking-primary-200);
+}
+
+.radio {
+    @apply rounded-full;
+}
+
+/* ===== 开关组件 ===== */
+.switch {
+    @apply relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2;
+    background-color: var(--neutral-300);
+}
+
+.switch:checked {
+    background-color: var(--baking-primary-600);
+}
+
+.switch:focus {
+    --tw-ring-color: var(--baking-primary-200);
+}
+
+.switch-thumb {
+    @apply inline-block h-4 w-4 transform rounded-full bg-white transition-transform;
+    transform: translateX(2px);
+}
+
+.switch:checked .switch-thumb {
+    transform: translateX(22px);
+}
+
+/* ===== 进度条组件 ===== */
+.progress {
+    @apply w-full bg-gray-200 rounded-full h-2;
+}
+
+.progress-bar {
+    @apply h-2 rounded-full transition-all duration-300;
+    background-color: var(--baking-primary-600);
+}
+
+/* ===== 分页组件 ===== */
+.pagination {
+    @apply flex items-center space-x-1;
+}
+
+.pagination-item {
+    @apply w-8 h-8 flex items-center justify-center text-sm rounded-lg border transition-colors;
+    border-color: var(--neutral-300);
+    color: var(--neutral-600);
+}
+
+.pagination-item:hover:not(.disabled) {
+    background-color: var(--neutral-50);
+    border-color: var(--neutral-400);
+}
+
+.pagination-item.active {
+    background-color: var(--baking-primary-600);
+    border-color: var(--baking-primary-600);
+    color: white;
+}
+
+.pagination-item.disabled {
+    @apply opacity-50 cursor-not-allowed;
+}
+
+/* ===== 工具提示 ===== */
+.tooltip {
+    @apply absolute z-50 px-2 py-1 text-xs text-white bg-gray-900 rounded shadow-lg;
+}
+
+/* ===== 面包屑导航 ===== */
+.breadcrumb {
+    @apply flex items-center space-x-2 text-sm;
+}
+
+.breadcrumb-item {
+    @apply flex items-center;
+    color: var(--neutral-500);
+}
+
+.breadcrumb-item.active {
+    color: var(--neutral-800);
+    font-weight: 500;
+}
+
+.breadcrumb-separator {
+    @apply mx-2;
+    color: var(--neutral-400);
+}
+
+/* ===== 标签页组件 ===== */
+.tabs {
+    @apply border-b;
+    border-color: var(--neutral-200);
+}
+
+.tab {
+    @apply px-4 py-2 text-sm font-medium border-b-2 border-transparent transition-colors;
+    color: var(--neutral-500);
+}
+
+.tab:hover {
+    color: var(--neutral-700);
+}
+
+.tab.active {
+    color: var(--baking-primary-600);
+    border-color: var(--baking-primary-600);
+}
+
+/* ===== 响应式设计 ===== */
+@media (max-width: 640px) {
+    .btn {
+        @apply w-full justify-center;
+    }
+    
+    .modal {
+        @apply mx-4;
+    }
+    
+    .card {
+        @apply mx-4;
+    }
+}
+
+/* ===== 暗色主题支持 ===== */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --neutral-50: #0F172A;
+        --neutral-100: #1E293B;
+        --neutral-200: #334155;
+        --neutral-300: #475569;
+        --neutral-400: #64748B;
+        --neutral-500: #94A3B8;
+        --neutral-600: #CBD5E1;
+        --neutral-700: #E2E8F0;
+        --neutral-800: #F1F5F9;
+        --neutral-900: #F8FAFC;
+    }
+    
+    .card {
+        @apply bg-gray-800 border-gray-700;
+    }
+    
+    .input {
+        @apply bg-gray-800 border-gray-600 text-white;
+    }
+    
+    .modal {
+        @apply bg-gray-800;
+    }
+}
+
+/* ===== 动画效果 ===== */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { 
+        opacity: 0; 
+        transform: translateY(10px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
+    }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.2s ease-out;
+}
+
+.animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+}
+
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ===== 实用工具类 ===== */
+.text-baking-primary {
+    color: var(--baking-primary-600);
+}
+
+.text-baking-secondary {
+    color: var(--baking-secondary-600);
+}
+
+.bg-baking-primary {
+    background-color: var(--baking-primary-600);
+}
+
+.bg-baking-secondary {
+    background-color: var(--baking-secondary-600);
+}
+
+.border-baking-primary {
+    border-color: var(--baking-primary-600);
+}
+
+.border-baking-secondary {
+    border-color: var(--baking-secondary-600);
+}
+
+/* 状态颜色工具类 */
+.text-success { color: var(--status-success); }
+.text-warning { color: var(--status-warning); }
+.text-error { color: var(--status-error); }
+.text-info { color: var(--status-info); }
+
+.bg-success { background-color: var(--status-success); }
+.bg-warning { background-color: var(--status-warning); }
+.bg-error { background-color: var(--status-error); }
+.bg-info { background-color: var(--status-info); }
+
+.bg-success-light { background-color: var(--status-success-light); }
+.bg-warning-light { background-color: var(--status-warning-light); }
+.bg-error-light { background-color: var(--status-error-light); }
+.bg-info-light { background-color: var(--status-info-light); }

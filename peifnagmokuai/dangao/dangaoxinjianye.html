@@ -1,0 +1,1789 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新建配方</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config = { darkMode: 'class' }</script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.css" rel="stylesheet">
+    <style>
+        /* 强制刷新暗黑模式的辅助类 */
+        .dark-force-refresh {}
+        .dark-handle {}
+        
+        /* 渐变色彩定义 - 与首页保持一致 */
+        .gradient-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .gradient-recipe {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+        .gradient-message {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+        .gradient-inventory {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        .gradient-order {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        /* 主题基础变量 */
+        :root {
+            /* Light Theme */
+            --light-bg: #f9fafb;
+            --light-card-bg: #FFFFFF;
+            --light-text: #1E293B;
+            --light-border: #e5e7eb;
+            --light-hover: #f3f4f6;
+            
+            /* Dark Theme */
+            --dark-bg: #0F172A;
+            --dark-card-bg: #1E293B;
+            --dark-text: #F1F5F9;
+            --dark-border: #334155;
+            --dark-hover: #1E3A8A;
+            
+            /* Japanese Theme */
+            --jp-bg: #F7F6F2;
+            --jp-card-bg: #FFFCF7;
+            --jp-text: #2C2C2C;
+            --jp-border: #E5E2D9;
+            --jp-accent: #D64F45;
+            --jp-hover: #FFF1EC;
+            
+            /* Korean Theme */
+            --kr-bg: #F3F7F6;
+            --kr-card-bg: #FFFFFF;
+            --kr-text: #363B3A;
+            --kr-border: #DDE7E5;
+            --kr-accent: #98C6BE;
+            --kr-hover: #E8F3F1;
+        }
+
+        /* 主题切换器样式 */
+        .theme-switcher {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            background: white;
+            border-radius: 1rem;
+            padding: 0.5rem;
+            display: flex;
+            gap: 0.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+            border: 1px solid var(--light-border);
+        }
+
+        .theme-option {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .theme-option:hover {
+            transform: scale(1.1);
+        }
+
+        .theme-option.active {
+            box-shadow: 0 0 0 2px var(--light-border);
+        }
+
+        /* Light Theme */
+        .theme-light {
+            background: var(--light-bg);
+            color: var(--light-text);
+        }
+
+        .theme-light .card {
+            background: var(--light-card-bg);
+            border-color: var(--light-border);
+        }
+
+        /* Dark Theme */
+        .theme-dark {
+            background: var(--dark-bg);
+            color: var(--dark-text);
+        }
+
+        .theme-dark .card {
+            background: var(--dark-card-bg);
+            border-color: var(--dark-border);
+        }
+
+        /* Japanese Theme */
+        .theme-jp {
+            background: var(--jp-bg);
+            color: var(--jp-text);
+        }
+
+        .theme-jp .card {
+            background: var(--jp-card-bg);
+            border-color: var(--jp-border);
+        }
+
+        .theme-jp .btn-primary {
+            background: var(--jp-accent);
+        }
+
+        /* Korean Theme */
+        .theme-kr {
+            background: var(--kr-bg);
+            color: var(--kr-text);
+        }
+
+        .theme-kr .card {
+            background: var(--kr-card-bg);
+            border-color: var(--kr-border);
+        }
+
+        .theme-kr .btn-primary {
+            background: var(--kr-accent);
+        }
+
+        /* 基础主题样式 */
+        html, body { 
+            background: #f9fafb; 
+            transition: all 0.3s ease;
+        }
+        .dark html, .dark body { 
+            background: #0F172A; 
+        }
+        
+        /* 卡片样式 */
+        .card { 
+            border-radius: 12px; 
+            box-shadow: 0 4px 12px 0 rgba(0,0,0,0.1); 
+            background: #FFFFFF; 
+            border: 1px solid #e5e7eb; 
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+        }
+        .dark .card { 
+            background: #1E293B; 
+            box-shadow: 0 4px 20px 0 rgba(0,0,0,0.25); 
+            border: 1px solid #334155; 
+        }
+
+        /* 主题切换按钮 */
+        #themeToggleBtn {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: white;
+            border: 1px solid #e5e7eb;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .dark #themeToggleBtn {
+            background: #334155;
+            border-color: #475569;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        #themeToggleBtn:hover {
+            transform: scale(1.1) rotate(180deg);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+        .dark #themeToggleBtn:hover {
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        /* 文本颜色 */
+        .text-primary {
+            color: #1E293B;
+            transition: color 0.3s ease;
+        }
+        .dark .text-primary {
+            color: #F1F5F9;
+        }
+        
+        /* 输入框样式 */
+        input, textarea {
+            transition: all 0.3s ease;
+        }
+        .dark input, .dark textarea {
+            background: #1E293B;
+            color: #F1F5F9;
+            border-color: #475569;
+        }
+        
+        /* 按钮样式 */
+        .btn-primary {
+            transition: all 0.3s ease;
+        }
+        .dark .btn-primary {
+            background: linear-gradient(135deg, #8B5CF6, #A855F7);
+            color: #F1F5F9;
+        }
+
+        /* 步骤卡片样式 */
+        .step-card {
+            transition: all 0.3s ease;
+        }
+        .dark .step-card {
+            background: #1E293B;
+            border-color: #334155;
+        }
+
+        .input-shadow:focus { box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); border-color: #667eea; }
+        .tab-active { color: #667eea !important; }
+        .tab-inactive { color: #6b7280 !important; }
+        .tab-bg-active { background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)) !important; border: 1px solid #667eea; }
+        .tab-bg-inactive { background: #FFFFFF !important; border: 1px solid #e5e7eb; }
+        .dark .tab-bg-active { background: #1E3A8A !important; border: 1px solid #667eea; }
+        .dark .tab-bg-inactive { background: #1E293B !important; border: 1px solid #334155; }
+        
+        /* Tab图标容器样式 */
+        .tab-icon-container {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .tab-active .tab-icon-container {
+            background: linear-gradient(135deg, #667eea, #764ba2) !important;
+            border-color: #667eea !important;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
+            transform: translateY(-1px) scale(1.05);
+        }
+        .tab-inactive .tab-icon-container {
+            background: linear-gradient(135deg, #f1f5f9, #e2e8f0) !important;
+            border-color: #cbd5e1 !important;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+            transform: translateY(0) scale(1);
+        }
+        .dark .tab-active .tab-icon-container {
+            background: linear-gradient(135deg, #667eea, #8b5cf6) !important;
+            border-color: #667eea !important;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
+        }
+        .dark .tab-inactive .tab-icon-container {
+            background: linear-gradient(135deg, #334155, #475569) !important;
+            border-color: #64748b !important;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+        }
+        .tab-active .tab-icon-container i {
+            color: #ffffff !important;
+        }
+        .tab-inactive .tab-icon-container i {
+            color: #64748b !important;
+        }
+        .dark .tab-inactive .tab-icon-container i {
+            color: #94a3b8 !important;
+        }
+        .transition-all { transition: all 0.2s cubic-bezier(.4,0,.2,1); }
+        .bottom-bar { border-radius: 24px 24px 0 0; }
+        .group-blue { background: #E8F0FE; }
+        .group-yellow { background: #FFF7E0; }
+        .group-pink { background: #FDE7EF; }
+        .group-green { background: #E6F6EC; }
+        .group-gray { background: #F3F4F6; }
+        .dark .group-blue { background: #22304a; }
+        .dark .group-yellow { background: #4a3e22; }
+        .dark .group-pink { background: #4a2230; }
+        .dark .group-green { background: #224a30; }
+        .dark .group-gray { background: #23272f; }
+        .sop-step-row { transition: all 0.2s ease; }
+        .sop-step-row:hover { background: #2a2f3a !important; }
+        .dark .sop-step-row:hover { background: #2a2f3a !important; }
+        .sop-menu-dropdown { min-width: 100px; }
+        .sop-drag-handle:active { cursor: grabbing !important; }
+        .sop-type-modal { backdrop-filter: blur(8px); }
+        .sop-type-grid { max-height: 60vh; }
+        .sop-type-item { transition: all 0.15s ease; }
+        .sop-type-item:hover { background: rgba(139, 92, 246, 0.1) !important; transform: translateY(-1px); }
+        .sop-step-input { background: rgba(255,255,255,0.05) !important; }
+        .sop-step-input:focus { background: rgba(255,255,255,0.1) !important; }
+        .step-row { transition: all 0.3s ease; background: #FFFFFF !important; border: 1px solid #E2E8F0 !important; }
+        .step-row:hover { background: #F8FAFC !important; border-color: #CBD5E1 !important; transform: translateY(-1px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+        .dark .step-row { background: #1E293B !important; border: 1px solid #334155 !important; }
+        .dark .step-row:hover { background: #0F172A !important; border-color: #475569 !important; }
+        .media-upload-area { transition: all 0.2s ease; background: #F1F5F9; border: 2px dashed #CBD5E1; }
+        .media-upload-area:hover { border-color: #8B5CF6 !important; background: rgba(139, 92, 246, 0.05) !important; }
+        .dark .media-upload-area { background: #0F172A; border-color: #475569; }
+        .media-preview { position: relative; overflow: hidden; }
+        .media-preview .remove-btn { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.7); }
+        .step-number { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .video-indicator { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+        .crop-container { max-width: 100%; max-height: 400px; }
+        .crop-preview { width: 120px; height: 120px; border-radius: 12px; overflow: hidden; border: 2px solid #E2E8F0; }
+        .dark .crop-preview { border-color: #334155; }
+        
+        /* 步骤图片横向滚动样式 */
+        .snap-x {
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none; /* Firefox */
+        }
+        .snap-x::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Edge */
+        }
+        .snap-center {
+            scroll-snap-align: center;
+        }
+        
+        /* 拖动图标样式已统一为SOP样式 */
+        .sop-step-enhanced { 
+            background: #FFFFFF !important; 
+            border: 1px solid #E2E8F0 !important; 
+            transition: all 0.3s ease;
+        }
+        .sop-step-enhanced:hover { 
+            background: #F8FAFC !important; 
+            border-color: #CBD5E1 !important; 
+            transform: translateY(-1px); 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        .dark .sop-step-enhanced { 
+            background: #1E293B !important; 
+            border: 1px solid #334155 !important; 
+        }
+        .dark .sop-step-enhanced:hover { 
+            background: #0F172A !important; 
+            border-color: #475569 !important; 
+        }
+
+        /* 添加左滑删除相关样式 */
+        .ingredient-item {
+            position: relative;
+            overflow: hidden;
+            touch-action: pan-y;
+            transform: translateX(0);
+            transition: transform 0.3s ease;
+            width: 100%;
+        }
+
+        .ingredient-item .delete-action {
+            position: absolute;
+            right: -80px; /* 初始时完全在视图外 */
+            top: 0;
+            bottom: 0;
+            width: 80px;
+            background-color: #F44336;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 10; /* 确保在其他元素之上 */
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .ingredient-item.swiping {
+            transition: none;
+        }
+
+        /* 同步状态的样式 */
+        .name-input {
+            transition: all 0.3s ease;
+        }
+
+        .name-input.synced {
+            border-color: #4CAF50;
+            background-color: rgba(76, 175, 80, 0.05);
+        }
+
+        .name-input.not-synced {
+            border-color: #F44336;
+        }
+
+        .sync-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .sync-indicator.synced {
+            background-color: #4CAF50;
+        }
+
+        .sync-indicator.not-synced {
+            background-color: #F44336;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-50 dark:bg-[#0F172A] text-gray-800 dark:text-slate-100">
+    <div class="max-w-md mx-auto min-h-screen flex flex-col bg-gray-50 dark:bg-[#0F172A]">
+        <!-- 顶部导航 -->
+        <div class="sticky top-0 z-50 bg-white dark:bg-[#1E293B] flex items-center justify-between px-4 py-3 card rounded-b-2xl border-b border-slate-200 dark:border-slate-600">
+            <button class="text-gray-500 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-[#334155] active:scale-95 transition rounded-full p-2" onclick="checkExitConfirmation()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <span class="text-lg font-bold flex-1 text-center text-gray-800 dark:text-slate-100 tracking-wide">新建配方</span>
+            <div class="flex gap-2 items-center">
+                <button class="text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-[#1E3A8A] active:scale-90 rounded-full p-2 transition" title="拍照识别" onclick="openCamera()"><i class="fas fa-camera-retro"></i></button>
+                <!-- 还原主题切换按钮 -->
+                <button id="themeToggleBtn" class="ml-2 text-xl hover:bg-gray-100 dark:hover:bg-[#334155] active:scale-90 rounded-full p-2 transition" onclick="toggleTheme()">
+                    <span id="themeIcon">🌙</span>
+                </button>
+            </div>
+        </div>
+        <!-- 图片上传区 -->
+        <div class="relative mx-4 mt-4 mb-2">
+            <input type="file" id="coverImage" class="hidden" accept="image/*">
+            <label for="coverImage" class="block w-full h-40 card flex flex-col items-center justify-center cursor-pointer border-2 border-dashed border-purple-600 hover:border-purple-700 transition-all">
+                <div id="imagePreview" class="w-full h-full flex flex-col items-center justify-center text-purple-600 dark:text-purple-400">
+                    <i class="fas fa-camera text-3xl mb-2"></i>
+                    <span>点击上传封面图片</span>
+                </div>
+            </label>
+        </div>
+        <!-- Tab切换区 -->
+        <div class="flex bg-white dark:bg-[#1E293B] rounded-xl mx-4 mt-2 mb-4 overflow-hidden card">
+            <button id="tab-btn-recipe" class="flex-1 flex flex-col items-center py-3 text-center font-semibold tab-btn tab-active tab-bg-active gap-1 hover:bg-gray-100 dark:hover:bg-[#1E3A8A] active:scale-95 transition-all" onclick="switchTab('recipe')">
+                <i class="fas fa-utensils text-lg mb-1"></i>
+                <span class="mt-1">配方</span>
+            </button>
+            <button id="tab-btn-step" class="flex-1 flex flex-col items-center py-3 text-center font-semibold tab-btn tab-inactive tab-bg-inactive gap-1 hover:bg-gray-100 dark:hover:bg-[#1E3A8A] active:scale-95 transition-all" onclick="switchTab('step')">
+                <i class="fas fa-tasks text-lg mb-1"></i>
+                <span class="mt-1">步骤</span>
+            </button>
+        </div>
+        <!-- 配方基础信息区（优化设计） -->
+        <div id="recipe-meta-section" class="mx-4 mb-4">
+            <div class="card p-4 space-y-4">
+                <!-- 配方名称输入 -->
+                <div class="space-y-2">
+                    <div class="flex items-center gap-2">
+                        <div class="w-5 h-5 bg-gradient-to-br from-purple-500 to-purple-600 rounded-md flex items-center justify-center">
+                            <i class="fas fa-signature text-white text-xs"></i>
+                        </div>
+                        <label class="text-sm font-medium text-gray-800 dark:text-slate-100">配方名称 <span class="text-red-500">*</span></label>
+                    </div>
+                    <div class="relative">
+                        <input type="text" placeholder="请输入配方名称..." class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 dark:focus:ring-purple-900 outline-none bg-white dark:bg-[#1E293B] text-gray-800 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 transition-all duration-200 hover:border-gray-300 dark:hover:border-slate-500">
+                        <div class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500">
+                            <i class="fas fa-edit text-sm"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 分类选择 -->
+                <div class="space-y-2">
+                    <div class="flex items-center gap-2">
+                        <div class="w-5 h-5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-md flex items-center justify-center">
+                            <i class="fas fa-tags text-white text-xs"></i>
+                        </div>
+                        <label class="text-sm font-medium text-gray-800 dark:text-slate-100">选择分类 <span class="text-red-500">*</span></label>
+                    </div>
+                    <div class="relative">
+                        <select id="categorySelect" class="w-full pl-10 pr-12 py-3 rounded-xl border border-gray-200 dark:border-slate-600 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 dark:focus:ring-purple-900 outline-none bg-white dark:bg-[#1E293B] text-gray-800 dark:text-slate-100 appearance-none cursor-pointer transition-all duration-200 hover:border-gray-300 dark:hover:border-slate-500">
+                            <option value="" class="text-gray-400">请选择配方分类...</option>
+                            <option value="bread">🍞 面包类</option>
+                            <option value="cake">🎂 蛋糕类</option>
+                            <option value="drink">🥤 饮品类</option>
+                            <option value="pastry">🥐 糕点类</option>
+                            <option value="dessert">🍮 甜品类</option>
+                            <option value="other">📦 其他类</option>
+                        </select>
+                        <div class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500">
+                            <i class="fas fa-layer-group text-sm"></i>
+                        </div>
+
+                        <button onclick="openCategoryModal()" class="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl hover:shadow-lg active:scale-95 transition-all duration-200 flex items-center justify-center" title="新建分类">
+                            <i class="fas fa-plus text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- 原料分组区（统一设计风格） -->
+        <div class="space-y-4 flex-1 overflow-y-auto px-4 pb-32" id="recipe-section">
+            <!-- 配方说明卡片 - 移除文字和说明 -->
+            <div class="mt-4 mb-4">
+                <div class="card p-4">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="w-8 h-8 bg-gradient-to-r from-purple-600 to-purple-700 rounded-full flex items-center justify-center">
+                            <i class="fas fa-utensils text-white text-sm"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-800 dark:text-slate-100">配方组成</h3>
+                    </div>
+                    <p class="text-sm text-slate-600 dark:text-slate-400">可选原料可套用子配方，支持多层级配方</p>
+                </div>
+            </div>
+            <div class="card p-4">
+                <div class="flex justify-between items-center mb-3 bg-gray-50 dark:bg-[#0F172A] p-2 rounded-lg w-full">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-gray-50 dark:bg-[#0F172A] flex items-center justify-center mr-3">
+                            <i class="fas fa-tasks text-purple-600 dark:text-purple-400"></i>
+                        </div>
+                        <h3 contenteditable="true" class="font-semibold text-gray-800 dark:text-slate-100 outline-none border-b border-transparent focus:border-purple-600 px-1">步骤一</h3>
+                    </div>
+                </div>
+                <div id="stepOneIngredients" class="ingredients-group space-y-2"></div>
+                <div class="flex justify-end mt-3">
+                    <button class="text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-[#1E3A8A] active:scale-90 rounded-lg px-3 py-2 transition-all flex items-center text-sm" onclick="addIngredient('stepOne')">
+                        <i class="fas fa-plus mr-1"></i>
+                        <span>添加材料</span>
+                    </button>
+                </div>
+            </div>
+            <div class="px-4 mt-4">
+                <button class="w-full py-3 rounded-xl card text-purple-600 dark:text-purple-400 font-semibold hover:bg-purple-50 dark:hover:bg-[#1E3A8A] active:scale-95 transition-all border border-slate-200 dark:border-slate-600" onclick="addStepInRecipe()">
+                    <i class="fas fa-plus mr-2"></i> 添加步骤
+                </button>
+            </div>
+            <div class="card p-4">
+                <div class="flex justify-between items-center mb-3 bg-[#F8FAFC] dark:bg-[#0F172A] p-2 rounded-lg w-full">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-[#F8FAFC] dark:bg-[#0F172A] flex items-center justify-center mr-3">
+                            <i class="fas fa-cube text-purple-600 dark:text-purple-400"></i>
+                        </div>
+                        <h3 contenteditable="true" class="font-semibold text-[#1E293B] dark:text-slate-100 outline-none border-b border-transparent focus:border-purple-600 px-1">基础产品 <span class="text-red-500 dark:text-red-400">*</span></h3>
+                    </div>
+                </div>
+                <div id="baseIngredients" class="ingredients-group space-y-2"></div>
+                <div class="flex justify-end mt-3">
+                    <button class="text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 active:scale-90 rounded-lg px-3 py-2 transition-all flex items-center text-sm" onclick="addIngredient('base')">
+                        <i class="fas fa-plus mr-1"></i>
+                        <span>添加基础产品</span>
+                    </button>
+                </div>
+            </div>
+            <div id="variationList"></div>
+            <div class="px-4 mt-4">
+                <button id="addVariationBtn" class="w-full py-3 rounded-xl card text-purple-600 dark:text-purple-400 font-semibold hover:bg-purple-50 dark:hover:bg-purple-900/20 active:scale-95 transition-all border border-slate-200 dark:border-slate-600">
+                    <i class="fas fa-plus mr-2"></i> 添加其他产品
+                </button>
+            </div>
+        </div>
+        
+
+        
+        <!-- 步骤编辑区（统一设计风格） -->
+        <div class="flex-1 flex flex-col pb-32 hidden" id="step-section">
+            <!-- 步骤操作说明卡片 -->
+            <div class="mx-4 mt-4 mb-4">
+                <div class="card p-4">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="w-8 h-8 bg-gradient-to-r from-purple-600 to-purple-700 rounded-full flex items-center justify-center">
+                            <i class="fas fa-utensils text-white text-sm"></i>
+                        </div>
+                        <h3 class="font-semibold text-[#1E293B] dark:text-slate-100">制作步骤</h3>
+                    </div>
+                    <p class="text-sm text-slate-600 dark:text-slate-400">详细记录每个制作环节，支持图片和视频说明</p>
+                </div>
+            </div>
+            
+            <!-- 提示信息 -->
+            <div class="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-3 mx-4 mb-4 flex items-center">
+                <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+                <p class="text-sm text-blue-700 dark:text-blue-300">点击图片或<i class="fas fa-search-plus mx-1"></i>图标可查看大图</p>
+            </div>
+            
+            <!-- 步骤列表 -->
+            <div id="stepsList" class="px-4 space-y-8"></div>
+            
+            <!-- 添加步骤按钮 -->
+            <div class="px-4 mt-4">
+                <button class="w-full py-3 rounded-xl card text-purple-600 dark:text-purple-400 font-semibold hover:bg-purple-50 dark:hover:bg-purple-900/20 active:scale-95 transition-all border border-slate-200 dark:border-slate-600" onclick="addStep()">
+                    <i class="fas fa-plus mr-2"></i> 添加步骤
+                </button>
+            </div>
+        </div>
+        <!-- 底部固定栏：总重卡片+保存按钮并列 -->
+        <div class="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#1E293B] py-3 px-4 z-50 card bottom-bar border-t border-slate-200 dark:border-slate-600">
+            <div class="max-w-md mx-auto flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="rounded-lg border border-slate-200 dark:border-slate-600 bg-[#F8FAFC] dark:bg-[#0F172A] px-3 py-2 flex flex-col items-center">
+                        <div class="text-[#64748B] dark:text-slate-400 text-xs">总重</div>
+                        <div class="text-sm font-bold text-purple-600 dark:text-purple-400"><span id="totalWeight">0</span></div>
+                    </div>
+                </div>
+                <button id="saveBtn" class="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 active:scale-95 text-white px-4 py-2 rounded-lg font-medium text-sm shadow-md transition-all">保存配方</button>
+            </div>
+        </div>
+        
+        <!-- 图片全屏预览 -->
+        <div id="fullImageModal" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 hidden" onclick="this.classList.add('hidden')">
+            <img src="" alt="图片大图" class="max-w-[90vw] max-h-[90vh] object-contain rounded-xl">
+            <button class="absolute top-4 right-4 bg-white bg-opacity-20 text-white rounded-full p-3 hover:bg-opacity-40 transition-all" onclick="event.stopPropagation(); this.parentElement.classList.add('hidden')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <!-- 单位选择弹窗（常驻DOM，默认hidden） -->
+        <div id="unit-popup" class="fixed z-50 left-0 top-0 w-full h-full bg-black bg-opacity-50 backdrop-blur-sm transition-all hidden">
+            <div class="bg-white dark:bg-[#1E293B] rounded-2xl p-6 min-w-[300px] max-w-[90vw] shadow-2xl border border-slate-200 dark:border-slate-600 transform transition-all" style="position: absolute;">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-lg font-semibold text-[#1E293B] dark:text-slate-100">选择单位</h3>
+                    <button onclick="closeUnitSelector()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+            </div>
+                
+                <!-- Tab切换按钮组 -->
+                <div class="flex gap-2 mb-6 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl" id="unit-tab-btns">
+                    <!-- Tab按钮将通过JS动态生成 -->
+        </div>
+                
+                <!-- 单位列表容器 -->
+                <div id="unit-popup-list" class="grid grid-cols-3 gap-2 max-h-[40vh] overflow-y-auto pr-2 mb-4">
+                    <!-- 单位选项将通过JS动态生成 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 材料名称检索弹窗（常驻DOM，默认hidden） -->
+        <div id="material-popup" class="fixed z-50 left-0 top-0 w-full h-full flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm hidden">
+            <div class="bg-white dark:bg-[#1E293B] rounded-2xl p-4 max-w-4xl w-full mx-4 border border-slate-200 dark:border-slate-600 shadow-2xl max-h-[70vh] flex flex-col overflow-hidden">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center shadow-lg">
+                            <i class="fas fa-search text-white text-sm"></i>
+                        </div>
+                        <h2 class="text-lg font-bold text-gray-800 dark:text-slate-100">选择材料或配方</h2>
+                    </div>
+                    <button onclick="closeMaterialSearch()" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-600 hover:text-gray-700 dark:hover:text-slate-200 active:scale-95 transition-all duration-200 flex items-center justify-center">
+                        <i class="fas fa-times text-sm"></i>
+                    </button>
+                </div>
+                
+                <!-- 搜索和自定义材料输入区域 -->
+                <div class="mb-4 p-3 bg-gradient-to-r from-purple-50 to-amber-50 dark:from-purple-900/20 dark:to-amber-900/20 rounded-xl border border-purple-200/50 dark:border-purple-800/50 shadow-sm">
+                    <div class="flex items-start gap-2 mb-2">
+                        <div class="w-6 h-6 bg-amber-100 dark:bg-amber-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-exclamation-triangle text-amber-600 dark:text-amber-400 text-xs"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="text-xs font-semibold text-amber-700 dark:text-amber-300 mb-1">
+                                自定义材料提示
+                            </div>
+                            <div class="text-xs text-amber-600 dark:text-amber-400 leading-relaxed">
+                                自定义材料不会同步材料库的成本数据，配方计算时此材料成本为0
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <div class="flex-1 relative">
+                            <input type="text" id="custom-material-input" placeholder="搜索材料或输入自定义材料名称..." 
+                                   class="w-full pl-10 pr-3 py-2.5 rounded-lg border border-purple-200 dark:border-purple-700 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 dark:focus:ring-purple-900 outline-none bg-white dark:bg-[#0F172A] text-gray-800 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 transition-all duration-200 shadow-sm text-sm"
+                                   oninput="filterMaterialAndRecipes(this.value)">
+                            <div class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-slate-500">
+                                <i class="fas fa-search text-xs"></i>
+                            </div>
+                        </div>
+                        <button onclick="confirmCustomMaterial()" class="px-4 py-2.5 gradient-primary hover:from-[#764ba2] hover:to-[#667eea] text-white rounded-lg font-semibold transition-all active:scale-95 shadow-lg flex items-center gap-1 text-sm">
+                            <i class="fas fa-check text-xs"></i>
+                            <span>确认</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 分区标签 -->
+                <div class="flex mb-4 bg-gray-100 dark:bg-slate-700 rounded-lg p-1 shadow-inner">
+                    <button id="materials-tab" class="flex-1 py-2 px-3 rounded-md text-sm font-semibold transition-all duration-200 bg-white dark:bg-slate-600 text-purple-600 dark:text-purple-400 shadow-md" onclick="switchMaterialTab('materials')">
+                        <i class="fas fa-seedling mr-1 text-xs"></i>材料
+                    </button>
+                    <button id="recipes-tab" class="flex-1 py-2 px-3 rounded-md text-sm font-semibold transition-all duration-200 text-gray-600 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-600/50" onclick="switchMaterialTab('recipes')">
+                        <i class="fas fa-book mr-1 text-xs"></i>配方
+                    </button>
+                </div>
+                
+                <!-- 主要内容区域 -->
+                <div class="flex-1 flex gap-4 min-h-0">
+                    <!-- 材料区域 -->
+                    <div id="materials-section" class="flex gap-4 w-full">
+                        <!-- 左侧类别列表 -->
+                        <div class="w-[30%] flex-shrink-0">
+                            <div class="bg-gradient-to-b from-gray-50 to-gray-100 dark:from-slate-800 dark:to-slate-900 rounded-xl p-3 h-full flex flex-col shadow-sm border border-gray-200/50 dark:border-slate-700/50">
+                                <div class="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3 px-1 flex items-center gap-2">
+                                    <div class="w-2 h-2 bg-purple-500 rounded-full"></div>
+                                    <span>类别</span>
+                                </div>
+                                <div id="material-category-list" class="space-y-1 overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-slate-600">
+                                    <!-- 动态生成的类别列表 -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 右侧材料列表 -->
+                        <div class="w-[70%] min-w-0">
+                            <div class="bg-gradient-to-b from-gray-50/50 to-white dark:from-slate-800/50 dark:to-slate-900 rounded-xl p-3 h-full border border-gray-200/50 dark:border-slate-700/50 shadow-sm">
+                                <div id="material-popup-list" class="flex flex-col gap-2 pr-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-slate-600 max-h-full overflow-y-auto">
+                                    <!-- 动态生成的材料列表 -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 配方区域 -->
+                    <div id="recipes-section" class="flex gap-4 w-full hidden">
+                        <!-- 左侧类别列表 -->
+                        <div class="w-[30%] flex-shrink-0">
+                            <div class="bg-gradient-to-b from-gray-50 to-gray-100 dark:from-slate-800 dark:to-slate-900 rounded-xl p-3 h-full flex flex-col shadow-sm border border-gray-200/50 dark:border-slate-700/50">
+                                <div class="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3 px-1 flex items-center gap-2">
+                                    <div class="w-2 h-2 bg-purple-500 rounded-full"></div>
+                                    <span>类别</span>
+                                </div>
+                                <div id="recipe-category-list" class="space-y-1 overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-slate-600">
+                                    <!-- 动态生成的类别列表 -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 右侧配方列表 -->
+                        <div class="w-[70%] min-w-0">
+                            <div class="bg-gradient-to-b from-gray-50/50 to-white dark:from-slate-800/50 dark:to-slate-900 rounded-xl p-3 h-full border border-gray-200/50 dark:border-slate-700/50 shadow-sm">
+                                <div id="recipe-popup-list" class="flex flex-col gap-2 pr-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-slate-600 max-h-full overflow-y-auto">
+                                    <!-- 动态生成的配方列表 -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4 pt-3 border-t border-gray-200/50 dark:border-slate-600/50">
+                    <div class="flex justify-center">
+                        <button onclick="closeMaterialSearch()" class="px-6 py-2 rounded-lg bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600 active:scale-95 transition-all font-semibold shadow-sm border border-gray-200 dark:border-slate-600 text-sm">取消</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 单位选择弹窗 -->
+        <div id="unit-selector-popup" class="fixed z-50 left-0 top-0 w-full h-full flex items-center justify-center bg-black bg-opacity-30 hidden">
+            <div class="bg-white dark:bg-[#1E293B] card p-4 min-w-[200px] border border-gray-200 dark:border-slate-600">
+                <div class="font-semibold mb-3 text-gray-800 dark:text-slate-100">选择单位</div>
+                <div id="unit-selector-list" class="grid grid-cols-3 gap-2 mb-3"></div>
+                <button onclick="closeUnitSelector()" class="w-full py-1 rounded bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600 active:scale-95 transition-all">取消</button>
+            </div>
+        </div>
+        <!-- 新建类别弹窗 -->
+        <div id="categoryModal" class="fixed z-50 left-0 top-0 w-full h-full flex items-center justify-center bg-black bg-opacity-30 hidden">
+            <div class="bg-white dark:bg-[#1E293B] card p-6 min-w-[220px] border border-slate-200 dark:border-slate-600">
+                <div class="font-semibold mb-2 text-[#1E293B] dark:text-slate-100">新建类别</div>
+                <input id="newCategoryInput" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 focus:border-purple-600 focus:ring-2 focus:ring-purple-100 dark:focus:ring-purple-900 outline-none bg-white dark:bg-[#0F172A] text-[#1E293B] dark:text-slate-100 mb-3" placeholder="输入新类别名称">
+                <div class="flex gap-2">
+                    <button onclick="closeCategoryModal()" class="flex-1 py-2 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 active:scale-95 transition-all">取消</button>
+                    <button onclick="addNewCategory()" class="flex-1 py-2 rounded bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold hover:from-purple-700 hover:to-purple-800 active:scale-95 transition-all">确定</button>
+                </div>
+            </div>
+        </div>
+        
+
+        
+        <!-- 步骤操作菜单弹窗 -->
+        <div id="stepMenuModal" class="fixed z-50 left-0 top-0 w-full h-full flex items-center justify-center bg-black bg-opacity-40 hidden">
+            <div class="bg-white dark:bg-white rounded-2xl shadow-2xl p-0 max-w-xs w-full mx-4 overflow-hidden">
+                <button id="stepMenuDelete" class="w-full px-6 py-4 text-red-600 text-lg font-medium hover:bg-red-50 active:bg-red-100 transition border-b border-gray-200">
+                    删除
+                </button>
+                <button id="stepMenuAdd" class="w-full px-6 py-4 text-blue-600 text-lg font-medium hover:bg-blue-50 active:bg-blue-100 transition border-b border-gray-200">
+                    添加一行
+                </button>
+                <button onclick="closeStepMenuModal()" class="w-full px-6 py-4 text-gray-600 text-lg font-medium hover:bg-gray-50 active:bg-gray-100 transition">
+                    取消
+                </button>
+            </div>
+        </div>
+        
+        <!-- 媒体上传选择弹窗 -->
+        <div id="mediaUploadModal" class="fixed z-50 left-0 top-0 w-full h-full flex items-center justify-center bg-black bg-opacity-40 hidden">
+            <div class="bg-white dark:bg-white rounded-2xl shadow-2xl p-0 max-w-xs w-full mx-4 overflow-hidden">
+                <button onclick="selectImage()" class="w-full px-6 py-4 text-blue-600 text-lg font-medium hover:bg-blue-50 active:bg-blue-100 transition border-b border-gray-200">
+                    <i class="fas fa-image mr-2"></i>选择图片
+                </button>
+                <button onclick="selectVideo()" class="w-full px-6 py-4 text-green-600 text-lg font-medium hover:bg-green-50 active:bg-green-100 transition border-b border-gray-200">
+                    <i class="fas fa-video mr-2"></i>选择视频
+                </button>
+                <button onclick="captureMedia()" class="w-full px-6 py-4 text-purple-600 text-lg font-medium hover:bg-purple-50 active:bg-purple-100 transition border-b border-gray-200">
+                    <i class="fas fa-camera mr-2"></i>拍照/录像
+                </button>
+                <button onclick="closeMediaUploadModal()" class="w-full px-6 py-4 text-gray-600 text-lg font-medium hover:bg-gray-50 active:bg-gray-100 transition">
+                    取消
+                </button>
+            </div>
+        </div>
+        
+        <!-- 图片裁剪弹窗 -->
+        <div id="cropModal" class="fixed z-50 left-0 top-0 w-full h-full flex items-center justify-center bg-black bg-opacity-40 hidden">
+            <div class="bg-white dark:bg-[#1E293B] rounded-2xl shadow-2xl p-6 max-w-lg w-full mx-4 border border-slate-200 dark:border-slate-600">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-[#1E293B] dark:text-slate-100 font-semibold text-lg">裁剪图片</h3>
+                    <button onclick="closeCropModal()" class="text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl active:scale-90 transition">×</button>
+                </div>
+                
+                <div class="space-y-4">
+                    <!-- 裁剪区域 -->
+                    <div class="crop-container">
+                        <img id="cropImage" style="max-width: 100%; display: block;">
+                    </div>
+                    
+                    <!-- 预览区域 -->
+                    <div class="flex items-center gap-4">
+                        <div class="text-sm text-slate-600 dark:text-slate-400">预览效果：</div>
+                        <div class="crop-preview" id="cropPreview"></div>
+                    </div>
+                    
+                    <!-- 操作按钮 -->
+                    <div class="flex gap-3">
+                        <button onclick="closeCropModal()" class="flex-1 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 active:scale-95 transition-all">取消</button>
+                        <button onclick="confirmCrop()" class="flex-1 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold hover:from-purple-700 hover:to-purple-800 active:scale-95 transition-all">确定裁剪</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+    <!-- 分享弹窗 -->
+    <div id="shareModal" class="fixed z-50 left-0 top-0 w-full h-full flex items-center justify-center bg-black bg-opacity-40 hidden">
+        <div class="bg-white dark:bg-[#1E293B] rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4 border border-slate-200 dark:border-slate-600">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-[#1E293B] dark:text-slate-100 font-semibold text-2xl">分享食谱</h3>
+                <button onclick="document.getElementById('shareModal').classList.add('hidden')" class="text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl active:scale-90 transition">×</button>
+            </div>
+            
+            <div class="mb-8">
+                <p class="text-slate-600 dark:text-slate-400 mb-2">选择分享平台</p>
+                
+                <!-- 分享功能已移除 -->
+                <div class="text-center py-8">
+                    <div class="text-slate-400 dark:text-slate-500">
+                        <i class="fas fa-info-circle text-3xl mb-3"></i>
+                        <p class="text-lg mb-2">分享功能暂时不可用</p>
+                        <p class="text-sm">该功能正在维护中，敬请谅解</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 取消按钮 -->
+            <div class="w-full">
+                <button onclick="document.getElementById('shareModal').classList.add('hidden')" class="w-full py-4 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-medium text-lg hover:bg-gray-200 dark:hover:bg-gray-700 active:scale-95 transition-all">
+                    取消
+                </button>
+            </div>
+        </div>
+    </div>
+    
+
+    
+    <!-- 退出确认弹窗 -->
+    <div id="exitConfirmModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white dark:bg-[#1E293B] rounded-2xl p-6 max-w-sm mx-4 shadow-2xl">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-save text-blue-500 text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-[#1E293B] dark:text-slate-100 mb-2">保存配方进度</h3>
+                <p class="text-slate-600 dark:text-slate-400 text-sm mb-6">检测到您正在编辑配方，是否保存当前进度？</p>
+                <div class="flex gap-3">
+                    <button class="flex-1 px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition" onclick="exitWithoutSaving()">不保存</button>
+                    <button class="flex-1 px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-xl hover:from-blue-600 hover:to-indigo-600 transition" onclick="saveAndExit()">保存并退出</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 拍照识别界面 -->
+    <div id="cameraModal" class="fixed z-50 left-0 top-0 w-full h-full bg-black flex flex-col hidden">
+        <!-- 相机预览区域 -->
+        <div id="cameraPreview" class="flex-1 bg-black hidden">
+            <!-- 实际应用中这里会显示相机预览 -->
+            <div class="w-full h-full relative overflow-hidden">
+                <!-- 模拟相机界面 -->
+                <div class="absolute inset-0 bg-gradient-to-b from-gray-700 to-gray-900 flex items-center justify-center">
+                    <div class="text-white text-5xl opacity-30">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                </div>
+                
+                <!-- 拍照闪光效果 -->
+                <div id="cameraFlash" class="absolute inset-0 bg-white hidden opacity-0 transition-opacity duration-200"></div>
+                
+                <!-- 相机网格和对焦图标 -->
+                <div class="absolute inset-0 grid grid-cols-3 grid-rows-3 pointer-events-none">
+                    <div class="border-r border-b border-white/20"></div>
+                    <div class="border-r border-l border-b border-white/20"></div>
+                    <div class="border-l border-b border-white/20"></div>
+                    <div class="border-r border-t border-b border-white/20"></div>
+                    <div class="border-r border-l border-t border-b border-white/20 flex items-center justify-center">
+                        <div class="w-12 h-12 border-2 border-blue-400 rounded-full opacity-50"></div>
+                    </div>
+                    <div class="border-l border-t border-b border-white/20"></div>
+                    <div class="border-r border-t border-white/20"></div>
+                    <div class="border-r border-l border-t border-white/20"></div>
+                    <div class="border-l border-t border-white/20"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 顶部导航栏 -->
+        <div class="absolute top-0 left-0 right-0 p-4">
+            <button class="text-white hover:bg-black/30 active:scale-95 transition rounded-full p-2" onclick="closeCamera()">
+                <i class="fas fa-arrow-left text-xl"></i>
+            </button>
+        </div>
+        
+        <!-- 底部操作区 -->
+        <div class="bg-black py-6 px-4">
+            <!-- 说明文字 -->
+            <div class="text-white text-center mb-6">
+                <p class="text-sm">手写/电子配方本 自动识别可快速创建配方</p>
+            </div>
+            
+            <!-- 拍照按钮 -->
+            <div class="flex justify-center items-center">
+                <button class="w-16 h-16 rounded-full bg-white flex items-center justify-center active:scale-95 transition" onclick="takePhoto()">
+                    <div class="w-14 h-14 border-2 border-gray-300 rounded-full"></div>
+                </button>
+            </div>
+        </div>
+    </div>
+    </div>
+    <script>
+        // 全局变量
+        let hasModifiedIngredients = false;
+        
+        // 定义savedRecipes对象，用于配方搜索和导入
+        const savedRecipes = {
+            // 蛋糕类示例数据
+            '经典戚风蛋糕': {
+                description: '松软绵密的经典戚风蛋糕',
+                category: '蛋糕类',
+                image: 'https://images.unsplash.com/photo-1586444248902-2f64eddc13df?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80',
+                ingredients: [
+                    { name: '低筋面粉', amount: 100, unit: 'g' },
+                    { name: '鸡蛋', amount: 5, unit: '个' },
+                    { name: '细砂糖', amount: 80, unit: 'g' },
+                    { name: '玉米油', amount: 40, unit: 'ml' },
+                    { name: '牛奶', amount: 50, unit: 'ml' }
+                ]
+            },
+            '巧克力蛋糕': {
+                description: '浓郁香醇的巧克力蛋糕',
+                category: '蛋糕类',
+                image: 'https://images.unsplash.com/photo-1586444248902-2f64eddc13df?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80',
+                ingredients: [
+                    { name: '低筋面粉', amount: 100, unit: 'g' },
+                    { name: '可可粉', amount: 30, unit: 'g' },
+                    { name: '鸡蛋', amount: 4, unit: '个' },
+                    { name: '细砂糖', amount: 90, unit: 'g' },
+                    { name: '黄油', amount: 50, unit: 'g' },
+                    { name: '牛奶', amount: 60, unit: 'ml' }
+                ]
+            }
+        };
+        
+        // 页面退出确认相关函数
+        function checkExitConfirmation() {
+            if (hasModifiedIngredients) {
+                document.getElementById('exitConfirmModal').classList.remove('hidden');
+            } else {
+                window.history.back();
+            }
+        }
+        
+        // Tab切换功能 - 修复未定义的switchTab函数
+        function switchTab(tab) {
+            console.log('切换到标签:', tab);
+            // 更新Tab按钮状态
+            const tabs = ['recipe', 'step'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-btn-${t}`);
+                const section = document.getElementById(`${t}-section`);
+                
+                if (t === tab) {
+                    btn.classList.add('tab-active', 'tab-bg-active');
+                    btn.classList.remove('tab-inactive', 'tab-bg-inactive');
+                    if (section) section.classList.remove('hidden');
+                } else {
+                    btn.classList.remove('tab-active', 'tab-bg-active');
+                    btn.classList.add('tab-inactive', 'tab-bg-inactive');
+                    if (section) section.classList.add('hidden');
+                }
+            });
+            
+            // 切换配方信息显示（配方名称和分类选择仅在配方页面显示）
+            const recipeMetaSection = document.getElementById('recipe-meta-section');
+            if (recipeMetaSection) {
+                if (tab === 'recipe') {
+                    recipeMetaSection.classList.remove('hidden');
+                } else {
+                    recipeMetaSection.classList.add('hidden');
+                }
+            }
+            
+            // 更新底部栏显示
+            const saveBtn = document.getElementById('saveBtn');
+            if (saveBtn) {
+                const totalWeightCard = saveBtn.parentElement.querySelector('.flex.items-center');
+                if(tab==='step') {
+                    saveBtn.textContent = '保存步骤';
+                    if (totalWeightCard) totalWeightCard.classList.add('hidden');
+                    saveBtn.classList.add('w-full');
+                } else {
+                    saveBtn.textContent = '保存配方';
+                    if (totalWeightCard) totalWeightCard.classList.remove('hidden');
+                    saveBtn.classList.remove('w-full');
+                }
+            }
+            
+            // 步骤首次打开时初始化数据
+            if(tab==='step' && document.getElementById('stepsList') && document.getElementById('stepsList').children.length === 0) {
+                initSteps();
+            }
+        }
+        
+        // 新建类别弹窗 - 修复未定义的openCategoryModal函数
+        function openCategoryModal() {
+            console.log('打开新建类别弹窗');
+            const modal = document.getElementById('categoryModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                const inputField = document.getElementById('newCategoryInput');
+                if (inputField) {
+                    inputField.value = '';
+                    setTimeout(() => {
+                        inputField.focus();
+                    }, 100);
+                }
+            } else {
+                console.error('找不到categoryModal元素');
+            }
+        }
+        
+        function closeCategoryModal() {
+            const modal = document.getElementById('categoryModal');
+            if (modal) modal.classList.add('hidden');
+        }
+        
+        function addNewCategory() {
+            const input = document.getElementById('newCategoryInput');
+            const val = input ? input.value.trim() : '';
+            if (val) {
+                const select = document.getElementById('categorySelect');
+                if (select) {
+                    const opt = document.createElement('option');
+                    opt.value = val;
+                    opt.textContent = val;
+                    select.appendChild(opt);
+                    select.value = val;
+                }
+                closeCategoryModal();
+            }
+        }
+        
+        // 添加原料行 - 修复未定义的addIngredient函数
+        function addIngredient(type) {
+            console.log('添加材料，类型:', type);
+            // 标记为已修改
+            hasModifiedIngredients = true;
+            
+            // 获取容器元素
+            const containerId = `${type}Ingredients`;
+            const container = document.getElementById(containerId);
+            
+            if (!container) {
+                console.error(`找不到容器: ${containerId}`);
+                alert(`添加材料时出错: 找不到容器 ${containerId}`);
+                return;
+            }
+            
+            // 判断是否为变化款中的基础产品
+            let nameValue = '';
+            let nameReadOnly = false;
+            if (type.startsWith('variation')) {
+                nameValue = '基础产品';
+                nameReadOnly = true;
+            }
+            
+            // 创建材料行元素
+            const div = document.createElement('div');
+            div.className = 'flex items-center gap-2 bg-white dark:bg-[#1E293B] rounded-lg p-2.5 shadow-sm border border-slate-200 dark:border-slate-600 ingredient-item';
+            div.setAttribute('data-open', 'false');
+            div.innerHTML = `
+                <div class="drag-handle p-1.5 rounded-full hover:bg-[#F1F5F9] dark:hover:bg-[#334155] cursor-grab text-slate-400 dark:text-slate-500 transition" title="拖拽排序">
+                    <i class="fas fa-grip-lines"></i>
+                </div>
+                <div class="flex-1 min-w-[90px] relative">
+                    <input type="text" placeholder="名称" class="name-input w-full px-2 py-2 text-sm border-none outline-none ${nameReadOnly?'bg-gray-100 dark:bg-slate-600 cursor-not-allowed text-gray-500 dark:text-slate-400':'bg-white/80 dark:bg-slate-700/50 text-gray-800 dark:text-slate-100'} rounded-lg not-synced" value="${nameValue}" ${nameReadOnly?'readonly':''} onclick="if(!this.readOnly){showMaterialSearch(this);}" oninput="updateAutoFields(this)">
+                    <div class="synced-text sync-status-text" style="display: none;">✓ 已同步材料库</div>
+                    <div class="not-synced-text sync-status-text" style="display: none;">! 自建材料</div>
+                </div>
+                <div class="w-24 relative flex items-center">
+                    <input type="text" inputmode="decimal" placeholder="用量" class="w-full px-1 py-2 text-sm text-center border-none outline-none bg-white/80 dark:bg-slate-700/50 rounded-lg text-gray-800 dark:text-slate-100" oninput="updateAutoFields(this)">
+                    <button class="unit-btn ml-1 px-1.5 py-0.5 text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded hover:bg-purple-200 dark:hover:bg-purple-900/50 active:scale-95 transition-all" onclick="showUnitSelector(this)">g</button>
+                </div>
+                <div class="flex flex-col gap-1 min-w-[50px]">
+                    <div class="cost-field text-emerald-600 dark:text-emerald-400 select-none text-xs font-medium bg-emerald-50 dark:bg-emerald-900/20 px-1 py-0.5 rounded text-center">¥0.00</div>
+                    <span class="percent-field text-slate-500 dark:text-slate-400 select-none text-xs font-medium bg-slate-50 dark:bg-slate-800/50 px-1 py-0.5 rounded text-center">0%</span>
+                </div>
+                <div class="delete-action"><i class="fas fa-trash-alt mr-1"></i> 删除</div>
+            `;
+            
+            // 添加到容器
+            container.appendChild(div);
+            
+            // 为新添加的名称输入框添加事件监听器
+            const nameInput = div.querySelector('.name-input');
+            if (nameInput && !nameInput.readOnly && !nameInput.hasAttribute('data-listener-added')) {
+                nameInput.addEventListener('click', function() {
+                    showMaterialSearch(this);
+                });
+                nameInput.addEventListener('input', function() {
+                    if (this.value) {
+                        showMaterialSearch(this);
+                    } else {
+                        closeMaterialSearch();
+                    }
+                });
+                nameInput.setAttribute('data-listener-added', 'true');
+            }
+            
+            // 初始化左滑删除功能
+            if (typeof initSwipeDelete === 'function') {
+                initSwipeDelete(div);
+            }
+            
+            // 更新排序和变化款总重
+            if (typeof updateSortable === 'function') {
+                updateSortable();
+            }
+            if (typeof updateVariationTotal === 'function') {
+                updateVariationTotal();
+            }
+        }
+        
+        // 添加步骤 - 修复未定义的addStepInRecipe函数
+        function addStepInRecipe() {
+            console.log('添加配方步骤');
+            // 标记为已修改
+            hasModifiedIngredients = true;
+            
+            // 获取当前步骤数量
+            const stepCards = document.querySelectorAll('.card:has([id$="Ingredients"])');
+            const stepCount = stepCards.length > 0 ? stepCards.length - 1 : 0; // 减去基础产品
+            
+            // 创建新步骤ID和名称
+            const stepName = `步骤${stepCount + 1}`;
+            const stepId = `step${stepCount + 1}`;
+            
+            // 创建步骤卡片元素
+            const div = document.createElement('div');
+            div.className = 'card p-4';
+            div.innerHTML = `
+                <div class="flex justify-between items-center mb-3 bg-[#F8FAFC] dark:bg-[#0F172A] p-2 rounded-lg w-full">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-[#F8FAFC] dark:bg-[#0F172A] flex items-center justify-center mr-3">
+                            <i class="fas fa-tasks text-purple-600 dark:text-purple-400"></i>
+                        </div>
+                        <h3 class="font-semibold text-[#1E293B] dark:text-slate-100">${stepName}</h3>
+                    </div>
+                </div>
+                <div id="${stepId}Ingredients" class="ingredients-group space-y-2"></div>
+                <div class="flex justify-end mt-3">
+                    <button class="text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 active:scale-90 rounded-lg px-3 py-2 transition-all flex items-center text-sm" onclick="addIngredient('${stepId}')">
+                        <i class="fas fa-plus mr-1"></i>
+                        <span>添加材料</span>
+                    </button>
+                </div>
+            `;
+            
+            // 获取添加步骤按钮和插入新步骤
+            const addStepButton = document.querySelector('button[onclick="addStepInRecipe()"]');
+            if (addStepButton && addStepButton.parentElement) {
+                addStepButton.parentElement.parentNode.insertBefore(div, addStepButton.parentElement);
+                
+                // 初始化新步骤的排序
+                if (typeof Sortable !== 'undefined') {
+                    new Sortable(document.getElementById(`${stepId}Ingredients`), {
+                        handle: '.drag-handle',
+                        animation: 150
+                    });
+                }
+            } else {
+                console.error('找不到添加步骤按钮');
+                // 尝试添加到variationList之前
+                const variationList = document.getElementById('variationList');
+                if (variationList) {
+                    variationList.parentNode.insertBefore(div, variationList);
+                } else {
+                    // 尝试添加到recipe-section末尾
+                    const recipeSection = document.getElementById('recipe-section');
+                    if (recipeSection) {
+                        recipeSection.appendChild(div);
+                    } else {
+                        console.error('找不到适合的位置插入新步骤');
+                    }
+                }
+            }
+        }
+        
+        // 添加其他必要函数的存根以避免错误
+        function initSteps() {
+            console.log('初始化步骤');
+            // 实现步骤初始化逻辑
+        }
+        
+        function showUnitSelector(button) {
+            console.log('显示单位选择器');
+            // 实现单位选择器显示逻辑
+        }
+        
+        function updateAutoFields(input) {
+            console.log('更新自动字段');
+            // 实现更新自动字段逻辑
+        }
+        
+        function updateSortable() {
+            console.log('更新排序');
+            // 实现更新排序逻辑
+        }
+        
+        function updateVariationTotal() {
+            console.log('更新变化款总重');
+            // 实现更新变化款总重逻辑
+        }
+        
+        // 材料列表定义
+        const materialList = [
+            '低筋面粉', '高筋面粉', '中筋面粉', '全麦粉', '玉米淀粉', '泡打粉',
+            '鸡蛋', '蛋黄', '蛋白', '牛奶', '淡奶油', '酸奶', '炼乳',
+            '细砂糖', '绵白糖', '红糖', '糖粉', '蜂蜜', '枫糖浆',
+            '黄油', '植物油', '玉米油', '橄榄油', '椰子油',
+            '香草精', '柠檬汁', '柠檬皮屑', '可可粉', '巧克力',
+            '奶油奶酪', '马斯卡彭', '酸奶油', '吉利丁', '明膠粉',
+            '杏仁粉', '椰蓉', '核桃', '杏仁', '开心果', '蔓越莓', '葡萄干'
+        ];
+        
+        let currentNameInput = null;
+        
+        function showMaterialSearch(input) {
+            console.log('显示材料搜索', input);
+            currentNameInput = input;
+            if (!input.value) {
+                closeMaterialSearch();
+                return;
+            }
+            updateMaterialSearch(input.value);
+            document.getElementById('material-popup').classList.remove('hidden');
+        }
+        
+        function updateMaterialSearch(keyword) {
+            const list = document.getElementById('material-popup-list');
+            list.innerHTML = '';
+            
+            // 过滤匹配的材料
+            const filteredMaterials = materialList.filter(m => m.includes(keyword));
+            
+            if (filteredMaterials.length === 0) {
+                list.innerHTML = '<div class="text-center text-gray-500 dark:text-slate-400 py-4">未找到匹配的材料</div>';
+                return;
+            }
+            
+            filteredMaterials.forEach(m => {
+                const button = document.createElement('button');
+                button.className = 'px-3 py-2 rounded-lg bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/30 text-left transition-all w-full';
+                button.textContent = m;
+                button.onclick = () => {
+                    currentNameInput.value = m;
+                    // 同步状态变绿
+                    const nameInput = currentNameInput;
+                    nameInput.classList.remove('not-synced');
+                    nameInput.classList.add('synced');
+                    
+                    closeMaterialSearch();
+                    updateAutoFields(currentNameInput);
+                };
+                list.appendChild(button);
+            });
+        }
+        
+        function closeMaterialSearch() {
+            document.getElementById('material-popup').classList.add('hidden');
+        }
+        
+        // 为名称输入框添加事件监听器
+        function addNameInputListeners() {
+            const nameInputs = document.querySelectorAll('input[placeholder="材料名称"]');
+            nameInputs.forEach(input => {
+                if (!input.hasAttribute('data-listener-added')) {
+                    input.addEventListener('click', function() {
+                        showMaterialSearch(this);
+                    });
+                    input.addEventListener('input', function() {
+                        if (this.value) {
+                            showMaterialSearch(this);
+                        } else {
+                            closeMaterialSearch();
+                        }
+                    });
+                    input.setAttribute('data-listener-added', 'true');
+                }
+            });
+        }
+        
+        function initSwipeDelete(element) {
+            console.log('初始化左滑删除');
+            // 实现左滑删除初始化逻辑
+        }
+        
+        // 显示通知
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-80 text-white px-4 py-2 rounded-xl z-50 text-sm';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+        
+        // 页面加载时的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('页面加载完成');
+            try {
+                // 初始化添加一些默认材料
+                ['stepOne', 'base'].forEach(type => {
+                    try {
+                        addIngredient(type);
+                    } catch (error) {
+                        console.error(`初始化材料失败 (${type}):`, error);
+                    }
+                });
+                
+                // 注册事件监听器
+                document.addEventListener('click', function(e) {
+                    // 点击页面其他地方时关闭所有打开的删除按钮
+                    const openItems = document.querySelectorAll('.ingredient-item[data-open="true"]');
+                    if (openItems.length > 0 && !e.target.closest('.delete-action')) {
+                        openItems.forEach(item => {
+                            item.style.transform = 'translateX(0)';
+                            item.setAttribute('data-open', 'false');
+                        });
+                    }
+                });
+                
+                // 绑定变化款添加按钮事件
+                const addVariationBtn = document.getElementById('addVariationBtn');
+                if (addVariationBtn) {
+                    addVariationBtn.onclick = addVariationGroup;
+                }
+                
+                // 为现有的名称输入框添加事件监听器
+                addNameInputListeners();
+                
+                // 调用初始化函数
+                console.log('初始化完成');
+            } catch (error) {
+                console.error('初始化出错:', error);
+            }
+        });
+        
+        // 添加变化款分组函数
+        function addVariationGroup() {
+            // 标记为已修改
+            hasModifiedIngredients = true;
+            
+            console.log('添加变化款分组');
+            // 获取变化款计数并递增
+            window.variationCount = (window.variationCount || 0) + 1;
+            const id = `variation${window.variationCount}`;
+            
+            // 创建变化款分组元素
+            const div = document.createElement('div');
+            div.className = 'card p-4 mb-4 variation-group';
+            div.innerHTML = `
+                <div class="flex justify-between items-center mb-3 bg-[#F8FAFC] dark:bg-[#0F172A] p-2 rounded-lg w-full">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-[#F8FAFC] dark:bg-[#0F172A] flex items-center justify-center mr-3">
+                            <i class="fas fa-cubes text-purple-600 dark:text-purple-400"></i>
+                        </div>
+                        <h3 class="font-semibold text-[#1E293B] dark:text-slate-100">其他产品</h3>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button class="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 active:scale-90 transition rounded-full p-1" onclick="this.closest('.variation-group').remove(); updateAllAutoFields();"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+                <div id="${id}Ingredients" class="space-y-2 ingredients-group"></div>
+                <div id="${id}Total" class="mt-3 text-right text-sm text-purple-700 dark:text-purple-300 font-semibold bg-purple-100/50 dark:bg-purple-900/20 rounded-lg px-3 py-1 hidden"></div>
+                <div class="flex justify-end mt-3">
+                    <button class="text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 active:scale-90 rounded-lg px-3 py-2 transition-all flex items-center text-sm" onclick="addIngredient('${id}')">
+                        <i class="fas fa-plus mr-1"></i>
+                        <span>添加一行</span>
+                    </button>
+                </div>
+            `;
+            
+            // 添加到变化款列表
+            const variationList = document.getElementById('variationList');
+            if (variationList) {
+                variationList.appendChild(div);
+                
+                // 初始化排序
+                if (typeof updateSortable === 'function') {
+                    updateSortable();
+                }
+            } else {
+                console.error('找不到variationList元素');
+            }
+        }
+        
+        // 添加拖拽后刷新所有分组自动字段
+        function updateAllAutoFields() {
+            document.querySelectorAll('.ingredients-group').forEach(group => {
+                Array.from(group.children).forEach(row => {
+                    updateAutoFields(row.querySelector('input[type="number"]') || row.querySelector('input[type="text"]'));
+                });
+            });
+        }
+        
+        // 暗色模式切换
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('themeIcon');
+            if(html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                icon.textContent = '🌙';
+                localStorage.setItem('theme','light');
+            } else {
+                html.classList.add('dark');
+                icon.textContent = '☀️';
+                localStorage.setItem('theme','dark');
+            }
+            
+            // 强制更新所有元素的暗色模式样式
+            refreshDarkModeStyles();
+        }
+        
+        // 强制更新所有元素的暗色模式样式
+        function refreshDarkModeStyles() {
+            // 获取所有可能需要更新的元素
+            const elementsToRefresh = [
+                '.card', '.step-images', '.bg-white', '.bg-slate-50', '.bg-slate-100',
+                '.text-slate-800', '.text-slate-600', '.text-slate-500', '.text-slate-400',
+                '.border-slate-100', '.border-slate-200', '.border-slate-300',
+                '.hover\\:bg-slate-50', '.hover\\:bg-slate-100',
+                '.sop-step-enhanced', '.sop-step-row', '.sop-step-input',
+                '.sop-type-item', '.media-upload-area', '.step-row'
+            ].join(',');
+            
+            const allElements = document.querySelectorAll(elementsToRefresh);
+            
+            // 先移除再添加所有元素的class，强制浏览器重新应用样式
+            allElements.forEach(el => {
+                el.classList.remove('dark-force-refresh');
+                setTimeout(() => {
+                    el.classList.add('dark-force-refresh');
+                    setTimeout(() => {
+                        el.classList.remove('dark-force-refresh');
+                    }, 10);
+                }, 5);
+            });
+        }
+        
+        // 自动读取主题
+        (function(){
+            if(localStorage.getItem('theme')==='dark') {
+                document.documentElement.classList.add('dark');
+                if (document.getElementById('themeIcon')) {
+                    document.getElementById('themeIcon').textContent = '☀️';
+                }
+            }
+        })();
+
+        // 添加步骤函数
+        function addStep(stepTitle = '', stepContent = '') {
+            console.log('添加步骤');
+            const container = document.getElementById('stepsList');
+            const div = document.createElement('div');
+            div.className = 'step-row card p-4 mb-4 relative';
+            
+            // 创建步骤编号
+            const stepNum = document.querySelectorAll('#stepsList .step-row').length + 1;
+            
+            div.innerHTML = `
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex items-center">
+                        <div class="step-number w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-semibold mr-3">
+                            ${stepNum}
+                        </div>
+                        <input type="text" class="bg-transparent border-b border-slate-200 dark:border-slate-600 outline-none focus:border-purple-500 text-gray-800 dark:text-slate-100 font-semibold" placeholder="步骤标题" value="${stepTitle}">
+                    </div>
+                    <div class="flex gap-1">
+                        <button class="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 p-1.5 rounded-full transition-all" onclick="openStepMenu(this)">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <div class="step-drag-handle p-1.5 rounded-full hover:bg-[#F1F5F9] dark:hover:bg-[#334155] cursor-grab text-slate-400 dark:text-slate-500 transition" title="拖拽排序">
+                            <i class="fas fa-grip-lines"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-4">
+                    <!-- 步骤内容输入 -->
+                    <textarea class="w-full px-4 py-3 bg-gray-50 dark:bg-slate-800 text-gray-800 dark:text-slate-100 border border-slate-200 dark:border-slate-600 rounded-xl outline-none resize-none placeholder-slate-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 dark:focus:ring-purple-900 transition text-sm leading-relaxed mb-4" 
+                              placeholder="请输入详细的制作步骤说明..." rows="3">${stepContent}</textarea>
+                    
+                    <!-- 媒体上传区 -->
+                    <div class="flex overflow-x-auto gap-3 pb-2 mb-2 snap-x">
+                        <div class="media-slot flex-none w-[70%] snap-center relative">
+                            <div class="media-upload-area w-full h-20 rounded-lg flex items-center justify-center cursor-pointer transition-all border-2 border-dashed border-slate-200 dark:border-slate-600 hover:border-purple-500 hover:bg-gray-50 dark:hover:bg-slate-800" onclick="openMediaUpload(this)">
+                                <div class="text-center text-slate-400 dark:text-slate-500">
+                                    <i class="fas fa-plus text-lg mb-1"></i>
+                                    <div class="text-xs">添加图片/视频</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // 设置步骤编号样式
+            const stepNumber = div.querySelector('.step-number');
+            stepNumber.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+            
+            container.appendChild(div);
+            updateStepNumbers();
+            return div;
+        }
+
+        // 更新步骤编号
+        function updateStepNumbers() {
+            const steps = document.querySelectorAll('#stepsList .step-row');
+            steps.forEach((step, index) => {
+                const numberElement = step.querySelector('.step-number');
+                if (numberElement) {
+                    numberElement.textContent = index + 1;
+                }
+            });
+        }
+
+        // 初始化步骤数据
+        function initSteps() {
+            // 初始化3个示例步骤，分别展示不同的内容
+            const defaultSteps = [
+                { title: '步骤1（蛋黄打发）', content: '将蛋黄和一半的糖放入搅拌碗中，用电动打蛋器中速打发至颜色变浅，质地变厚' },
+                { title: '步骤2（蛋白打发）', content: '将蛋白和剩余的糖分3次加入，打发至湿性发泡，用打蛋器提起可以形成尖角' },
+                { title: '步骤3（混合面粉）', content: '将筛过的低筋面粉分3次加入蛋黄糊中，用橡皮刮刀以切拌方式混合，注意不要过度搅拌' }
+            ];
+            
+            // 创建步骤
+            defaultSteps.forEach((step) => {
+                addStep(step.title, step.content);
+            });
+            
+            updateStepSortable();
+        }
+        
+        // 更新步骤的拖拽排序功能
+        function updateStepSortable() {
+            const container = document.getElementById('stepsList');
+            if (container && typeof Sortable !== 'undefined') {
+                new Sortable(container, {
+                    handle: '.step-drag-handle', // 使用专门的拖动把手
+                    animation: 150,
+                    ghostClass: 'bg-purple-50 dark:bg-purple-900/20',
+                    onEnd: function() {
+                        updateStepNumbers();
+                    }
+                });
+            }
+        }
+        
+        // 步骤菜单功能
+        let currentStepRow = null;
+        let currentMediaSlot = null;
+        
+        function openStepMenu(btn) {
+            currentStepRow = btn.closest('.step-row');
+            document.getElementById('stepMenuModal').classList.remove('hidden');
+            
+            // 绑定菜单操作
+            document.getElementById('stepMenuDelete').onclick = function() {
+                if(document.getElementById('stepsList').children.length <= 1) {
+                    alert('至少需要保留一个步骤');
+                    return;
+                }
+                currentStepRow.remove();
+                updateStepNumbers();
+                closeStepMenuModal();
+            };
+            
+            document.getElementById('stepMenuAdd').onclick = function() {
+                addStep();
+                const container = document.getElementById('stepsList');
+                const newRow = container.lastElementChild;
+                container.insertBefore(newRow, currentStepRow.nextSibling);
+                updateStepNumbers();
+                updateStepSortable();
+                closeStepMenuModal();
+            };
+        }
+        
+        function closeStepMenuModal() {
+            document.getElementById('stepMenuModal').classList.add('hidden');
+            currentStepRow = null;
+        }
+        
+        // 媒体上传功能
+        function openMediaUpload(slot) {
+            currentMediaSlot = slot;
+            document.getElementById('mediaUploadModal').classList.remove('hidden');
+        }
+        
+        function closeMediaUploadModal() {
+            document.getElementById('mediaUploadModal').classList.add('hidden');
+            currentMediaSlot = null;
+        }
+        
+        function selectImage() {
+            // 模拟选择图片
+            closeMediaUploadModal();
+            if (currentMediaSlot) {
+                const mediaSlot = currentMediaSlot.closest('.media-slot');
+                mediaSlot.innerHTML = `
+                    <div class="media-preview w-full h-20 rounded-lg overflow-hidden relative">
+                        <img src="https://images.unsplash.com/photo-1464305795204-6f5bbfc7fb81?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" class="w-full h-full object-cover">
+                        <button class="remove-btn w-6 h-6 rounded-full flex items-center justify-center text-white text-xs" onclick="removeMedia(this)">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        <div class="absolute bottom-0 left-0 right-0 p-1.5 bg-gradient-to-t from-black/70 to-transparent">
+                            <div class="flex justify-between items-center">
+                                <button class="text-white hover:text-purple-300 transition" onclick="showFullImage(this.closest('.media-preview'))">
+                                    <i class="fas fa-search-plus"></i>
+                                </button>
+                                <span class="text-white text-xs">图片</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // 添加一个新的空白媒体槽
+                addEmptyMediaSlot(mediaSlot.parentElement);
+            }
+        }
+        
+        function selectVideo() {
+            // 模拟选择视频
+            closeMediaUploadModal();
+            if (currentMediaSlot) {
+                const mediaSlot = currentMediaSlot.closest('.media-slot');
+                mediaSlot.innerHTML = `
+                    <div class="media-preview w-full h-20 rounded-lg overflow-hidden relative">
+                        <img src="https://images.unsplash.com/photo-1527529482837-4698179dc6ce?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" class="w-full h-full object-cover">
+                        <div class="video-indicator w-8 h-8 rounded-full bg-black/50 flex items-center justify-center">
+                            <i class="fas fa-play text-white"></i>
+                        </div>
+                        <button class="remove-btn w-6 h-6 rounded-full flex items-center justify-center text-white text-xs" onclick="removeMedia(this)">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        <div class="absolute bottom-0 left-0 right-0 p-1.5 bg-gradient-to-t from-black/70 to-transparent">
+                            <div class="flex justify-between items-center">
+                                <button class="text-white hover:text-purple-300 transition" onclick="showFullImage(this.closest('.media-preview'))">
+                                    <i class="fas fa-search-plus"></i>
+                                </button>
+                                <span class="text-white text-xs">视频</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // 添加一个新的空白媒体槽
+                addEmptyMediaSlot(mediaSlot.parentElement);
+            }
+        }
+        
+        function addEmptyMediaSlot(mediaContainer) {
+            // 检查是否已经有空白的媒体槽
+            const existingEmptySlots = mediaContainer.querySelectorAll('.media-upload-area').length;
+            if (existingEmptySlots > 0) {
+                return; // 已经有空白媒体槽，不需要再添加
+            }
+            
+            // 创建新的空白媒体槽
+            const emptySlot = document.createElement('div');
+            emptySlot.className = 'media-slot flex-none w-[70%] snap-center relative';
+            emptySlot.innerHTML = `
+                <div class="media-upload-area w-full h-20 rounded-lg flex items-center justify-center cursor-pointer transition-all border-2 border-dashed border-slate-200 dark:border-slate-600 hover:border-purple-500 hover:bg-gray-50 dark:hover:bg-slate-800" onclick="openMediaUpload(this)">
+                    <div class="text-center text-slate-400 dark:text-slate-500">
+                        <i class="fas fa-plus text-lg mb-1"></i>
+                        <div class="text-xs">图片/视频</div>
+                    </div>
+                </div>
+            `;
+            mediaContainer.appendChild(emptySlot);
+        }
+        
+        function captureMedia() {
+            // 打开相机界面
+            closeMediaUploadModal();
+            document.getElementById('cameraModal').classList.remove('hidden');
+            document.getElementById('cameraPreview').classList.remove('hidden');
+        }
+        
+        function closeCamera() {
+            document.getElementById('cameraModal').classList.add('hidden');
+            document.getElementById('cameraPreview').classList.add('hidden');
+        }
+        
+        function takePhoto() {
+            // 模拟拍照效果
+            const flashEffect = document.getElementById('cameraFlash');
+            flashEffect.classList.remove('hidden');
+            flashEffect.style.opacity = '1';
+            
+            setTimeout(() => {
+                flashEffect.style.opacity = '0';
+                setTimeout(() => {
+                    flashEffect.classList.add('hidden');
+                    showNotification('✅ 已自动识别配方内容');
+                    closeCamera();
+                }, 300);
+            }, 100);
+        }
+        
+        // 图片全屏预览功能
+        function showFullImage(container) {
+            const img = container.querySelector('img');
+            const modal = document.getElementById('fullImageModal');
+            const modalImg = modal.querySelector('img');
+            
+            if (img) {
+                // 获取原始图片URL，显示高清大图
+                modalImg.src = img.src;
+                modal.classList.remove('hidden');
+            }
+        }
+        
+
+        
+        // 分享相关函数已移除
+        
+        // 通知显示函数
+        function showNotification(message) {
+            console.log('通知:', message);
+            // 创建临时通知元素
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            // 3秒后自动移除
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
