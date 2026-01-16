@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新建商品 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Cookpad Design System & Unified Theme */
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+            --secondary-green: #28c76f;
+            --secondary-blue: #00cfe8;
+            --text-main: #333333;
+            --text-sub: #8b8b8b;
+            --bg-light: #f7f7f5;
+            --bg-white: #ffffff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-main);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* 渐变类 */
+        .gradient-primary {
+            background: linear-gradient(135deg, #ff9f43 0%, #ff8c00 100%);
+        }
+        .gradient-cost {
+            background: linear-gradient(135deg, #28c76f 0%, #1eef82 100%);
+        }
+
+        /* 卡片样式 */
+        .card {
+            background: var(--bg-white);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0,0,0,0.03);
+        }
+        
+        /* 表单样式 */
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            background-color: #f9fafb;
+            transition: all 0.2s ease;
+        }
+        
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary-orange);
+            background-color: #fff;
+            box-shadow: 0 0 0 4px rgba(255, 159, 67, 0.1);
+        }
+
+        /* 开关样式 */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px; width: 18px;
+            left: 3px; bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .toggle-slider { background-color: var(--primary-orange); }
+        input:checked + .toggle-slider:before { transform: translateX(20px); }
+
+        /* 按钮样式 */
+        .btn-primary {
+            background: linear-gradient(135deg, #ff9f43 0%, #ff8c00 100%);
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(255, 140, 0, 0.2);
+            border: none;
+        }
+        .btn-primary:hover {
+            box-shadow: 0 6px 15px rgba(255, 140, 0, 0.3);
+            transform: translateY(-1px);
+        }
+
+        /* 图片上传 */
+        .image-upload {
+            border: 2px dashed #e5e7eb;
+            background-color: #f9fafb;
+            transition: all 0.3s;
+        }
+        .image-upload:hover {
+            border-color: var(--primary-orange);
+            background-color: #fff7ed;
+        }
+
+        /* 动画 */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+    </style>
+</head>
+<body class="bg-[#f7f7f5] pb-24">
+
+    <!-- 顶部导航栏 -->
+    <div class="fixed top-0 left-0 right-0 bg-white z-50 px-4 py-3 shadow-sm border-b border-gray-100">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <a href="javascript:history.back()" class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+                <h1 class="text-lg font-bold text-gray-800">新建商品</h1>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button type="button" onclick="saveProduct()" class="btn-primary px-4 py-1.5 rounded-full text-sm shadow-lg shadow-orange-200/50">
+                    保存
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 占位符 -->
+    <div class="h-16"></div>
+
+    <!-- 主内容区域 -->
+    <div class="main-content p-4 max-w-2xl mx-auto space-y-4">
+        
+        <!-- 图片上传卡片 -->
+        <div class="card p-5">
+             <div class="flex justify-center">
+                <div class="image-upload w-full h-48 rounded-xl flex flex-col items-center justify-center cursor-pointer relative overflow-hidden group" onclick="document.getElementById('productImage').click()">
+                    <input type="file" id="productImage" accept="image/*" class="hidden" onchange="previewImage(this)">
+                    <img id="imagePreview" src="" class="absolute inset-0 w-full h-full object-cover hidden">
+                    <div class="text-center p-2 group-hover:scale-105 transition-transform">
+                        <div class="w-16 h-16 rounded-full bg-orange-50 flex items-center justify-center mx-auto mb-3">
+                            <i class="fas fa-camera text-2xl text-orange-400"></i>
+                        </div>
+                        <div class="text-sm font-medium text-gray-600">上传商品图片</div>
+                        <div class="text-xs text-gray-400 mt-1">支持 JPG, PNG</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 基础信息卡片 -->
+        <div class="card p-5">
+            <div class="flex items-center space-x-2 mb-4 pb-3 border-b border-gray-50">
+                <div class="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center">
+                    <i class="fas fa-cube text-orange-500"></i>
+                </div>
+                <h2 class="text-base font-bold text-gray-800">基础信息</h2>
+            </div>
+
+            <div class="space-y-4">
+                <div class="form-group">
+                    <label class="form-label">商品名称 <span class="text-red-500">*</span></label>
+                    <input type="text" id="productName" class="form-input" placeholder="例如：法式牛角包" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">商品分类 <span class="text-red-500">*</span></label>
+                    <div class="flex gap-2">
+                        <select id="productCategory" class="form-select flex-1">
+                            <option value="">请选择分类...</option>
+                            <option value="bread">面包</option>
+                            <option value="cake">蛋糕</option>
+                            <option value="cookie">饼干</option>
+                            <option value="drink">饮品</option>
+                            <option value="other">其他</option>
+                        </select>
+                        <button type="button" class="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200" onclick="alert('新建分类功能')">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">商品条码 (选填)</label>
+                    <div class="relative">
+                        <input type="text" id="productBarcode" class="form-input pr-10" placeholder="扫码或手动输入">
+                        <button class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-orange-500 p-1">
+                            <i class="fas fa-qrcode"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 配方与材料卡片 -->
+        <div class="card p-5">
+            <div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-50">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
+                    <i class="fas fa-cubes text-green-500"></i>
+                </div>
+                <h2 class="text-base font-bold text-gray-800 flex items-center gap-2">
+                    <span>配方</span>
+                    <span class="text-gray-300 font-normal text-xs">|</span>
+                    <span>材料</span>
+                    <span class="text-gray-300 font-normal text-xs">|</span>
+                    <span>包材</span>
+                </h2>
+                </div>
+                <button type="button" class="text-xs bg-green-50 text-green-600 px-3 py-1.5 rounded-full font-medium hover:bg-green-100 transition-colors" onclick="openMaterialPopup()">
+                    <i class="fas fa-plus mr-1"></i>添加
+                </button>
+            </div>
+
+            <!-- 暂无关联状态 -->
+            <div id="noRecipeState" class="text-center py-6 bg-gray-50 rounded-xl border border-dashed border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors" onclick="openMaterialPopup()">
+                <i class="fas fa-plus-circle text-gray-300 text-2xl mb-2"></i>
+                <div class="text-sm text-gray-500">点击关联配方/材料，自动计算成本</div>
+            </div>
+
+            <!-- 已关联列表 (示例，默认隐藏) -->
+            <div id="linkedRecipeList" class="hidden space-y-3">
+                <!-- Items injected by JS -->
+            </div>
+
+            <!-- Summary Footer (New) -->
+            <div id="itemsSummary" class="mt-4 pt-3 border-t border-gray-100 flex justify-between items-center bg-gray-50 p-3 rounded-lg hidden">
+                <div class="text-xs text-gray-500">共 <span id="summaryCount">0</span> 项</div>
+                <div class="text-right">
+                    <div class="text-xs text-gray-500">总重: <span id="summaryWeight" class="font-bold text-gray-700">0g</span></div>
+                    <div class="text-sm font-bold text-orange-600">总金额: ¥<span id="summaryCost">0.00</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 价格与规格卡片 -->
+        <div class="card p-5">
+            <div class="flex items-center space-x-2 mb-4 pb-3 border-b border-gray-50">
+                <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                    <i class="fas fa-tags text-blue-500"></i>
+                </div>
+                <h2 class="text-base font-bold text-gray-800">价格与规格</h2>
+            </div>
+
+            <div class="space-y-4">
+                <div class="flex gap-4">
+                    <div class="form-group w-[35%]">
+                        <label class="form-label">销售价格 <span class="text-red-500">*</span></label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">¥</span>
+                            <input type="number" id="salePrice" class="form-input pl-8 font-bold text-orange-600" placeholder="0.00" oninput="calculateProfit()">
+                        </div>
+                    </div>
+                    <div class="form-group flex-1">
+                        <label class="form-label">规格单位</label>
+                        <div class="flex gap-2">
+                            <input type="number" id="productSpec" class="form-input flex-1" placeholder="如120">
+                            <select id="productUnit" class="form-select w-20 bg-white">
+                                <option value="g">g</option>
+                                <option value="ml">ml</option>
+                                <option value="个">个</option>
+                                <option value="份">份</option>
+                                <option value="盒">盒</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 利润预览 -->
+                <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                    <div class="flex justify-between items-center mb-3">
+                        <div class="text-xs text-gray-500">预估毛利</div>
+                        <div class="text-sm font-bold text-green-600" id="profitPreview">¥0.00 (0%)</div>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-1.5 mb-1">
+                        <div class="bg-green-500 h-1.5 rounded-full transition-all duration-500" style="width: 0%" id="profitBar"></div>
+                    </div>
+                    <div class="flex justify-between text-[10px] text-gray-400 mt-1">
+                        <span>成本: ¥<span id="costPreview">0.00</span></span>
+                        <span>目标: 60%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 详细描述 -->
+        <div class="card p-5">
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                        <i class="fas fa-align-left text-purple-500"></i>
+                    </div>
+                    <h2 class="text-base font-bold text-gray-800">商品描述</h2>
+                </div>
+            </div>
+            <textarea class="form-textarea w-full" rows="4" placeholder="请输入商品描述、卖点或注意事项..."></textarea>
+        </div>
+
+        <!-- 库存预警 -->
+        <div class="card p-5">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 rounded-lg bg-yellow-100 flex items-center justify-center">
+                        <i class="fas fa-bell text-yellow-500"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-sm font-bold text-gray-800">库存预警</h2>
+                        <p class="text-xs text-gray-400">库存不足时提醒</p>
+                    </div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="stockWarningToggle" onchange="document.getElementById('stockWarningInput').classList.toggle('hidden')">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            
+            <div id="stockWarningInput" class="mt-4 pt-4 border-t border-gray-50 hidden">
+                 <div class="form-group">
+                    <label class="form-label text-sm">预警阈值</label>
+                    <div class="flex gap-2">
+                        <input type="number" class="form-input" placeholder="数量" value="10">
+                        <div class="flex items-center justify-center bg-gray-100 px-3 rounded-lg text-sm text-gray-500">个</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 模态框：配方/材料选择 -->
+    <div id="materialPopup" class="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4 transition-opacity duration-300 opacity-0">
+        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[80vh] transform scale-95 transition-transform duration-300" id="materialPopupContent">
+            <!-- Header -->
+            <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-white z-10">
+                <h3 class="font-bold text-lg text-gray-800">选择关联项</h3>
+                <button onclick="closeMaterialPopup()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <!-- Search Bar -->
+            <div class="p-4 bg-gray-50">
+                <div class="relative flex gap-2">
+                    <div class="relative flex-1">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" id="custom-material-input" placeholder="搜索配方、材料..." class="w-full pl-10 pr-4 py-2.5 rounded-xl border-none outline-none bg-white shadow-sm">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Area (Sidebar + List) -->
+            <div class="flex flex-1 overflow-hidden relative">
+                <!-- Sidebar (Categories) -->
+                <div class="w-24 bg-gray-50 overflow-y-auto border-r border-gray-100 flex-shrink-0" id="popup-category-list">
+                    <div class="p-3 text-sm font-medium text-orange-600 bg-white border-l-2 border-orange-500 cursor-pointer">全部</div>
+                    <div class="p-3 text-sm text-gray-500 hover:bg-white cursor-pointer">面包类</div>
+                    <div class="p-3 text-sm text-gray-500 hover:bg-white cursor-pointer">蛋糕类</div>
+                    <div class="p-3 text-sm text-gray-500 hover:bg-white cursor-pointer">饮品类</div>
+                    <div class="p-3 text-sm text-gray-500 hover:bg-white cursor-pointer">包装类</div>
+                </div>
+                
+                <!-- Main List -->
+                <div class="flex-1 overflow-y-auto bg-white relative p-3" id="popup-list-container">
+                    <!-- Recipes List (Default Visible) -->
+                    <div id="popup-list-recipes" class="space-y-2">
+                         <div class="flex items-center p-3 bg-white border border-gray-100 rounded-xl shadow-sm active:scale-[0.99] transition-transform cursor-pointer hover:border-orange-200" onclick="selectRecipe(this)" data-type="recipe" data-name="法式牛角包面团" data-cost="12.5" data-unit="份">
+                            <div class="w-10 h-10 rounded-lg bg-orange-100 mr-3 flex items-center justify-center text-orange-500 flex-shrink-0">
+                                <i class="fas fa-bread-slice"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-bold text-gray-800 text-sm">法式牛角包面团</div>
+                                <div class="text-xs text-gray-500 mt-0.5">配方 • 成本: ¥12.5</div>
+                            </div>
+                            <div class="w-5 h-5 rounded-full border-2 border-gray-200 flex items-center justify-center select-indicator">
+                                <div class="w-2.5 h-2.5 rounded-full bg-orange-500 hidden flex items-center justify-center"><i class="fas fa-check text-white text-[8px]"></i></div>
+                            </div>
+                        </div>
+                         <div class="flex items-center p-3 bg-white border border-gray-100 rounded-xl shadow-sm active:scale-[0.99] transition-transform cursor-pointer hover:border-orange-200" onclick="selectRecipe(this)" data-type="recipe" data-name="全麦吐司面团" data-cost="8.0" data-unit="份">
+                            <div class="w-10 h-10 rounded-lg bg-orange-100 mr-3 flex items-center justify-center text-orange-500 flex-shrink-0">
+                                <i class="fas fa-bread-slice"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-bold text-gray-800 text-sm">全麦吐司面团</div>
+                                <div class="text-xs text-gray-500 mt-0.5">配方 • 成本: ¥8.0</div>
+                            </div>
+                            <div class="w-5 h-5 rounded-full border-2 border-gray-200 flex items-center justify-center select-indicator">
+                                <div class="w-2.5 h-2.5 rounded-full bg-orange-500 hidden flex items-center justify-center"><i class="fas fa-check text-white text-[8px]"></i></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Materials List (Default Hidden) -->
+                    <div id="popup-list-materials" class="space-y-2 hidden">
+                        <div class="flex items-center p-3 bg-white border border-gray-100 rounded-xl shadow-sm active:scale-[0.99] transition-transform cursor-pointer hover:border-orange-200" onclick="selectRecipe(this)" data-type="material" data-name="牛皮纸包装袋(大号)" data-cost="0.8" data-unit="个">
+                            <div class="w-10 h-10 rounded-lg bg-blue-100 mr-3 flex items-center justify-center text-blue-500 flex-shrink-0">
+                                <i class="fas fa-box"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-bold text-gray-800 text-sm">牛皮纸包装袋(大号)</div>
+                                <div class="text-xs text-gray-500 mt-0.5">包装 • 成本: ¥0.8</div>
+                            </div>
+                            <div class="w-5 h-5 rounded-full border-2 border-gray-200 flex items-center justify-center select-indicator">
+                                <div class="w-2.5 h-2.5 rounded-full bg-orange-500 hidden flex items-center justify-center"><i class="fas fa-check text-white text-[8px]"></i></div>
+                            </div>
+                        </div>
+                         <div class="flex items-center p-3 bg-white border border-gray-100 rounded-xl shadow-sm active:scale-[0.99] transition-transform cursor-pointer hover:border-orange-200" onclick="selectRecipe(this)" data-type="material" data-name="精美丝带(红色)" data-cost="0.2" data-unit="米">
+                            <div class="w-10 h-10 rounded-lg bg-blue-100 mr-3 flex items-center justify-center text-blue-500 flex-shrink-0">
+                                <i class="fas fa-box"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-bold text-gray-800 text-sm">精美丝带(红色)</div>
+                                <div class="text-xs text-gray-500 mt-0.5">包装 • 成本: ¥0.2</div>
+                            </div>
+                            <div class="w-5 h-5 rounded-full border-2 border-gray-200 flex items-center justify-center select-indicator">
+                                <div class="w-2.5 h-2.5 rounded-full bg-orange-500 hidden flex items-center justify-center"><i class="fas fa-check text-white text-[8px]"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Tabs -->
+            <div class="flex border-t border-gray-100 bg-white">
+                <button id="tab-recipes" class="flex-1 py-3 text-sm font-medium text-orange-600 border-t-2 border-orange-600 bg-orange-50/50 transition-colors" onclick="switchPopupTab('recipes')">
+                    <i class="fas fa-book-open mr-1"></i> 配方库
+                </button>
+                <button id="tab-materials" class="flex-1 py-3 text-sm font-medium text-gray-500 border-t-2 border-transparent hover:bg-gray-50 transition-colors" onclick="switchPopupTab('materials')">
+                    <i class="fas fa-cubes mr-1"></i> 材料/包装
+                </button>
+            </div>
+            
+            <!-- 底部确认 -->
+            <div class="p-4 border-t border-gray-100">
+                <button onclick="confirmRecipeSelection()" class="w-full btn-primary py-3 rounded-xl font-bold shadow-lg">确认选择</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 图片预览
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.getElementById('imagePreview');
+                    img.src = e.target.result;
+                    img.classList.remove('hidden');
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // 保存逻辑
+        function saveProduct() {
+            const btn = document.querySelector('button[onclick="saveProduct()"]');
+            const originalText = btn.innerHTML;
+            
+            // 简单验证
+            const name = document.getElementById('productName').value;
+            const price = document.getElementById('salePrice').value;
+            
+            if(!name || !price) {
+                alert('请填写商品名称和销售价格');
+                return;
+            }
+
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 保存中';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                alert('保存成功！');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                // window.location.href = 'shangpin-zhuye.html'; // 假设有这个页面
+            }, 1000);
+        }
+
+        // 利润计算模拟
+        function calculateProfit() {
+            const price = parseFloat(document.getElementById('salePrice').value) || 0;
+            
+            // 动态计算成本
+            let totalCost = 0;
+            let totalWeight = 0;
+            const recipeItems = document.querySelectorAll('#linkedRecipeList > div');
+            
+            // 检查列表是否可见且有内容
+            const listVisible = !document.getElementById('linkedRecipeList').classList.contains('hidden');
+            
+            if (listVisible && recipeItems.length > 0) {
+                recipeItems.forEach(item => {
+                    // 获取单价
+                    const costText = item.querySelector('.unit-cost')?.innerText || '0';
+                    const unitCost = parseFloat(costText);
+                    
+                    // 获取数量和单位
+                    const amountInput = item.querySelector('.recipe-amount-input');
+                    const amount = amountInput ? parseFloat(amountInput.value) : 0;
+                    
+                    // 获取单位
+                    const unitSelect = item.querySelector('select');
+                    const unit = unitSelect ? unitSelect.value : '';
+                    
+                    if (!isNaN(unitCost) && !isNaN(amount)) {
+                        const lineCost = unitCost * amount;
+                        totalCost += lineCost;
+                        
+                        // 更新小计
+                        const lineTotalEl = item.querySelector('.line-total');
+                        if (lineTotalEl) {
+                            lineTotalEl.innerText = `小计: ¥${lineCost.toFixed(2)}`;
+                        }
+                        
+                        // 累加重量 (仅累加质量/体积单位)
+                        if (['g', 'ml'].includes(unit)) {
+                            totalWeight += amount;
+                        } else if (['kg', 'L'].includes(unit)) {
+                            totalWeight += amount * 1000;
+                        }
+                        // '份', '个' 等单位暂不计入总重，或需要单独处理
+                    }
+                });
+                
+                // 更新 Summary Footer
+                const summaryDiv = document.getElementById('itemsSummary');
+                if (recipeItems.length >= 2) {
+                    summaryDiv.classList.remove('hidden');
+                    document.getElementById('summaryCount').innerText = recipeItems.length;
+                    document.getElementById('summaryWeight').innerText = totalWeight > 1000 ? (totalWeight/1000).toFixed(2) + 'kg' : totalWeight.toFixed(0) + 'g';
+                    document.getElementById('summaryCost').innerText = totalCost.toFixed(2);
+                } else {
+                    summaryDiv.classList.add('hidden');
+                }
+                
+            } else {
+                // 如果没有关联配方，默认成本为0
+                totalCost = 0;
+                document.getElementById('itemsSummary').classList.add('hidden');
+            }
+
+            // 更新成本预览
+            document.getElementById('costPreview').innerText = totalCost.toFixed(2);
+            
+            if(price > 0) {
+                const profit = price - totalCost;
+                const margin = (profit / price) * 100;
+                
+                document.getElementById('profitPreview').innerText = `¥${profit.toFixed(2)} (${margin.toFixed(1)}%)`;
+                
+                // 更新进度条
+                const bar = document.getElementById('profitBar');
+                const width = Math.max(0, Math.min(100, margin));
+                bar.style.width = width + '%';
+                
+                // 颜色变化
+                if(margin < 30) {
+                    bar.className = 'bg-red-500 h-1.5 rounded-full transition-all duration-500';
+                    document.getElementById('profitPreview').className = 'text-sm font-bold text-red-500';
+                } else if (margin < 50) {
+                    bar.className = 'bg-yellow-500 h-1.5 rounded-full transition-all duration-500';
+                    document.getElementById('profitPreview').className = 'text-sm font-bold text-yellow-500';
+                } else {
+                    bar.className = 'bg-green-500 h-1.5 rounded-full transition-all duration-500';
+                    document.getElementById('profitPreview').className = 'text-sm font-bold text-green-600';
+                }
+            } else {
+                // 价格未输入时重置状态
+                document.getElementById('profitPreview').innerText = '¥0.00 (0%)';
+                document.getElementById('profitBar').style.width = '0%';
+            }
+        }
+
+        // 移除配方
+        function removeRecipe(btn) {
+            // 找到对应的列表项并移除
+            // 注意：因为现在列表项结构变了，btn在header里，列表项是btn的父级的父级
+            // btn -> div(header) -> div(card)
+            const item = btn.closest('.bg-white.border.rounded-xl'); 
+            if(item) {
+                item.remove();
+            }
+            
+            // 检查是否还有剩余项
+            const list = document.getElementById('linkedRecipeList');
+            // 注意：list里可能还有空白文本节点，所以检查 element child count
+            if (list.children.length === 0) {
+                list.classList.add('hidden');
+                document.getElementById('noRecipeState').classList.remove('hidden');
+            }
+            
+            calculateProfit();
+        }
+
+        // 弹窗逻辑
+        function openMaterialPopup() {
+            const popup = document.getElementById('materialPopup');
+            const content = document.getElementById('materialPopupContent');
+            
+            // First make it visible (display: flex) but transparent
+            popup.classList.remove('hidden');
+            
+            // Force reflow
+            void popup.offsetWidth;
+            
+            // Then fade in and scale up
+            requestAnimationFrame(() => {
+                popup.classList.remove('opacity-0');
+                if(content) {
+                    content.classList.remove('scale-95');
+                    content.classList.add('scale-100');
+                }
+            });
+        }
+
+        function closeMaterialPopup() {
+            const popup = document.getElementById('materialPopup');
+            const content = document.getElementById('materialPopupContent');
+            
+            // Fade out and scale down
+            popup.classList.add('opacity-0');
+            if(content) {
+                content.classList.remove('scale-100');
+                content.classList.add('scale-95');
+            }
+            
+            // Wait for transition to finish before hiding
+            setTimeout(() => {
+                popup.classList.add('hidden');
+            }, 300);
+        }
+
+        // 切换弹窗Tab逻辑
+        function switchPopupTab(tab) {
+            const tabRecipes = document.getElementById('tab-recipes');
+            const tabMaterials = document.getElementById('tab-materials');
+            const listRecipes = document.getElementById('popup-list-recipes');
+            const listMaterials = document.getElementById('popup-list-materials');
+            
+            if(tab === 'recipes') {
+                tabRecipes.className = "flex-1 py-3 text-sm font-medium text-orange-600 border-t-2 border-orange-600 bg-orange-50/50 transition-colors";
+                tabMaterials.className = "flex-1 py-3 text-sm font-medium text-gray-500 border-t-2 border-transparent hover:bg-gray-50 transition-colors";
+                
+                listRecipes.classList.remove('hidden');
+                listMaterials.classList.add('hidden');
+            } else {
+                tabMaterials.className = "flex-1 py-3 text-sm font-medium text-orange-600 border-t-2 border-orange-600 bg-orange-50/50 transition-colors";
+                tabRecipes.className = "flex-1 py-3 text-sm font-medium text-gray-500 border-t-2 border-transparent hover:bg-gray-50 transition-colors";
+                
+                listMaterials.classList.remove('hidden');
+                listRecipes.classList.add('hidden');
+            }
+        }
+
+        // 配方选择逻辑 (多选)
+        function selectRecipe(el) {
+            // 切换选中状态
+            const indicator = el.querySelector('.select-indicator div');
+            
+            if (indicator.classList.contains('hidden')) {
+                // 选中
+                el.classList.add('border-orange-500', 'bg-orange-50');
+                indicator.classList.remove('hidden');
+            } else {
+                // 取消选中
+                el.classList.remove('border-orange-500', 'bg-orange-50');
+                indicator.classList.add('hidden');
+            }
+        }
+
+        function confirmRecipeSelection() {
+            // 获取所有选中的项 (跨Tab)
+            const selectedItems = document.querySelectorAll('#popup-list-container .select-indicator div:not(.hidden)');
+            
+            if (selectedItems.length === 0) {
+                // 如果没有选中任何项，直接关闭
+                closeMaterialPopup();
+                return;
+            }
+
+            const list = document.getElementById('linkedRecipeList');
+            document.getElementById('noRecipeState').classList.add('hidden');
+            list.classList.remove('hidden');
+
+            selectedItems.forEach(indicator => {
+                // indicator -> div(circle) -> div(item container)
+                const itemEl = indicator.parentElement.parentElement;
+                
+                const type = itemEl.getAttribute('data-type'); // recipe or material
+                const name = itemEl.getAttribute('data-name');
+                const cost = parseFloat(itemEl.getAttribute('data-cost'));
+                const unit = itemEl.getAttribute('data-unit');
+                
+                // 检查是否已存在 (可选，如果不允许重复添加)
+                // 这里我们允许重复添加，或者你可以添加逻辑去重
+                
+                // 创建新行
+                const newRow = document.createElement('div');
+                newRow.className = 'bg-white border border-gray-100 rounded-xl shadow-sm p-3';
+                
+                // 根据类型设置图标和颜色
+                let iconClass = 'fas fa-bread-slice';
+                let bgClass = 'bg-orange-100';
+                let textClass = 'text-orange-500'; // fixed typo: was text-ornage
+                
+                if (type === 'material') {
+                    iconClass = 'fas fa-box';
+                    bgClass = 'bg-blue-100';
+                    textClass = 'text-blue-500';
+                }
+                
+                newRow.innerHTML = `
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg ${bgClass} flex items-center justify-center ${textClass} flex-shrink-0">
+                                <i class="${iconClass}"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-medium text-gray-800 text-sm">${name}</div>
+                                <div class="text-xs text-gray-500">
+                                    单价: ¥<span class="unit-cost">${cost.toFixed(2)}</span> / ${unit}
+                                    <span class="ml-2 font-bold text-orange-500 line-total">小计: ¥${cost.toFixed(2)}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="text-red-400 p-2 hover:bg-red-50 rounded-lg transition-colors" onclick="removeRecipe(this)">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="flex items-center gap-3 bg-gray-50 p-2.5 rounded-lg">
+                        <span class="text-xs text-gray-600 font-medium">使用用量</span>
+                        <div class="flex-1 flex items-center bg-white border border-gray-200 rounded-md px-2 transition-colors focus-within:border-orange-400 focus-within:ring-1 focus-within:ring-orange-100">
+                            <input type="number" class="recipe-amount-input w-full py-1.5 text-sm outline-none text-center font-medium text-gray-700 bg-transparent" value="1" step="0.1" placeholder="0" oninput="calculateProfit()">
+                        </div>
+                        <select class="form-select w-20 py-1.5 px-2 text-sm bg-white border border-gray-200 rounded-md focus:outline-none focus:border-orange-400">
+                            <option value="${unit}">${unit}</option>
+                            <option value="g">g</option>
+                            <option value="kg">kg</option>
+                            <option value="ml">ml</option>
+                            <option value="L">L</option>
+                            <option value="个">个</option>
+                        </select>
+                    </div>
+                `;
+                
+                list.appendChild(newRow);
+                
+                // 重置选中状态，以便下次打开时是干净的
+                selectRecipe(itemEl); 
+            });
+            
+            closeMaterialPopup();
+            
+            // 触发成本计算更新
+            calculateProfit();
+        }
+    </script>
+</body>
+</html>

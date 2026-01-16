@@ -1,0 +1,339 @@
+                        <!-- 4. 菠萝包 -->
+                        <div class="group">
+                            <div class="flex justify-between items-center p-2 hover:bg-gray-50 transition-colors">
+                                <div class="flex flex-col justify-center">
+                                    <span class="text-sm font-bold text-gray-800 leading-tight">菠萝包</span>
+                                    <span class="text-[10px] text-gray-400 mt-0.5">计划: 40</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <button class="w-7 h-7 flex items-center justify-center bg-gray-50 rounded text-gray-600 hover:bg-gray-200 active:bg-gray-300 transition-colors" onclick="updateQty('s1-i4', -1)">-</button>
+                                    <input type="number" id="qty-s1-i4" class="w-10 h-7 text-center border-none bg-transparent text-sm font-bold focus:ring-0 p-0" value="40" onchange="checkDiff('s1-i4', 40)">
+                                    <button class="w-7 h-7 flex items-center justify-center bg-gray-50 rounded text-gray-600 hover:bg-gray-200 active:bg-gray-300 transition-colors" onclick="updateQty('s1-i4', 1)">+</button>
+                                </div>
+                            </div>
+                            <div id="diff-s1-i4" class="hidden px-2 pb-1">
+                                <div class="bg-orange-50 rounded p-1.5 border border-orange-100">
+                                    <div class="text-[10px] text-orange-600 mb-0.5 flex items-center gap-1"><i class="fas fa-exclamation-triangle"></i> 数量差异原因</div>
+                                    <input type="text" id="reason-s1-i4" class="w-full text-[10px] border border-gray-200 rounded px-1.5 py-0.5 bg-white h-6" placeholder="输入具体原因...">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 5. 红豆餐包 -->
+                        <div class="group">
+                            <div class="flex justify-between items-center p-2 hover:bg-gray-50 transition-colors">
+                                <div class="flex flex-col justify-center">
+                                    <span class="text-sm font-bold text-gray-800 leading-tight">红豆餐包</span>
+                                    <span class="text-[10px] text-gray-400 mt-0.5">计划: 35</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <button class="w-7 h-7 flex items-center justify-center bg-gray-50 rounded text-gray-600 hover:bg-gray-200 active:bg-gray-300 transition-colors" onclick="updateQty('s1-i5', -1)">-</button>
+                                    <input type="number" id="qty-s1-i5" class="w-10 h-7 text-center border-none bg-transparent text-sm font-bold focus:ring-0 p-0" value="35" onchange="checkDiff('s1-i5', 35)">
+                                    <button class="w-7 h-7 flex items-center justify-center bg-gray-50 rounded text-gray-600 hover:bg-gray-200 active:bg-gray-300 transition-colors" onclick="updateQty('s1-i5', 1)">+</button>
+                                </div>
+                            </div>
+                            <div id="diff-s1-i5" class="hidden px-2 pb-1">
+                                <div class="bg-orange-50 rounded p-1.5 border border-orange-100">
+                                    <div class="text-[10px] text-orange-600 mb-0.5 flex items-center gap-1"><i class="fas fa-exclamation-triangle"></i> 数量差异原因</div>
+                                    <input type="text" id="reason-s1-i5" class="w-full text-[10px] border border-gray-200 rounded px-1.5 py-0.5 bg-white h-6" placeholder="输入具体原因...">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 6. 提拉米苏 -->
+                        <div class="group">
+                            <div class="flex justify-between items-center p-2 hover:bg-gray-50 transition-colors">
+                                <div class="flex flex-col justify-center">
+                                    <span class="text-sm font-bold text-gray-800 leading-tight">提拉米苏</span>
+                                    <span class="text-[10px] text-gray-400 mt-0.5">计划: 15</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <button class="w-7 h-7 flex items-center justify-center bg-gray-50 rounded text-gray-600 hover:bg-gray-200 active:bg-gray-300 transition-colors" onclick="updateQty('s1-i6', -1)">-</button>
+                                    <input type="number" id="qty-s1-i6" class="w-10 h-7 text-center border-none bg-transparent text-sm font-bold focus:ring-0 p-0" value="15" onchange="checkDiff('s1-i6', 15)">
+                                    <button class="w-7 h-7 flex items-center justify-center bg-gray-50 rounded text-gray-600 hover:bg-gray-200 active:bg-gray-300 transition-colors" onclick="updateQty('s1-i6', 1)">+</button>
+                                </div>
+                            </div>
+                            <div id="diff-s1-i6" class="hidden px-2 pb-1">
+                                <div class="bg-orange-50 rounded p-1.5 border border-orange-100">
+                                    <div class="text-[10px] text-orange-600 mb-0.5 flex items-center gap-1"><i class="fas fa-exclamation-triangle"></i> 数量差异原因</div>
+                                    <input type="text" id="reason-s1-i6" class="w-full text-[10px] border border-gray-200 rounded px-1.5 py-0.5 bg-white h-6" placeholder="输入具体原因...">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 7. 草莓慕斯 -->
+                        <div class="group">
+                            <div class="flex justify-between items-center p-2 hover:bg-gray-50 transition-colors">
+                                <div class="flex flex-col justify-center">
+                                    <span class="text-sm font-bold text-gray-800 leading-tight">草莓慕斯</span>
+                                    <span class="text-[10px] text-gray-400 mt-0.5">计划: 12</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <button class="w-7 h-7 flex items-center justify-center bg-gray-50 rounded text-gray-600 hover:bg-gray-200 active:bg-gray-300 transition-colors" onclick="updateQty('s1-i7', -1)">-</button>
+                                    <input type="number" id="qty-s1-i7" class="w-10 h-7 text-center border-none bg-transparent text-sm font-bold focus:ring-0 p-0" value="12" onchange="checkDiff('s1-i7', 12)">
+                                    <button class="w-7 h-7 flex items-center justify-center bg-gray-50 rounded text-gray-600 hover:bg-gray-200 active:bg-gray-300 transition-colors" onclick="updateQty('s1-i7', 1)">+</button>
+                                </div>
+                            </div>
+                            <div id="diff-s1-i7" class="hidden px-2 pb-1">
+                                <div class="bg-orange-50 rounded p-1.5 border border-orange-100">
+                                    <div class="text-[10px] text-orange-600 mb-0.5 flex items-center gap-1"><i class="fas fa-exclamation-triangle"></i> 数量差异原因</div>
+                                    <input type="text" id="reason-s1-i7" class="w-full text-[10px] border border-gray-200 rounded px-1.5 py-0.5 bg-white h-6" placeholder="输入具体原因...">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 8. 法棍 -->
+                        <div class="group">
+                            <div class="flex justify-between items-center p-2 hover:bg-gray-50 transition-colors">
+                                <div class="flex flex-col justify-center">
+                                    <span class="text-sm font-bold text-gray-800 leading-tight">法棍</span>
+                                    <span class="text-[10px] text-gray-400 mt-0.5">计划: 10</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <button class="w-7 h-7 flex items-center justify-center bg-gray-50 rounded text-gray-600 hover:bg-gray-200 active:bg-gray-300 transition-colors" onclick="updateQty('s1-i8', -1)">-</button>
+                                    <input type="number" id="qty-s1-i8" class="w-10 h-7 text-center border-none bg-transparent text-sm font-bold focus:ring-0 p-0" value="10" onchange="checkDiff('s1-i8', 10)">
+                                    <button class="w-7 h-7 flex items-center justify-center bg-gray-50 rounded text-gray-600 hover:bg-gray-200 active:bg-gray-300 transition-colors" onclick="updateQty('s1-i8', 1)">+</button>
+                                </div>
+                            </div>
+                            <div id="diff-s1-i8" class="hidden px-2 pb-1">
+                                <div class="bg-orange-50 rounded p-1.5 border border-orange-100">
+                                    <div class="text-[10px] text-orange-600 mb-0.5 flex items-center gap-1"><i class="fas fa-exclamation-triangle"></i> 数量差异原因</div>
+                                    <input type="text" id="reason-s1-i8" class="w-full text-[10px] border border-gray-200 rounded px-1.5 py-0.5 bg-white h-6" placeholder="输入具体原因...">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 9. 甜甜圈 -->
+                        <div class="group">
+                            <div class="flex justify-between items-center p-2 hover:bg-gray-50 transition-colors">
+                                <div class="flex flex-col justify-center">
+                                    <span class="text-sm font-bold text-gray-800 leading-tight">甜甜圈</span>
+                                    <span class="text-[10px] text-gray-400 mt-0.5">计划: 45</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <button class="w-7 h-7 flex items-center justify-center bg-gray-50 rounded text-gray-600 hover:bg-gray-200 active:bg-gray-300 transition-colors" onclick="updateQty('s1-i9', -1)">-</button>
+                                    <input type="number" id="qty-s1-i9" class="w-10 h-7 text-center border-none bg-transparent text-sm font-bold focus:ring-0 p-0" value="45" onchange="checkDiff('s1-i9', 45)">
+                                    <button class="w-7 h-7 flex items-center justify-center bg-gray-50 rounded text-gray-600 hover:bg-gray-200 active:bg-gray-300 transition-colors" onclick="updateQty('s1-i9', 1)">+</button>
+                                </div>
+                            </div>
+                            <div id="diff-s1-i9" class="hidden px-2 pb-1">
+                                <div class="bg-orange-50 rounded p-1.5 border border-orange-100">
+                                    <div class="text-[10px] text-orange-600 mb-0.5 flex items-center gap-1"><i class="fas fa-exclamation-triangle"></i> 数量差异原因</div>
+                                    <input type="text" id="reason-s1-i9" class="w-full text-[10px] border border-gray-200 rounded px-1.5 py-0.5 bg-white h-6" placeholder="输入具体原因...">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 10. 葡式蛋挞 -->
+                        <div class="group">
+                            <div class="flex justify-between items-center p-2 hover:bg-gray-50 transition-colors">
+                                <div class="flex flex-col justify-center">
+                                    <span class="text-sm font-bold text-gray-800 leading-tight">葡式蛋挞</span>
+                                    <span class="text-[10px] text-gray-400 mt-0.5">计划: 60</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <button class="w-7 h-7 flex items-center justify-center bg-gray-50 rounded text-gray-600 hover:bg-gray-200 active:bg-gray-300 transition-colors" onclick="updateQty('s1-i10', -1)">-</button>
+                                    <input type="number" id="qty-s1-i10" class="w-10 h-7 text-center border-none bg-transparent text-sm font-bold focus:ring-0 p-0" value="60" onchange="checkDiff('s1-i10', 60)">
+                                    <button class="w-7 h-7 flex items-center justify-center bg-gray-50 rounded text-gray-600 hover:bg-gray-200 active:bg-gray-300 transition-colors" onclick="updateQty('s1-i10', 1)">+</button>
+                                </div>
+                            </div>
+                            <div id="diff-s1-i10" class="hidden px-2 pb-1">
+                                <div class="bg-orange-50 rounded p-1.5 border border-orange-100">
+                                    <div class="text-[10px] text-orange-600 mb-0.5 flex items-center gap-1"><i class="fas fa-exclamation-triangle"></i> 数量差异原因</div>
+                                    <input type="text" id="reason-s1-i10" class="w-full text-[10px] border border-gray-200 rounded px-1.5 py-0.5 bg-white h-6" placeholder="输入具体原因...">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 11. 芝士蛋糕 -->
+                        <div class="group">
+                            <div class="flex justify-between items-center p-2 hover:bg-gray-50 transition-colors">
+                                <div class="flex flex-col justify-center">
+                                    <span class="text-sm font-bold text-gray-800 leading-tight">芝士蛋糕</span>
+                                    <span class="text-[10px] text-gray-400 mt-0.5">计划: 8</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <button class="w-7 h-7 flex items-center justify-center bg-gray-50 rounded text-gray-600 hover:bg-gray-200 active:bg-gray-300 transition-colors" onclick="updateQty('s1-i11', -1)">-</button>
+                                    <input type="number" id="qty-s1-i11" class="w-10 h-7 text-center border-none bg-transparent text-sm font-bold focus:ring-0 p-0" value="8" onchange="checkDiff('s1-i11', 8)">
+                                    <button class="w-7 h-7 flex items-center justify-center bg-gray-50 rounded text-gray-600 hover:bg-gray-200 active:bg-gray-300 transition-colors" onclick="updateQty('s1-i11', 1)">+</button>
+                                </div>
+                            </div>
+                            <div id="diff-s1-i11" class="hidden px-2 pb-1">
+                                <div class="bg-orange-50 rounded p-1.5 border border-orange-100">
+                                    <div class="text-[10px] text-orange-600 mb-0.5 flex items-center gap-1"><i class="fas fa-exclamation-triangle"></i> 数量差异原因</div>
+                                    <input type="text" id="reason-s1-i11" class="w-full text-[10px] border border-gray-200 rounded px-1.5 py-0.5 bg-white h-6" placeholder="输入具体原因...">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 12. 抹茶卷 -->
+                        <div class="group">
+                            <div class="flex justify-between items-center p-2 hover:bg-gray-50 transition-colors">
+                                <div class="flex flex-col justify-center">
+                                    <span class="text-sm font-bold text-gray-800 leading-tight">抹茶卷</span>
+                                    <span class="text-[10px] text-gray-400 mt-0.5">计划: 16</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <button class="w-7 h-7 flex items-center justify-center bg-gray-50 rounded text-gray-600 hover:bg-gray-200 active:bg-gray-300 transition-colors" onclick="updateQty('s1-i12', -1)">-</button>
+                                    <input type="number" id="qty-s1-i12" class="w-10 h-7 text-center border-none bg-transparent text-sm font-bold focus:ring-0 p-0" value="16" onchange="checkDiff('s1-i12', 16)">
+                                    <button class="w-7 h-7 flex items-center justify-center bg-gray-50 rounded text-gray-600 hover:bg-gray-200 active:bg-gray-300 transition-colors" onclick="updateQty('s1-i12', 1)">+</button>
+                                </div>
+                            </div>
+                            <div id="diff-s1-i12" class="hidden px-2 pb-1">
+                                <div class="bg-orange-50 rounded p-1.5 border border-orange-100">
+                                    <div class="text-[10px] text-orange-600 mb-0.5 flex items-center gap-1"><i class="fas fa-exclamation-triangle"></i> 数量差异原因</div>
+                                    <input type="text" id="reason-s1-i12" class="w-full text-[10px] border border-gray-200 rounded px-1.5 py-0.5 bg-white h-6" placeholder="输入具体原因...">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 13. 巧克力麦芬 -->
+                        <div class="group">
+                            <div class="flex justify-between items-center p-2 hover:bg-gray-50 transition-colors">
+                                <div class="flex flex-col justify-center">
+                                    <span class="text-sm font-bold text-gray-800 leading-tight">巧克力麦芬</span>
+                                    <span class="text-[10px] text-gray-400 mt-0.5">计划: 24</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <button class="w-7 h-7 flex items-center justify-center bg-gray-50 rounded text-gray-600 hover:bg-gray-200 active:bg-gray-300 transition-colors" onclick="updateQty('s1-i13', -1)">-</button>
+                                    <input type="number" id="qty-s1-i13" class="w-10 h-7 text-center border-none bg-transparent text-sm font-bold focus:ring-0 p-0" value="24" onchange="checkDiff('s1-i13', 24)">
+                                    <button class="w-7 h-7 flex items-center justify-center bg-gray-50 rounded text-gray-600 hover:bg-gray-200 active:bg-gray-300 transition-colors" onclick="updateQty('s1-i13', 1)">+</button>
+                                </div>
+                            </div>
+                            <div id="diff-s1-i13" class="hidden px-2 pb-1">
+                                <div class="bg-orange-50 rounded p-1.5 border border-orange-100">
+                                    <div class="text-[10px] text-orange-600 mb-0.5 flex items-center gap-1"><i class="fas fa-exclamation-triangle"></i> 数量差异原因</div>
+                                    <input type="text" id="reason-s1-i13" class="w-full text-[10px] border border-gray-200 rounded px-1.5 py-0.5 bg-white h-6" placeholder="输入具体原因...">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 14. 黄油曲奇 -->
+                        <div class="group">
+                            <div class="flex justify-between items-center p-2 hover:bg-gray-50 transition-colors">
+                                <div class="flex flex-col justify-center">
+                                    <span class="text-sm font-bold text-gray-800 leading-tight">黄油曲奇</span>
+                                    <span class="text-[10px] text-gray-400 mt-0.5">计划: 50</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <button class="w-7 h-7 flex items-center justify-center bg-gray-50 rounded text-gray-600 hover:bg-gray-200 active:bg-gray-300 transition-colors" onclick="updateQty('s1-i14', -1)">-</button>
+                                    <input type="number" id="qty-s1-i14" class="w-10 h-7 text-center border-none bg-transparent text-sm font-bold focus:ring-0 p-0" value="50" onchange="checkDiff('s1-i14', 50)">
+                                    <button class="w-7 h-7 flex items-center justify-center bg-gray-50 rounded text-gray-600 hover:bg-gray-200 active:bg-gray-300 transition-colors" onclick="updateQty('s1-i14', 1)">+</button>
+                                </div>
+                            </div>
+                            <div id="diff-s1-i14" class="hidden px-2 pb-1">
+                                <div class="bg-orange-50 rounded p-1.5 border border-orange-100">
+                                    <div class="text-[10px] text-orange-600 mb-0.5 flex items-center gap-1"><i class="fas fa-exclamation-triangle"></i> 数量差异原因</div>
+                                    <input type="text" id="reason-s1-i14" class="w-full text-[10px] border border-gray-200 rounded px-1.5 py-0.5 bg-white h-6" placeholder="输入具体原因...">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 15. 酸种面包 -->
+                        <div class="group">
+                            <div class="flex justify-between items-center p-2 hover:bg-gray-50 transition-colors">
+                                <div class="flex flex-col justify-center">
+                                    <span class="text-sm font-bold text-gray-800 leading-tight">酸种面包</span>
+                                    <span class="text-[10px] text-gray-400 mt-0.5">计划: 6</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <button class="w-7 h-7 flex items-center justify-center bg-gray-50 rounded text-gray-600 hover:bg-gray-200 active:bg-gray-300 transition-colors" onclick="updateQty('s1-i15', -1)">-</button>
+                                    <input type="number" id="qty-s1-i15" class="w-10 h-7 text-center border-none bg-transparent text-sm font-bold focus:ring-0 p-0" value="6" onchange="checkDiff('s1-i15', 6)">
+                                    <button class="w-7 h-7 flex items-center justify-center bg-gray-50 rounded text-gray-600 hover:bg-gray-200 active:bg-gray-300 transition-colors" onclick="updateQty('s1-i15', 1)">+</button>
+                                </div>
+                            </div>
+                            <div id="diff-s1-i15" class="hidden px-2 pb-1">
+                                <div class="bg-orange-50 rounded p-1.5 border border-orange-100">
+                                    <div class="text-[10px] text-orange-600 mb-0.5 flex items-center gap-1"><i class="fas fa-exclamation-triangle"></i> 数量差异原因</div>
+                                    <input type="text" id="reason-s1-i15" class="w-full text-[10px] border border-gray-200 rounded px-1.5 py-0.5 bg-white h-6" placeholder="输入具体原因...">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 16. 碱水结 -->
+                        <div class="group">
+                            <div class="flex justify-between items-center p-2 hover:bg-gray-50 transition-colors">
+                                <div class="flex flex-col justify-center">
+                                    <span class="text-sm font-bold text-gray-800 leading-tight">碱水结</span>
+                                    <span class="text-[10px] text-gray-400 mt-0.5">计划: 18</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <button class="w-7 h-7 flex items-center justify-center bg-gray-50 rounded text-gray-600 hover:bg-gray-200 active:bg-gray-300 transition-colors" onclick="updateQty('s1-i16', -1)">-</button>
+                                    <input type="number" id="qty-s1-i16" class="w-10 h-7 text-center border-none bg-transparent text-sm font-bold focus:ring-0 p-0" value="18" onchange="checkDiff('s1-i16', 18)">
+                                    <button class="w-7 h-7 flex items-center justify-center bg-gray-50 rounded text-gray-600 hover:bg-gray-200 active:bg-gray-300 transition-colors" onclick="updateQty('s1-i16', 1)">+</button>
+                                </div>
+                            </div>
+                            <div id="diff-s1-i16" class="hidden px-2 pb-1">
+                                <div class="bg-orange-50 rounded p-1.5 border border-orange-100">
+                                    <div class="text-[10px] text-orange-600 mb-0.5 flex items-center gap-1"><i class="fas fa-exclamation-triangle"></i> 数量差异原因</div>
+                                    <input type="text" id="reason-s1-i16" class="w-full text-[10px] border border-gray-200 rounded px-1.5 py-0.5 bg-white h-6" placeholder="输入具体原因...">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 17. 马卡龙 -->
+                        <div class="group">
+                            <div class="flex justify-between items-center p-2 hover:bg-gray-50 transition-colors">
+                                <div class="flex flex-col justify-center">
+                                    <span class="text-sm font-bold text-gray-800 leading-tight">马卡龙</span>
+                                    <span class="text-[10px] text-gray-400 mt-0.5">计划: 100</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <button class="w-7 h-7 flex items-center justify-center bg-gray-50 rounded text-gray-600 hover:bg-gray-200 active:bg-gray-300 transition-colors" onclick="updateQty('s1-i17', -1)">-</button>
+                                    <input type="number" id="qty-s1-i17" class="w-10 h-7 text-center border-none bg-transparent text-sm font-bold focus:ring-0 p-0" value="100" onchange="checkDiff('s1-i17', 100)">
+                                    <button class="w-7 h-7 flex items-center justify-center bg-gray-50 rounded text-gray-600 hover:bg-gray-200 active:bg-gray-300 transition-colors" onclick="updateQty('s1-i17', 1)">+</button>
+                                </div>
+                            </div>
+                            <div id="diff-s1-i17" class="hidden px-2 pb-1">
+                                <div class="bg-orange-50 rounded p-1.5 border border-orange-100">
+                                    <div class="text-[10px] text-orange-600 mb-0.5 flex items-center gap-1"><i class="fas fa-exclamation-triangle"></i> 数量差异原因</div>
+                                    <input type="text" id="reason-s1-i17" class="w-full text-[10px] border border-gray-200 rounded px-1.5 py-0.5 bg-white h-6" placeholder="输入具体原因...">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 18. 泡芙 -->
+                        <div class="group">
+                            <div class="flex justify-between items-center p-2 hover:bg-gray-50 transition-colors">
+                                <div class="flex flex-col justify-center">
+                                    <span class="text-sm font-bold text-gray-800 leading-tight">泡芙</span>
+                                    <span class="text-[10px] text-gray-400 mt-0.5">计划: 40</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <button class="w-7 h-7 flex items-center justify-center bg-gray-50 rounded text-gray-600 hover:bg-gray-200 active:bg-gray-300 transition-colors" onclick="updateQty('s1-i18', -1)">-</button>
+                                    <input type="number" id="qty-s1-i18" class="w-10 h-7 text-center border-none bg-transparent text-sm font-bold focus:ring-0 p-0" value="40" onchange="checkDiff('s1-i18', 40)">
+                                    <button class="w-7 h-7 flex items-center justify-center bg-gray-50 rounded text-gray-600 hover:bg-gray-200 active:bg-gray-300 transition-colors" onclick="updateQty('s1-i18', 1)">+</button>
+                                </div>
+                            </div>
+                            <div id="diff-s1-i18" class="hidden px-2 pb-1">
+                                <div class="bg-orange-50 rounded p-1.5 border border-orange-100">
+                                    <div class="text-[10px] text-orange-600 mb-0.5 flex items-center gap-1"><i class="fas fa-exclamation-triangle"></i> 数量差异原因</div>
+                                    <input type="text" id="reason-s1-i18" class="w-full text-[10px] border border-gray-200 rounded px-1.5 py-0.5 bg-white h-6" placeholder="输入具体原因...">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 19. 水果塔 -->
+                        <div class="group">
+                            <div class="flex justify-between items-center p-2 hover:bg-gray-50 transition-colors">
+                                <div class="flex flex-col justify-center">
+                                    <span class="text-sm font-bold text-gray-800 leading-tight">水果塔</span>
+                                    <span class="text-[10px] text-gray-400 mt-0.5">计划: 20</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <button class="w-7 h-7 flex items-center justify-center bg-gray-50 rounded text-gray-600 hover:bg-gray-200 active:bg-gray-300 transition-colors" onclick="updateQty('s1-i19', -1)">-</button>
+                                    <input type="number" id="qty-s1-i19" class="w-10 h-7 text-center border-none bg-transparent text-sm font-bold focus:ring-0 p-0" value="20" onchange="checkDiff('s1-i19', 20)">
+                                    <button class="w-7 h-7 flex items-center justify-center bg-gray-50 rounded text-gray-600 hover:bg-gray-200 active:bg-gray-300 transition-colors" onclick="updateQty('s1-i19', 1)">+</button>
+                                </div>
+                            </div>
+                            <div id="diff-s1-i19" class="hidden px-2 pb-1">
+                                <div class="bg-orange-50 rounded p-1.5 border border-orange-100">
+                                    <div class="text-[10px] text-orange-600 mb-0.5 flex items-center gap-1"><i class="fas fa-exclamation-triangle"></i> 数量差异原因</div>
+                                    <input type="text" id="reason-s1-i19" class="w-full text-[10px] border border-gray-200 rounded px-1.5 py-0.5 bg-white h-6" placeholder="输入具体原因...">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 20. 蒜香面包 -->
+                        <div class="group">
+                            <div class="flex justify-between items-center p-2 hover:bg-gray-50 transition-colors">
+                                <div class="flex flex-col justify-center">
+                                    <span class="text-sm font-bold text-gray-800 leading-tight">蒜香面包</span>
+                                    <span class="text-[10px] text-gray-400 mt-0.5">计划: 15</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <button class="w-7 h-7 flex items-center justify-center bg-gray-50 rounded text-gray-600 hover:bg-gray-200 active:bg-gray-300 transition-colors" onclick="updateQty('s1-i20', -1)">-</button>
+                                    <input type="number" id="qty-s1-i20" class="w-10 h-7 text-center border-none bg-transparent text-sm font-bold focus:ring-0 p-0" value="15" onchange="checkDiff('s1-i20', 15)">
+                                    <button class="w-7 h-7 flex items-center justify-center bg-gray-50 rounded text-gray-600 hover:bg-gray-200 active:bg-gray-300 transition-colors" onclick="updateQty('s1-i20', 1)">+</button>
+                                </div>
+                            </div>
+                            <div id="diff-s1-i20" class="hidden px-2 pb-1">
+                                <div class="bg-orange-50 rounded p-1.5 border border-orange-100">
+                                    <div class="text-[10px] text-orange-600 mb-0.5 flex items-center gap-1"><i class="fas fa-exclamation-triangle"></i> 数量差异原因</div>
+                                    <input type="text" id="reason-s1-i20" class="w-full text-[10px] border border-gray-200 rounded px-1.5 py-0.5 bg-white h-6" placeholder="输入具体原因...">
+                                </div>
+                            </div>

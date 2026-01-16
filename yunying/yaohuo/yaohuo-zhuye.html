@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>要货管理 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body class="bg-[#f7f7f5] h-screen flex flex-col">
+
+    <!-- 顶部导航栏 -->
+    <div class="bg-white px-4 py-3 shadow-sm border-b border-gray-100 z-30 flex-shrink-0">
+        <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center space-x-3">
+                <a href="../../cangku-gongneng/erp-zhuye-canku.html" class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+                <h1 class="text-lg font-bold text-gray-800">要货管理</h1>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors" onclick="window.location.href='yaohuolishi.html'">
+                    <i class="fas fa-history"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- 统计概览 - 已移除 -->
+    </div>
+
+    <!-- 标签页 -->
+    <div class="bg-white px-4 border-b border-gray-100 flex-shrink-0">
+        <div class="flex items-center justify-between overflow-x-auto no-scrollbar">
+            <button id="tab-btn-all" class="nav-tab active py-3 text-sm min-w-[60px]" onclick="switchTab('all', this)">
+                全部 <span class="ml-1 text-xs opacity-60">0</span>
+            </button>
+            <button id="tab-btn-producing" class="nav-tab py-3 text-sm min-w-[60px]" onclick="switchTab('producing', this)">
+                生产中 <span class="ml-1 text-xs opacity-60">0</span>
+            </button>
+            <button id="tab-btn-delivering" class="nav-tab py-3 text-sm min-w-[60px]" onclick="switchTab('delivering', this)">
+                配送中 <span class="ml-1 text-xs opacity-60">0</span>
+            </button>
+            <button id="tab-btn-completed" class="nav-tab py-3 text-sm min-w-[60px]" onclick="switchTab('completed', this)">
+                已完成 <span class="ml-1 text-xs opacity-60">0</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 列表区域 -->
+    <div class="flex-1 overflow-y-auto p-4 custom-scrollbar" id="orderList">
+        
+        <!-- 卡片 1: 待确认 (Pending) -->
+        <div class="card p-4 mb-3 border-l-4 border-l-yellow-400" data-status="pending" onclick="viewDetail('YH20231026001')">
+            <div class="flex justify-between items-start mb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-sm">
+                        A
+                    </div>
+                    <div>
+                        <div class="font-bold text-gray-800 text-sm">市中心旗舰店</div>
+                        <div class="text-xs text-gray-500">店长: 王小明</div>
+                    </div>
+                </div>
+                <span class="status-pill status-pending">
+                    <i class="fas fa-clock mr-1"></i> 生产中 · 待确认
+                </span>
+            </div>
+            
+            <div class="bg-gray-50 rounded-lg p-3 mb-3">
+                <div class="flex justify-between text-sm mb-1">
+                    <span class="text-gray-600">法式牛角包面团</span>
+                    <span class="font-medium">x50</span>
+                </div>
+                <div class="flex justify-between text-sm mb-1">
+                    <span class="text-gray-600">全麦吐司面团</span>
+                    <span class="font-medium">x30</span>
+                </div>
+                <div class="text-xs text-gray-400 mt-2">...共 5 种商品</div>
+            </div>
+            
+            <div class="flex justify-between items-center">
+                <span class="text-xs text-gray-400">10:30 提交</span>
+                <span class="text-xs text-orange-500 font-medium">等待仓库确认</span>
+            </div>
+        </div>
+
+        <!-- 卡片 2: 生产中 (Producing) -->
+        <div class="card p-4 mb-3 border-l-4 border-l-blue-400" data-status="producing" onclick="viewDetail('YH20231026002')">
+            <div class="flex justify-between items-start mb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold text-sm">
+                        B
+                    </div>
+                    <div>
+                        <div class="font-bold text-gray-800 text-sm">科技园分店</div>
+                        <div class="text-xs text-gray-500">店长: 李四</div>
+                    </div>
+                </div>
+                <span class="status-pill status-producing">
+                    <i class="fas fa-industry mr-1"></i> 生产中
+                </span>
+            </div>
+            
+            <div class="bg-gray-50 rounded-lg p-3 mb-3">
+                 <!-- 生产进度条 -->
+                 <div class="mb-2">
+                    <div class="flex justify-between text-xs text-blue-600 mb-1">
+                        <span>生产进度</span>
+                        <span>60%</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill bg-blue-500" style="width: 60%"></div>
+                    </div>
+                 </div>
+
+                <div class="flex justify-between text-sm mb-1">
+                    <span class="text-gray-600">草莓慕斯</span>
+                    <span class="font-medium">x20</span>
+                </div>
+                <div class="text-xs text-gray-400 mt-2">...共 2 种商品</div>
+            </div>
+            
+            <div class="flex justify-between items-center">
+                <span class="text-xs text-gray-400">09:15 提交</span>
+                <button class="text-blue-600 text-xs font-medium px-2 py-1 bg-blue-50 rounded hover:bg-blue-100" onclick="event.stopPropagation();">
+                    查看进度
+                </button>
+            </div>
+        </div>
+
+        <!-- 卡片 3: 配送中 (Delivering) -->
+        <div class="card p-4 mb-3 border-l-4 border-l-indigo-400" data-status="delivering" onclick="viewDetail('YH20231025005')">
+            <div class="flex justify-between items-start mb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 font-bold text-sm">
+                        C
+                    </div>
+                    <div>
+                        <div class="font-bold text-gray-800 text-sm">社区便民店</div>
+                        <div class="text-xs text-gray-500">店长: 张三</div>
+                    </div>
+                </div>
+                <span class="status-pill status-delivering">
+                    <i class="fas fa-truck mr-1"></i> 配送中
+                </span>
+            </div>
+            
+            <div class="bg-gray-50 rounded-lg p-3 mb-3">
+                <div class="flex justify-between text-sm mb-1">
+                    <span class="text-gray-600">牛皮纸包装袋</span>
+                    <span class="font-medium">x100</span>
+                </div>
+                <div class="text-xs text-gray-400 mt-2">...共 1 种商品</div>
+            </div>
+            
+            <div class="flex justify-between items-center">
+                <span class="text-xs text-gray-400">昨天 16:20</span>
+                <span class="text-xs text-indigo-600 font-medium">预计 14:00 送达</span>
+            </div>
+        </div>
+
+        <!-- 卡片 4: 已完成 (Completed) -->
+        <div class="card p-4 mb-3 border-l-4 border-l-green-400 opacity-80" data-status="completed" onclick="viewDetail('YH20231024008')">
+            <div class="flex justify-between items-start mb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold text-sm">
+                        D
+                    </div>
+                    <div>
+                        <div class="font-bold text-gray-600 text-sm">大学城店</div>
+                        <div class="text-xs text-gray-400">店长: 赵五</div>
+                    </div>
+                </div>
+                <span class="status-pill status-completed">
+                    <i class="fas fa-check-circle mr-1"></i> 已完成
+                </span>
+            </div>
+            
+            <div class="bg-gray-50 rounded-lg p-3 mb-3">
+                <div class="flex justify-between text-sm mb-1">
+                    <span class="text-gray-500">提拉米苏</span>
+                    <span class="font-medium text-gray-600">x15</span>
+                </div>
+                <div class="text-xs text-gray-400 mt-2">...共 3 种商品</div>
+            </div>
+            
+            <div class="flex justify-between items-center">
+                <span class="text-xs text-gray-400">10-24 签收</span>
+                <button class="text-gray-500 text-xs font-medium px-2 py-1 rounded hover:bg-gray-100" onclick="event.stopPropagation();">
+                    再来一单
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 悬浮添加按钮 -->
+    <div class="fixed bottom-6 right-6 z-40">
+        <button class="w-14 h-14 bg-gray-900 text-white rounded-full shadow-xl flex items-center justify-center text-xl hover:scale-105 transition-transform" onclick="createNewOrder()">
+            <i class="fas fa-plus"></i>
+        </button>
+    </div>
+
+    <script>
+        // 切换标签
+        function switchTab(status, btn) {
+            // 更新按钮状态
+            document.querySelectorAll('.nav-tab').forEach(item => item.classList.remove('active'));
+            btn.classList.add('active');
+            
+            // 筛选列表
+            const cards = document.querySelectorAll('#orderList .card');
+            cards.forEach(card => {
+                const cardStatus = card.dataset.status;
+                
+                if (status === 'all') {
+                    card.style.display = 'block';
+                } else if (status === 'producing') {
+                    // 生产中 Tab 包含 'pending' (待确认) 和 'producing' (生产中)
+                    if (cardStatus === 'pending' || cardStatus === 'producing') {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                } else {
+                    if (cardStatus === status) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                }
+            });
+        }
+
+        // 跳转详情
+        function viewDetail(id) {
+            window.location.href = 'yaohuoxiangqing.html?id=' + id;
+        }
+
+        // 处理订单
+        function processOrder(id) {
+            // alert('开始处理订单: ' + id);
+            // 跳转到生产主页进行排产
+            window.location.href = '../shengchan/shengchan-zhuye.html?orderId=' + id;
+        }
+
+        // 新建要货
+        function createNewOrder() {
+            window.location.href = 'yaohuoxinjian.html';
+        }
+    </script>
+</body>
+</html>

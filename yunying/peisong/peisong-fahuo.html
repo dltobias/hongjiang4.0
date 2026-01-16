@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>发货管理 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Unified Theme */
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+            --secondary-green: #28c76f;
+            --secondary-blue: #00cfe8;
+            --text-main: #333333;
+            --text-sub: #8b8b8b;
+            --bg-light: #f7f7f5;
+            --bg-white: #ffffff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-main);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+
+        /* Card & Layout */
+        .card {
+            background: var(--bg-white);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            border: 1px solid rgba(0,0,0,0.03);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        /* Status Pills */
+        .status-pill {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+        .status-pending { background: #eff6ff; color: #3b82f6; border: 1px solid #dbeafe; }
+        .status-shipping { background: #fff7ed; color: #f97316; border: 1px solid #ffedd5; }
+
+        /* Animation */
+        .animate-slide-up { animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes slide-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-[#f7f7f5] h-screen flex flex-col">
+
+    <!-- Header -->
+    <div class="bg-white px-4 py-3 shadow-sm border-b border-gray-100 z-30 flex-shrink-0">
+        <div class="flex items-center space-x-3">
+            <a href="peisong-zhuye.html" class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            <h1 class="text-lg font-bold text-gray-800">发货管理</h1>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="bg-white px-4 py-2 border-b border-gray-100 flex gap-2 overflow-x-auto custom-scrollbar flex-shrink-0">
+        <button class="px-3 py-1.5 rounded-full bg-gray-800 text-white text-xs font-bold whitespace-nowrap">待发货 (2)</button>
+        <button class="px-3 py-1.5 rounded-full bg-white border border-gray-200 text-gray-600 text-xs font-medium whitespace-nowrap">运输中 (5)</button>
+        <button class="px-3 py-1.5 rounded-full bg-white border border-gray-200 text-gray-600 text-xs font-medium whitespace-nowrap">已签收 (12)</button>
+    </div>
+
+    <!-- Content Area -->
+    <div class="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-4 pb-24">
+        
+        <!-- Batch Action Bar (Mock) -->
+        <div class="flex justify-between items-center mb-2 px-1">
+            <div class="flex items-center gap-2">
+                <input type="checkbox" class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" onchange="toggleAll(this)">
+                <span class="text-xs text-gray-500 font-medium">全选</span>
+            </div>
+            <button class="text-xs text-blue-600 font-bold" onclick="batchPrint()">
+                <i class="fas fa-print mr-1"></i> 批量打印配送单
+            </button>
+        </div>
+
+        <!-- Order 1: City Center Flagship -->
+        <div class="card p-4 animate-slide-up" id="order-1">
+            <div class="flex justify-between items-start mb-3 border-b border-gray-100 pb-3">
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" class="order-checkbox w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                    <div>
+                        <h4 class="font-bold text-gray-800 text-sm">订单号: SO-20231026-01</h4>
+                        <div class="text-xs text-gray-400 mt-0.5">创建时间: 2023-10-26 09:30</div>
+                    </div>
+                </div>
+                <span class="status-pill status-pending">待发货</span>
+            </div>
+            
+            <div class="flex items-start gap-3 mb-3">
+                <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs flex-shrink-0">
+                    <i class="fas fa-store"></i>
+                </div>
+                <div class="flex-1">
+                    <div class="flex justify-between items-start">
+                        <span class="font-bold text-gray-800 text-sm">市中心旗舰店</span>
+                        <span class="text-xs font-bold text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded">🔥 今天 16:00 前送达</span>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-1">
+                        <i class="fas fa-map-marker-alt mr-1"></i> 福田区中心四路1号嘉里建设广场
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 rounded-lg p-3 mb-4">
+                <div class="flex justify-between text-xs text-gray-500 mb-2">
+                    <span>产品清单</span>
+                    <span>共 2 品项</span>
+                </div>
+                <div class="space-y-1">
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="text-gray-700">法式牛角包</span>
+                        <span class="font-bold">x 30</span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="text-gray-700">全麦吐司</span>
+                        <span class="font-bold">x 20</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-3">
+                <button class="flex-1 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-50" onclick="printDeliveryNote('SO-20231026-01')">
+                    <i class="fas fa-print mr-1"></i> 打印配送单
+                </button>
+                <button class="flex-1 py-2.5 bg-gray-900 text-white rounded-xl text-xs font-bold shadow-lg shadow-gray-200 active:scale-95 transition-all" onclick="scanOutbound(1)">
+                    <i class="fas fa-qrcode mr-1"></i> 扫码出库
+                </button>
+            </div>
+        </div>
+
+        <!-- Order 2: Tech Park Branch -->
+        <div class="card p-4 animate-slide-up" style="animation-delay: 0.1s;" id="order-2">
+            <div class="flex justify-between items-start mb-3 border-b border-gray-100 pb-3">
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" class="order-checkbox w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                    <div>
+                        <h4 class="font-bold text-gray-800 text-sm">订单号: SO-20231026-02</h4>
+                        <div class="text-xs text-gray-400 mt-0.5">创建时间: 2023-10-26 10:15</div>
+                    </div>
+                </div>
+                <span class="status-pill status-pending">待发货</span>
+            </div>
+            
+            <div class="flex items-start gap-3 mb-3">
+                <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600 font-bold text-xs flex-shrink-0">
+                    <i class="fas fa-store"></i>
+                </div>
+                <div class="flex-1">
+                    <div class="flex justify-between items-start">
+                        <span class="font-bold text-gray-800 text-sm">科技园分店</span>
+                        <span class="text-xs font-medium text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">明天 09:00 前送达</span>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-1">
+                        <i class="fas fa-map-marker-alt mr-1"></i> 南山区科兴科学园B栋
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 rounded-lg p-3 mb-4">
+                <div class="flex justify-between text-xs text-gray-500 mb-2">
+                    <span>产品清单</span>
+                    <span>共 1 品项</span>
+                </div>
+                <div class="space-y-1">
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="text-gray-700">菠萝包</span>
+                        <span class="font-bold">x 40</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-3">
+                <button class="flex-1 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-50" onclick="printDeliveryNote('SO-20231026-02')">
+                    <i class="fas fa-print mr-1"></i> 打印配送单
+                </button>
+                <button class="flex-1 py-2.5 bg-gray-900 text-white rounded-xl text-xs font-bold shadow-lg shadow-gray-200 active:scale-95 transition-all" onclick="scanOutbound(2)">
+                    <i class="fas fa-qrcode mr-1"></i> 扫码出库
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Scan Modal (Mock) -->
+    <div id="scanModal" class="fixed inset-0 bg-black/90 z-50 hidden flex flex-col items-center justify-center text-white">
+        <div class="relative w-64 h-64 border-2 border-green-500 rounded-lg mb-8 flex items-center justify-center overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-b from-transparent via-green-500/20 to-transparent animate-scan"></div>
+            <i class="fas fa-qrcode text-6xl opacity-50"></i>
+        </div>
+        <p class="text-lg font-bold mb-2">正在扫描出库码...</p>
+        <p class="text-sm text-gray-400 mb-8">请对准单据上的条形码或二维码</p>
+        <button class="px-8 py-3 bg-gray-800 rounded-full font-bold" onclick="closeScanModal()">取消扫描</button>
+    </div>
+
+    <style>
+        @keyframes scan {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100%); }
+        }
+        .animate-scan {
+            animation: scan 2s linear infinite;
+        }
+    </style>
+
+    <script>
+        function toggleAll(source) {
+            const checkboxes = document.querySelectorAll('.order-checkbox');
+            checkboxes.forEach(cb => cb.checked = source.checked);
+        }
+
+        function printDeliveryNote(orderId) {
+            alert(`正在连接打印机...\n打印配送单: ${orderId}`);
+        }
+
+        function batchPrint() {
+            const checked = document.querySelectorAll('.order-checkbox:checked');
+            if (checked.length === 0) {
+                alert('请先选择要打印的订单');
+                return;
+            }
+            alert(`正在批量打印 ${checked.length} 张配送单...`);
+        }
+
+        let currentOrderId = null;
+
+        function scanOutbound(id) {
+            currentOrderId = id;
+            document.getElementById('scanModal').classList.remove('hidden');
+            
+            // Mock Scan Success
+            setTimeout(() => {
+                closeScanModal();
+                completeOutbound(currentOrderId);
+            }, 2000);
+        }
+
+        function closeScanModal() {
+            document.getElementById('scanModal').classList.add('hidden');
+        }
+
+        function completeOutbound(id) {
+            const card = document.getElementById('order-' + id);
+            if(card) {
+                card.style.transition = 'all 0.5s ease';
+                card.style.transform = 'translateX(100%)';
+                card.style.opacity = '0';
+                
+                setTimeout(() => {
+                    card.style.display = 'none';
+                    alert('✅ 出库成功！库存已更新。\n订单状态已变更为“运输中”');
+                    
+                    // If no more orders, go back home
+                    const remaining = document.querySelectorAll('.card:not([style*="display: none"])').length;
+                    if (remaining === 0) {
+                        window.location.href = 'shengchan-zhuye.html';
+                    }
+                }, 500);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>上架管理 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Cookpad Design System & Unified Theme */
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+            --secondary-green: #28c76f;
+            --secondary-blue: #00cfe8;
+            --text-main: #333333;
+            --text-sub: #8b8b8b;
+            --bg-light: #f7f7f5;
+            --bg-white: #ffffff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-main);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* 滚动条美化 */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 4px;
+        }
+
+        /* 卡片样式 */
+        .card {
+            background: var(--bg-white);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0,0,0,0.03);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card:active {
+            transform: scale(0.98);
+        }
+
+        /* 状态标签 */
+        .status-badge {
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+        }
+        
+        .status-pending { background-color: #fff7ed; color: #f97316; border: 1px solid #ffedd5; }
+        .status-processing { background-color: #eff6ff; color: #3b82f6; border: 1px solid #dbeafe; }
+        .status-completed { background-color: #ecfdf5; color: #10b981; border: 1px solid #d1fae5; }
+        .status-issue { background-color: #fef2f2; color: #ef4444; border: 1px solid #fee2e2; }
+
+        /* 标签页样式 */
+        .tab-item {
+            position: relative;
+            padding-bottom: 8px;
+            color: var(--text-sub);
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        .tab-item.active {
+            color: var(--primary-dark);
+            font-weight: 700;
+        }
+        
+        .tab-item.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 3px;
+            background-color: var(--primary-dark);
+            border-radius: 3px;
+        }
+
+        /* 悬浮按钮 */
+        .create-btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            box-shadow: 0 8px 25px rgba(255, 140, 0, 0.3);
+            transition: all 0.3s;
+        }
+        .create-btn:active { transform: scale(0.9); }
+
+        /* 统计卡片 */
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 12px;
+            border: 1px solid #f3f4f6;
+        }
+    </style>
+</head>
+<body class="bg-[#f7f7f5] h-screen flex flex-col">
+
+    <!-- 顶部导航栏 -->
+    <div class="bg-white px-4 py-3 shadow-sm border-b border-gray-100 z-30 flex-shrink-0">
+        <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center space-x-3">
+                <a href="../../cangku-gongneng/erp-zhuye-canku.html" class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+                <h1 class="text-lg font-bold text-gray-800">上架管理</h1>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600" onclick="alert('历史记录功能开发中')">
+                    <i class="fas fa-history"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- 统计概览 -->
+        <div class="grid grid-cols-3 gap-3 mb-1">
+            <div class="stat-card flex flex-col items-center">
+                <span class="text-xs text-gray-500 mb-1">今日生产单</span>
+                <span class="text-lg font-bold text-gray-800">8</span>
+            </div>
+            <div class="stat-card flex flex-col items-center bg-orange-50 border-orange-100">
+                <span class="text-xs text-orange-600 mb-1">待上架</span>
+                <span class="text-lg font-bold text-orange-600">3</span>
+            </div>
+            <div class="stat-card flex flex-col items-center">
+                <span class="text-xs text-gray-500 mb-1">已完成</span>
+                <span class="text-lg font-bold text-gray-800">5</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 标签页 -->
+    <div class="bg-white px-4 border-b border-gray-100 flex-shrink-0">
+        <div class="flex items-center justify-between">
+            <button class="tab-item active py-3 text-sm flex-1" onclick="switchTab('all', this)">全部</button>
+            <button class="tab-item py-3 text-sm flex-1" onclick="switchTab('pending', this)">待上架</button>
+            <button class="tab-item py-3 text-sm flex-1" onclick="switchTab('issue', this)">异常/意外</button>
+            <button class="tab-item py-3 text-sm flex-1" onclick="switchTab('completed', this)">已完成</button>
+        </div>
+    </div>
+
+    <!-- 列表区域 -->
+    <div class="flex-1 overflow-y-auto p-4 custom-scrollbar" id="orderList">
+        
+        <!-- 卡片 1: 待上架 (生产完成) -->
+        <div class="card p-4 mb-3" data-status="pending" onclick="viewDetail('PROD-20231026-001')">
+            <div class="flex justify-between items-start mb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-sm">
+                        <i class="fas fa-industry"></i>
+                    </div>
+                    <div>
+                        <div class="font-bold text-gray-800 text-sm">生产任务单 #001</div>
+                        <div class="text-xs text-gray-500">来源: 烘焙车间 A组</div>
+                    </div>
+                </div>
+                <span class="status-badge status-pending">
+                    <i class="fas fa-clock mr-1"></i> 待上架
+                </span>
+            </div>
+            
+            <div class="bg-gray-50 rounded-lg p-3 mb-3">
+                <div class="flex justify-between text-sm mb-1">
+                    <span class="text-gray-600">法式牛角包</span>
+                    <span class="font-medium">x50</span>
+                </div>
+                <div class="flex justify-between text-sm mb-1">
+                    <span class="text-gray-600">全麦吐司</span>
+                    <span class="font-medium">x30</span>
+                </div>
+                <div class="text-xs text-gray-400 mt-2">计划: 80 | 实产: 80</div>
+            </div>
+            
+            <div class="flex justify-between items-center">
+                <span class="text-xs text-gray-400">10:30 完工入库</span>
+                <button class="bg-orange-500 text-white px-4 py-1.5 rounded-lg text-xs font-bold shadow-sm shadow-orange-200" onclick="event.stopPropagation(); viewDetail('PROD-20231026-001')">
+                    去上架
+                </button>
+            </div>
+        </div>
+
+        <!-- 卡片 2: 异常/意外 (昨日遗留) -->
+        <div class="card p-4 mb-3" data-status="issue" onclick="viewDetail('PROD-20231025-009')">
+            <div class="flex justify-between items-start mb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 font-bold text-sm">
+                        <i class="fas fa-exclamation"></i>
+                    </div>
+                    <div>
+                        <div class="font-bold text-gray-800 text-sm">生产任务单 #009 (昨日)</div>
+                        <div class="text-xs text-gray-500">来源: 裱花间</div>
+                    </div>
+                </div>
+                <span class="status-badge status-issue">
+                    <i class="fas fa-exclamation-triangle mr-1"></i> 意外/遗留
+                </span>
+            </div>
+            
+            <div class="bg-gray-50 rounded-lg p-3 mb-3">
+                <div class="flex justify-between text-sm mb-1">
+                    <span class="text-gray-600">草莓慕斯</span>
+                    <span class="font-medium">x20</span>
+                </div>
+                <div class="text-xs text-red-400 mt-2">计划: 20 | 实产: 18 (差异 -2)</div>
+            </div>
+            
+            <div class="flex justify-between items-center">
+                <span class="text-xs text-gray-400">昨天 18:15 提交</span>
+                <button class="bg-white border border-gray-200 text-gray-600 px-4 py-1.5 rounded-lg text-xs font-bold hover:border-orange-500 hover:text-orange-500" onclick="event.stopPropagation(); viewDetail('PROD-20231025-009')">
+                    查看详情
+                </button>
+            </div>
+        </div>
+
+        <!-- 卡片 3: 已完成 -->
+        <div class="card p-4 mb-3" data-status="completed" onclick="viewDetail('PROD-20231026-002')">
+            <div class="flex justify-between items-start mb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 font-bold text-sm">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div>
+                        <div class="font-bold text-gray-800 text-sm">生产任务单 #002</div>
+                        <div class="text-xs text-gray-500">来源: 烘焙车间 B组</div>
+                    </div>
+                </div>
+                <span class="status-badge status-completed">
+                    <i class="fas fa-check-circle mr-1"></i> 已完成
+                </span>
+            </div>
+            
+            <div class="bg-gray-50 rounded-lg p-3 mb-3">
+                <div class="flex justify-between text-sm mb-1">
+                    <span class="text-gray-600">菠萝包</span>
+                    <span class="font-medium">x100</span>
+                </div>
+                <div class="text-xs text-gray-400 mt-2">计划: 100 | 实产: 102</div>
+            </div>
+            
+            <div class="flex justify-between items-center">
+                <span class="text-xs text-gray-400">09:45 完成上架</span>
+                <button class="text-gray-500 text-xs font-medium px-2 py-1 rounded hover:bg-gray-100" onclick="event.stopPropagation(); viewDetail('PROD-20231026-002')">
+                    查看记录
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // 切换标签
+        function switchTab(status, btn) {
+            // 更新按钮状态
+            document.querySelectorAll('.tab-item').forEach(item => item.classList.remove('active'));
+            btn.classList.add('active');
+            
+            // 筛选列表
+            const cards = document.querySelectorAll('#orderList .card');
+            cards.forEach(card => {
+                if (status === 'all' || card.dataset.status === status) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        // 跳转详情
+        function viewDetail(id) {
+            window.location.href = 'shangjia-xiangqing.html?id=' + id;
+        }
+    </script>
+</body>
+</html>

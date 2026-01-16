@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能领料单 - 生产管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="../style.css">
+
+</head>
+<body class="bg-[#f7f7f5] h-screen flex flex-col">
+
+    <!-- Header -->
+    <div class="bg-white px-4 py-3 shadow-sm border-b border-gray-100 z-30 flex-shrink-0">
+        <div class="flex items-center space-x-3 mb-3">
+            <a href="javascript:history.back()" class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            <div class="flex-1">
+                <h1 class="text-lg font-bold text-gray-800">智能领料单</h1>
+                <div class="text-xs text-gray-500">2023-10-26 (明日生产)</div>
+            </div>
+            <button class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors">
+                <i class="fas fa-history"></i>
+            </button>
+        </div>
+
+        <!-- Dashboard Summary -->
+        <div class="flex gap-3 overflow-x-auto no-scrollbar pb-1">
+            <div class="bg-orange-50 rounded-xl p-3 flex-1 min-w-[120px] border border-orange-100">
+                <div class="text-xs text-orange-600 mb-1 font-medium">待领物料</div>
+                <div class="text-lg font-bold text-orange-700">24 <span class="text-xs font-normal opacity-70">种</span></div>
+            </div>
+            <div class="bg-blue-50 rounded-xl p-3 flex-1 min-w-[120px] border border-blue-100">
+                <div class="text-xs text-blue-600 mb-1 font-medium">预估总重</div>
+                <div class="text-lg font-bold text-blue-700">158.5 <span class="text-xs font-normal opacity-70">kg</span></div>
+            </div>
+            <div class="bg-red-50 rounded-xl p-3 flex-1 min-w-[120px] border border-red-100 animate-pulse">
+                <div class="text-xs text-red-600 mb-1 font-medium">库存预警</div>
+                <div class="text-lg font-bold text-red-700">2 <span class="text-xs font-normal opacity-70">项</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Tabs - REMOVED -->
+    
+    <!-- Content Area -->
+    <div class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar" id="picking-container">
+        
+        <!-- Section: Cold Storage (Priority) -->
+        <div class="picking-section" data-category="cold">
+            <h3 class="text-xs font-bold text-gray-500 mb-2 flex items-center gap-2">
+                <i class="fas fa-snowflake text-blue-400"></i> 冷藏/冷冻原料
+            </h3>
+            
+            <!-- Item: Butter (Warning) -->
+            <div class="card p-3 mb-3 border-l-4 border-l-red-400">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-yellow-50 flex items-center justify-center text-yellow-600 font-bold text-xl">
+                            🧈
+                        </div>
+                        <div>
+                            <div class="font-bold text-gray-800 text-sm">总统发酵黄油块</div>
+                            <div class="text-xs text-red-500 font-medium flex items-center gap-1">
+                                <i class="fas fa-exclamation-circle"></i> 库存不足 (剩 20kg)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs text-gray-400">理论需求</div>
+                        <div class="text-sm font-bold text-gray-800">25.0 kg</div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 rounded-lg p-2 flex items-center justify-between gap-3">
+                    <span class="text-xs font-bold text-gray-600">实领量:</span>
+                    <div class="flex items-center gap-2 flex-1 justify-end">
+                        <button class="w-8 h-8 rounded-lg bg-white border border-gray-200 text-gray-500 active:scale-95" onclick="adjustQty('butter', -0.5)">-</button>
+                        <input type="number" id="qty-butter" class="w-20 h-8 text-center bg-white border border-red-300 rounded-lg text-sm font-bold text-red-600 qty-input" value="20.0">
+                        <span class="text-xs text-gray-500">kg</span>
+                        <button class="w-8 h-8 rounded-lg bg-white border border-gray-200 text-gray-500 active:scale-95" onclick="adjustQty('butter', 0.5)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Item: Cream -->
+            <div class="card p-3 mb-3">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500 font-bold text-xl">
+                            🥛
+                        </div>
+                        <div>
+                            <div class="font-bold text-gray-800 text-sm">铁塔淡奶油</div>
+                            <div class="text-xs text-green-600 font-medium">库存充足</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs text-gray-400">理论需求</div>
+                        <div class="text-sm font-bold text-gray-800">12.0 L</div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 rounded-lg p-2 flex items-center justify-between gap-3">
+                    <span class="text-xs font-bold text-gray-600">实领量:</span>
+                    <div class="flex items-center gap-2 flex-1 justify-end">
+                        <button class="w-8 h-8 rounded-lg bg-white border border-gray-200 text-gray-500 active:scale-95" onclick="adjustQty('cream', -1)">-</button>
+                        <input type="number" id="qty-cream" class="w-20 h-8 text-center bg-white border border-gray-200 rounded-lg text-sm font-bold text-gray-800 qty-input" value="12.0">
+                        <span class="text-xs text-gray-500">L</span>
+                        <button class="w-8 h-8 rounded-lg bg-white border border-gray-200 text-gray-500 active:scale-95" onclick="adjustQty('cream', 1)">+</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section: Dry Goods -->
+        <div class="picking-section" data-category="dry">
+            <h3 class="text-xs font-bold text-gray-500 mb-2 flex items-center gap-2">
+                <i class="fas fa-cubes text-orange-400"></i> 常温/干货原料
+            </h3>
+            
+            <!-- Item: Flour T55 -->
+            <div class="card p-3 mb-3">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600 font-bold text-xl">
+                            🌾
+                        </div>
+                        <div>
+                            <div class="font-bold text-gray-800 text-sm">王后T55法式面粉</div>
+                            <div class="text-xs text-green-600 font-medium">库存充足</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs text-gray-400">理论需求</div>
+                        <div class="text-sm font-bold text-gray-800">80.0 kg</div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 rounded-lg p-2 flex items-center justify-between gap-3">
+                    <span class="text-xs font-bold text-gray-600">实领量:</span>
+                    <div class="flex items-center gap-2 flex-1 justify-end">
+                        <button class="w-8 h-8 rounded-lg bg-white border border-gray-200 text-gray-500 active:scale-95" onclick="adjustQty('flour', -5)">-</button>
+                        <input type="number" id="qty-flour" class="w-20 h-8 text-center bg-white border border-gray-200 rounded-lg text-sm font-bold text-gray-800 qty-input" value="80.0">
+                        <span class="text-xs text-gray-500">kg</span>
+                        <button class="w-8 h-8 rounded-lg bg-white border border-gray-200 text-gray-500 active:scale-95" onclick="adjustQty('flour', 5)">+</button>
+                    </div>
+                </div>
+            </div>
+             <!-- Item: Sugar -->
+            <div class="card p-3 mb-3">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600 font-bold text-xl">
+                            🍬
+                        </div>
+                        <div>
+                            <div class="font-bold text-gray-800 text-sm">太古细砂糖</div>
+                            <div class="text-xs text-green-600 font-medium">库存充足</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs text-gray-400">理论需求</div>
+                        <div class="text-sm font-bold text-gray-800">15.0 kg</div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 rounded-lg p-2 flex items-center justify-between gap-3">
+                    <span class="text-xs font-bold text-gray-600">实领量:</span>
+                    <div class="flex items-center gap-2 flex-1 justify-end">
+                        <button class="w-8 h-8 rounded-lg bg-white border border-gray-200 text-gray-500 active:scale-95" onclick="adjustQty('sugar', -1)">-</button>
+                        <input type="number" id="qty-sugar" class="w-20 h-8 text-center bg-white border border-gray-200 rounded-lg text-sm font-bold text-gray-800 qty-input" value="15.0">
+                        <span class="text-xs text-gray-500">kg</span>
+                        <button class="w-8 h-8 rounded-lg bg-white border border-gray-200 text-gray-500 active:scale-95" onclick="adjustQty('sugar', 1)">+</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section: Packaging -->
+        <div class="picking-section" data-category="package">
+            <h3 class="text-xs font-bold text-gray-500 mb-2 flex items-center gap-2">
+                <i class="fas fa-box text-blue-500"></i> 包装耗材
+            </h3>
+            
+            <div class="card p-3 mb-3">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500 font-bold text-xl">
+                            🎁
+                        </div>
+                        <div>
+                            <div class="font-bold text-gray-800 text-sm">4寸透明蛋糕盒</div>
+                            <div class="text-xs text-gray-500 font-medium">配套底托 + 丝带</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs text-gray-400">理论需求</div>
+                        <div class="text-sm font-bold text-gray-800">50 套</div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 rounded-lg p-2 flex items-center justify-between gap-3">
+                    <span class="text-xs font-bold text-gray-600">实领量:</span>
+                    <div class="flex items-center gap-2 flex-1 justify-end">
+                        <button class="w-8 h-8 rounded-lg bg-white border border-gray-200 text-gray-500 active:scale-95" onclick="adjustQty('box', -5)">-</button>
+                        <input type="number" id="qty-box" class="w-20 h-8 text-center bg-white border border-gray-200 rounded-lg text-sm font-bold text-gray-800 qty-input" value="50">
+                        <span class="text-xs text-gray-500">套</span>
+                        <button class="w-8 h-8 rounded-lg bg-white border border-gray-200 text-gray-500 active:scale-95" onclick="adjustQty('box', 5)">+</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Section: Tools -->
+        <div class="picking-section" data-category="tools">
+            <h3 class="text-xs font-bold text-gray-500 mb-2 flex items-center gap-2">
+                <i class="fas fa-tools text-purple-500"></i> 工具/模具 (需归还)
+            </h3>
+            
+            <div class="card p-3 mb-3">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center text-purple-500 font-bold text-xl">
+                            🔧
+                        </div>
+                        <div>
+                            <div class="font-bold text-gray-800 text-sm">4寸圆形活底模具</div>
+                            <div class="text-xs text-purple-600 font-medium">当前可用: 45个</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs text-gray-400">理论需求</div>
+                        <div class="text-sm font-bold text-gray-800">20 个</div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 rounded-lg p-2 flex items-center justify-between gap-3">
+                    <span class="text-xs font-bold text-gray-600">实领量:</span>
+                    <div class="flex items-center gap-2 flex-1 justify-end">
+                        <button class="w-8 h-8 rounded-lg bg-white border border-gray-200 text-gray-500 active:scale-95" onclick="adjustQty('tool', -1)">-</button>
+                        <input type="number" id="qty-tool" class="w-20 h-8 text-center bg-white border border-gray-200 rounded-lg text-sm font-bold text-gray-800 qty-input" value="20">
+                        <span class="text-xs text-gray-500">个</span>
+                        <button class="w-8 h-8 rounded-lg bg-white border border-gray-200 text-gray-500 active:scale-95" onclick="adjustQty('tool', 1)">+</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Bottom Actions -->
+    <div class="bg-white p-4 border-t border-gray-100 z-30 flex gap-3">
+        <button class="flex-1 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-bold shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-2">
+            <i class="fas fa-print"></i> 打印清单
+        </button>
+        <button class="flex-[2] py-3 bg-orange-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-orange-200 active:scale-95 transition-transform flex items-center justify-center gap-2" onclick="showConfirmModal()">
+            <i class="fas fa-check-circle"></i> 确认领料并出库
+        </button>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-[320px] rounded-2xl p-6 animate-slide-up text-center">
+            <div class="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-warehouse text-2xl text-green-500"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-800 mb-2">确认库存出库？</h3>
+            <p class="text-sm text-gray-500 mb-6 leading-relaxed">
+                系统将根据<span class="text-orange-600 font-bold">实领量</span>扣减库存。<br>
+                <span class="text-xs text-gray-400">(黄油缺口将生成补货提醒)</span>
+            </p>
+            <div class="flex gap-3">
+                <button class="flex-1 py-3 rounded-xl bg-gray-100 text-gray-600 font-bold active:bg-gray-200 transition-colors" onclick="closeConfirmModal()">
+                    再核对
+                </button>
+                <button class="flex-1 py-3 rounded-xl bg-orange-500 text-white font-bold shadow-lg shadow-orange-200 active:scale-95 transition-transform" onclick="completePicking()">
+                    确认出库
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Category Filter Logic - REMOVED
+
+        // Quantity Adjustment Logic
+        function adjustQty(id, delta) {
+            const input = document.getElementById('qty-' + id);
+            let val = parseFloat(input.value) || 0;
+            
+            // Logic for integer vs float
+            if (id === 'box' || id === 'tool') {
+                val = parseInt(val) + delta;
+            } else {
+                val = parseFloat((val + delta).toFixed(1));
+            }
+
+            if (val < 0) val = 0;
+            input.value = val;
+            
+            // Highlight change if different from theoretical (mock logic)
+            // In real app, compare with data attribute
+        }
+
+        // Modal Logic
+        function showConfirmModal() {
+            document.getElementById('confirmModal').classList.remove('hidden');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').classList.add('hidden');
+        }
+
+        function completePicking() {
+            closeConfirmModal();
+            
+            // 1. Gather Picking Data
+            const pickingData = [];
+            const inputs = document.querySelectorAll('.qty-input');
+            const now = new Date();
+            const pickingNo = 'PK' + now.getFullYear() + (now.getMonth() + 1).toString().padStart(2, '0') + now.getDate().toString().padStart(2, '0') + Math.floor(Math.random() * 1000);
+            
+            // Fetch available batches from Material Traceability Ledger
+            const traceabilityLedger = JSON.parse(localStorage.getItem('material_traceability_ledger') || '[]');
+
+            inputs.forEach(input => {
+                const qty = parseFloat(input.value);
+                if (qty > 0) {
+                    const materialId = input.id.replace('qty-', '');
+                    let materialName = '';
+                    
+                    // Simple name mapping for prototype
+                    if (materialId === 'butter') materialName = '总统发酵黄油块';
+                    else if (materialId === 'cream') materialName = '铁塔淡奶油';
+                    else if (materialId === 'flour') materialName = '王后T55法式面粉';
+                    else if (materialId === 'sugar') materialName = '太古细砂糖';
+                    else if (materialId === 'box') materialName = '4寸透明蛋糕盒';
+                    else if (materialId === 'tool') materialName = '4寸圆形活底模具';
+
+                    // Find latest batch for this material
+                    const latestBatch = traceabilityLedger.find(entry => entry.materialName.includes(materialName) || materialName.includes(entry.materialName));
+                    const batchNo = latestBatch ? latestBatch.batchNo : 'BATCH-INIT-001';
+                    const supplier = latestBatch ? latestBatch.supplier : '默认供应商';
+
+                    pickingData.push({
+                        pickingNo: pickingNo,
+                        materialName: materialName,
+                        batchNo: batchNo,
+                        quantity: qty,
+                        unit: materialId === 'box' || materialId === 'tool' ? '个/套' : (materialId === 'cream' ? 'L' : 'kg'),
+                        pickingDate: now.toISOString().split('T')[0],
+                        personnel: '领料员B', // Auto-get
+                        usage: '生产订单 PO20231026001', // Mocked order link
+                        supplier: supplier
+                    });
+                }
+            });
+
+            // 2. Save Usage Record (Ledger)
+            const usageRecords = JSON.parse(localStorage.getItem('materialUsageRecords') || localStorage.getItem('usage_records') || '[]');
+            
+            // Map to new structure
+            const newUsageData = pickingData.map(item => ({
+                pickingOrderId: item.pickingNo,
+                materialBatchNumber: item.batchNo,
+                materialName: item.materialName,
+                quantity: item.quantity,
+                unit: item.unit,
+                pickingDate: item.pickingDate,
+                pickingPerson: item.personnel,
+                productionOrderId: "PO20231026001", // Mocked
+                productionBatchNumber: "BATCH20231026001", // Mocked
+                createdAt: new Date().toISOString(),
+                // Compatible fields
+                pickingNo: item.pickingNo,
+                batchNo: item.batchNo,
+                usage: item.usage,
+                supplier: item.supplier
+            }));
+
+            usageRecords.unshift(...newUsageData);
+            localStorage.setItem('materialUsageRecords', JSON.stringify(usageRecords));
+            localStorage.setItem('usage_records', JSON.stringify(usageRecords));
+
+            // Show success toast
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-4 left-1/2 -translate-x-1/2 bg-gray-900/90 backdrop-blur text-white px-4 py-3 rounded-xl shadow-xl z-[110] text-sm font-medium flex items-center gap-2';
+            toast.innerHTML = '<i class="fas fa-check-circle text-green-400"></i> 出库成功，已生成使用记录';
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                // Return to main page with success state
+                window.location.href = 'shengchan-zhuye.html';
+            }, 1500);
+        }
+    </script>
+</body>
+</html>

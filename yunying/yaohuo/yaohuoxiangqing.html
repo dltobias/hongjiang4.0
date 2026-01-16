@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>要货详情 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body class="bg-[#f7f7f5] h-screen flex flex-col">
+
+    <!-- Header -->
+    <div class="bg-white px-4 py-3 shadow-sm border-b border-gray-100 z-30 flex-shrink-0">
+        <div class="flex items-center space-x-3">
+            <a href="javascript:history.back()" class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            <div class="flex-1 text-center pr-12">
+                <h1 class="text-lg font-bold text-gray-800">要货详情</h1>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="flex-1 overflow-y-auto p-4 space-y-4">
+        
+        <!-- Status Card -->
+        <div class="card p-4 border-l-4 border-l-orange-400" id="statusCard">
+             <div class="flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-industry text-orange-500 text-xl" id="statusIcon"></i>
+                    <div>
+                        <h1 class="text-lg font-bold text-gray-800" id="statusTitle">待处理</h1>
+                        <p class="text-gray-500 text-xs">单号: YH20231025001</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="text-gray-500 text-xs">提交时间</p>
+                    <p class="text-gray-800 text-sm font-bold">10-25 10:30</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Store Info Section -->
+        <div class="card p-4">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-lg">
+                    A
+                </div>
+                <div class="flex-1">
+                    <div class="font-bold text-gray-800">市中心旗舰店</div>
+                    <div class="text-sm text-gray-500 mt-0.5">
+                        <i class="fas fa-user-circle mr-1"></i> 店长: 王小明
+                        <span class="mx-2 text-gray-300">|</span>
+                        <i class="fas fa-phone mr-1"></i> 13800138000
+                    </div>
+                </div>
+                <a href="tel:13800138000" class="w-9 h-9 rounded-full bg-green-50 text-green-600 flex items-center justify-center">
+                    <i class="fas fa-phone"></i>
+                </a>
+            </div>
+            <div class="mt-4 pt-3 border-t border-gray-50 grid grid-cols-2 gap-4">
+                <div>
+                    <div class="text-xs text-gray-400 mb-1">期望送达</div>
+                    <div class="text-sm font-medium text-gray-800">2023-10-26 (明天)</div>
+                </div>
+                <div>
+                    <div class="text-xs text-gray-400 mb-1">紧急程度</div>
+                    <div class="text-sm font-bold text-orange-500">
+                        <i class="fas fa-exclamation-circle mr-1"></i> 紧急
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order List Section (Unified with Production Style) -->
+        <div class="card p-4">
+            <div class="flex justify-between items-center mb-3">
+                <div class="flex items-center gap-1 text-gray-500 text-xs">
+                    <span>要货清单</span>
+                </div>
+                <div class="text-xs text-gray-500">共 18 品项</div>
+            </div>
+            
+            <div class="bg-gray-50 rounded-lg p-3">
+                <div class="space-y-4" id="item-list">
+                    <!-- Group 1: 丹麦面团 -->
+                    <div>
+                        <div class="text-xs font-bold text-gray-800 mb-2 flex items-center gap-1">
+                            <i class="fas fa-bread-slice text-orange-500"></i> 丹麦面团 (3)
+                        </div>
+                        <div class="space-y-2">
+                                <div class="flex justify-between items-center px-3 py-2 bg-white rounded shadow-sm border border-gray-100">
+                                <span class="text-gray-700 text-sm">法式牛角包</span>
+                                <span class="font-bold text-gray-800 text-sm">x 30</span>
+                            </div>
+                                <div class="flex justify-between items-center px-3 py-2 bg-white rounded shadow-sm border border-gray-100">
+                                <span class="text-gray-700 text-sm">全麦吐司</span>
+                                <span class="font-bold text-gray-800 text-sm">x 20</span>
+                            </div>
+                                <div class="flex justify-between items-center px-3 py-2 bg-white rounded shadow-sm border border-gray-100">
+                                <span class="text-gray-700 text-sm">肉松小贝</span>
+                                <span class="font-bold text-gray-800 text-sm">x 50</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Group 2: 甜面包 -->
+                    <div class="pt-2 border-t border-gray-200">
+                        <div class="text-xs font-bold text-gray-800 mb-2 flex items-center gap-1">
+                            <i class="fas fa-cookie text-yellow-500"></i> 甜面包 (5)
+                        </div>
+                        <div class="space-y-2">
+                                <div class="flex justify-between items-center px-3 py-2 bg-white rounded shadow-sm border border-gray-100">
+                                <span class="text-gray-700 text-sm">菠萝包</span>
+                                <span class="font-bold text-gray-800 text-sm">x 20</span>
+                            </div>
+                                <div class="flex justify-between items-center px-3 py-2 bg-white rounded shadow-sm border border-gray-100">
+                                <span class="text-gray-700 text-sm">红豆面包</span>
+                                <span class="font-bold text-gray-800 text-sm">x 15</span>
+                            </div>
+                                <div class="flex justify-between items-center px-3 py-2 bg-white rounded shadow-sm border border-gray-100">
+                                <span class="text-gray-700 text-sm">奶油面包</span>
+                                <span class="font-bold text-gray-800 text-sm">x 25</span>
+                            </div>
+                                <div class="flex justify-between items-center px-3 py-2 bg-white rounded shadow-sm border border-gray-100">
+                                <span class="text-gray-700 text-sm">椰蓉面包</span>
+                                <span class="font-bold text-gray-800 text-sm">x 10</span>
+                            </div>
+                                <div class="flex justify-between items-center px-3 py-2 bg-white rounded shadow-sm border border-gray-100">
+                                <span class="text-gray-700 text-sm">毛毛虫面包</span>
+                                <span class="font-bold text-gray-800 text-sm">x 12</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Group 3: 欧式面包 -->
+                    <div class="pt-2 border-t border-gray-200">
+                        <div class="text-xs font-bold text-gray-800 mb-2 flex items-center gap-1">
+                            <i class="fas fa-cheese text-amber-700"></i> 欧式面包 (8)
+                        </div>
+                        <div class="space-y-2">
+                                <div class="flex justify-between items-center px-3 py-2 bg-white rounded shadow-sm border border-gray-100">
+                                <span class="text-gray-700 text-sm">法式长棍</span>
+                                <span class="font-bold text-gray-800 text-sm">x 10</span>
+                            </div>
+                                <div class="flex justify-between items-center px-3 py-2 bg-white rounded shadow-sm border border-gray-100">
+                                <span class="text-gray-700 text-sm">乡村面包</span>
+                                <span class="font-bold text-gray-800 text-sm">x 8</span>
+                            </div>
+                                <div class="flex justify-between items-center px-3 py-2 bg-white rounded shadow-sm border border-gray-100">
+                                <span class="text-gray-700 text-sm">恰巴塔</span>
+                                <span class="font-bold text-gray-800 text-sm">x 12</span>
+                            </div>
+                                <div class="flex justify-between items-center px-3 py-2 bg-white rounded shadow-sm border border-gray-100">
+                                <span class="text-gray-700 text-sm">碱水结</span>
+                                <span class="font-bold text-gray-800 text-sm">x 20</span>
+                            </div>
+                                <div class="flex justify-between items-center px-3 py-2 bg-white rounded shadow-sm border border-gray-100">
+                                <span class="text-gray-700 text-sm">黑麦面包</span>
+                                <span class="font-bold text-gray-800 text-sm">x 6</span>
+                            </div>
+                                <div class="flex justify-between items-center px-3 py-2 bg-white rounded shadow-sm border border-gray-100">
+                                <span class="text-gray-700 text-sm">原味贝果</span>
+                                <span class="font-bold text-gray-800 text-sm">x 15</span>
+                            </div>
+                                <div class="flex justify-between items-center px-3 py-2 bg-white rounded shadow-sm border border-gray-100">
+                                <span class="text-gray-700 text-sm">佛卡夏</span>
+                                <span class="font-bold text-gray-800 text-sm">x 5</span>
+                            </div>
+                                <div class="flex justify-between items-center px-3 py-2 bg-white rounded shadow-sm border border-gray-100">
+                                <span class="text-gray-700 text-sm">意式硬面</span>
+                                <span class="font-bold text-gray-800 text-sm">x 8</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Group 4: 包装材料 -->
+                    <div class="pt-2 border-t border-gray-200">
+                        <div class="text-xs font-bold text-gray-800 mb-2 flex items-center gap-1">
+                            <i class="fas fa-box text-blue-500"></i> 包装材料 (1)
+                        </div>
+                            <div class="flex justify-between items-center px-3 py-2 bg-white rounded shadow-sm border border-gray-100">
+                            <div class="flex items-center gap-2">
+                                <span class="text-gray-700 text-sm">包装盒 (4寸)</span>
+                            </div>
+                            <span class="font-bold text-gray-800 text-sm">x 50</span>
+                        </div>
+                    </div>
+
+                    <!-- Group 5: 工具/设备 -->
+                    <div class="pt-2 border-t border-gray-200">
+                        <div class="text-xs font-bold text-gray-800 mb-2 flex items-center gap-1">
+                            <i class="fas fa-tools text-purple-500"></i> 工具/设备 (1)
+                        </div>
+                            <div class="flex justify-between items-center px-3 py-2 bg-white rounded shadow-sm border border-gray-100">
+                            <div class="flex items-center gap-2">
+                                <span class="text-gray-700 text-sm">蛋糕模具 (4寸)</span>
+                            </div>
+                            <span class="font-bold text-gray-800 text-sm">x 2</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notes Section -->
+        <div class="card p-4">
+            <h2 class="font-bold text-gray-800 mb-2">备注说明</h2>
+            <p class="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg leading-relaxed">
+                麻烦尽量在明天上午10点前送到，下午有团购订单需要提前准备。谢谢！
+            </p>
+        </div>
+
+    </div>
+
+    <!-- 底部操作栏 -->
+    <div id="bottomBar" class="bg-white p-4 border-t border-gray-100 z-30 flex-shrink-0 flex gap-3">
+        <!-- Injected by JS based on status -->
+    </div>
+
+    <!-- 处理弹窗 -->
+    <div id="actionModal" class="fixed inset-0 bg-black/50 z-[60] hidden flex items-center justify-center p-4 backdrop-blur-sm transition-opacity opacity-0">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-6 transform scale-95 transition-transform" id="modalContent">
+            <h3 class="text-lg font-bold text-gray-800 mb-2" id="modalTitle">确认操作</h3>
+            <p class="text-gray-500 text-sm mb-4" id="modalDesc">确定要执行此操作吗？</p>
+            
+            <div id="rejectReasonInput" class="hidden mb-4">
+                <textarea class="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-orange-500 bg-gray-50" rows="3" placeholder="请输入原因..."></textarea>
+            </div>
+
+            <div class="flex gap-3">
+                <button class="flex-1 py-2.5 rounded-xl bg-gray-100 text-gray-600 font-medium" onclick="closeModal()">取消</button>
+                <button class="flex-1 py-2.5 rounded-xl bg-orange-500 text-white font-bold shadow-lg shadow-orange-200" onclick="confirmAction()">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟当前订单状态 (可以通过 URL 参数 ?status=pending|producing|delivering|completed 来测试)
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentStatus = urlParams.get('status') || 'pending'; // 默认为待确认
+
+        // 初始化页面
+        initPage();
+
+        function initPage() {
+            renderBottomBar();
+            updateStatusHeader();
+        }
+
+        // 渲染底部操作栏
+        function renderBottomBar() {
+            const bar = document.getElementById('bottomBar');
+            
+            if (currentStatus === 'pending') {
+                // 待确认：修改申请、撤销订单
+                bar.innerHTML = `
+                    <button class="flex-1 py-3 bg-red-50 text-red-500 rounded-lg text-sm font-bold flex items-center justify-center gap-2" onclick="handleAction('revoke')">
+                        <i class="fas fa-undo mr-1"></i> 撤销订单
+                    </button>
+                    <button class="flex-1 py-3 bg-orange-500 text-white rounded-lg text-sm font-bold flex items-center justify-center gap-2 shadow-lg" onclick="handleAction('edit')">
+                        <i class="fas fa-edit mr-1"></i> 修改申请
+                    </button>
+                `;
+            } else if (currentStatus === 'producing') {
+                // 生产中：查看进度、联系生产
+                bar.innerHTML = `
+                    <button class="flex-1 py-3 bg-white border border-gray-200 text-gray-600 rounded-lg text-sm font-bold flex items-center justify-center gap-2" onclick="handleAction('contact_production')">
+                        <i class="fas fa-phone mr-1"></i> 联系生产
+                    </button>
+                    <button class="flex-1 py-3 bg-blue-500 text-white rounded-lg text-sm font-bold flex items-center justify-center gap-2 shadow-lg" onclick="handleAction('view_progress')">
+                        <i class="fas fa-tasks mr-1"></i> 查看生产进度
+                    </button>
+                `;
+            } else if (currentStatus === 'delivering') {
+                // 配送中：查看配送、联系配送员、漏点补货
+                bar.innerHTML = `
+                    <button class="flex-1 py-3 bg-white border border-gray-200 text-gray-600 rounded-lg text-sm font-bold flex items-center justify-center gap-2" onclick="handleAction('contact_driver')">
+                        <i class="fas fa-phone mr-1"></i> 联系配送
+                    </button>
+                    <button class="flex-1 py-3 bg-indigo-500 text-white rounded-lg text-sm font-bold flex items-center justify-center gap-2 shadow-lg" onclick="handleAction('view_delivery')">
+                        <i class="fas fa-map-marker-alt mr-1"></i> 查看配送
+                    </button>
+                `;
+            } else if (currentStatus === 'completed') {
+                // 已完成：再来一单、评价
+                bar.innerHTML = `
+                    <button class="flex-1 py-3 bg-white border border-gray-200 text-gray-600 rounded-lg text-sm font-bold flex items-center justify-center gap-2" onclick="handleAction('print')">
+                        <i class="fas fa-print mr-1"></i> 打印单据
+                    </button>
+                    <button class="flex-1 py-3 bg-green-500 text-white rounded-lg text-sm font-bold flex items-center justify-center gap-2 shadow-lg" onclick="handleAction('reorder')">
+                        <i class="fas fa-redo mr-1"></i> 再来一单
+                    </button>
+                `;
+            } else if (currentStatus === 'rejected') {
+                // 已驳回：删除订单、修改重新提交
+                bar.innerHTML = `
+                    <button class="flex-1 py-3 bg-red-50 text-red-500 rounded-lg text-sm font-bold flex items-center justify-center gap-2" onclick="handleAction('delete')">
+                        <i class="fas fa-trash-alt mr-1"></i> 删除订单
+                    </button>
+                    <button class="flex-1 py-3 bg-orange-500 text-white rounded-lg text-sm font-bold flex items-center justify-center gap-2 shadow-lg" onclick="handleAction('edit')">
+                        <i class="fas fa-edit mr-1"></i> 修改并重新提交
+                    </button>
+                `;
+            }
+        }
+
+        // 更新头部状态和时间轴
+        function updateStatusHeader() {
+            const statusCard = document.getElementById('statusCard');
+            const statusIcon = document.getElementById('statusIcon');
+            const statusTitle = document.getElementById('statusTitle');
+            
+            // 重置样式
+            statusCard.className = 'card p-4 border-l-4';
+            
+            if (currentStatus === 'pending') {
+                statusCard.classList.add('border-l-orange-400');
+                statusIcon.className = 'fas fa-industry text-orange-500 text-xl'; // Use industry icon for consistency
+                statusTitle.innerText = '生产中 (待确认)';
+            } else if (currentStatus === 'producing') {
+                statusCard.classList.add('border-l-blue-400');
+                statusIcon.className = 'fas fa-industry text-blue-500 text-xl';
+                statusTitle.innerText = '生产中';
+            } else if (currentStatus === 'delivering') {
+                statusCard.classList.add('border-l-indigo-400');
+                statusIcon.className = 'fas fa-truck text-indigo-500 text-xl';
+                statusTitle.innerText = '配送中';
+            } else if (currentStatus === 'completed') {
+                statusCard.classList.add('border-l-green-400');
+                statusIcon.className = 'fas fa-check-circle text-green-500 text-xl';
+                statusTitle.innerText = '已完成';
+            } else if (currentStatus === 'rejected') {
+                statusCard.classList.add('border-l-red-400');
+                statusIcon.className = 'fas fa-times-circle text-red-500 text-xl';
+                statusTitle.innerText = '已驳回';
+            }
+        }
+
+        function handleAction(action) {
+            const modal = document.getElementById('actionModal');
+            const content = document.getElementById('modalContent');
+            const title = document.getElementById('modalTitle');
+            const desc = document.getElementById('modalDesc');
+            const rejectInput = document.getElementById('rejectReasonInput');
+            
+            // Reset
+            rejectInput.classList.add('hidden');
+            
+            if (action === 'revoke') {
+                title.innerText = '撤销订单';
+                desc.innerText = '确定要撤销当前订单吗？撤销后不可恢复。';
+                rejectInput.classList.remove('hidden');
+                rejectInput.querySelector('textarea').placeholder = "请输入撤销原因...";
+                showModal();
+            } else if (action === 'delete') {
+                title.innerText = '删除订单';
+                desc.innerText = '确定要删除此订单记录吗？删除后将无法查看。';
+                showModal();
+            } else if (action === 'edit') {
+                window.location.href = 'yaohuoxinjian.html?mode=edit&id=YH20231025001';
+            } else if (action === 'view_progress') {
+                window.location.href = '../shengchan/shengchan-zhuye.html'; 
+            } else if (action === 'view_delivery') {
+                alert('打开地图查看配送轨迹...');
+            } else if (action === 'contact_production' || action === 'contact_driver') {
+                window.location.href = 'tel:13800000000';
+            } else if (action === 'reorder') {
+                window.location.href = 'yaohuoxinjian.html?reorder=YH20231025001';
+            } else if (action === 'print') {
+                window.print();
+            } else {
+                alert('功能开发中: ' + action);
+            }
+        }
+        
+        function showModal() {
+            const modal = document.getElementById('actionModal');
+            const content = document.getElementById('modalContent');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                content.classList.remove('scale-95');
+                content.classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('actionModal');
+            const content = document.getElementById('modalContent');
+            
+            modal.classList.add('opacity-0');
+            content.classList.remove('scale-100');
+            content.classList.add('scale-95');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200);
+        }
+
+        function confirmAction() {
+            const btn = document.querySelector('#modalContent button:last-child');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 处理中';
+            
+            setTimeout(() => {
+                closeModal();
+                btn.innerHTML = originalText;
+                alert('操作已执行');
+                // if revoke, back
+                // if edit, already redirected
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新建要货 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        /* Page Specific Styles */
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+        }
+
+        /* 列表项动画 */
+        .list-item {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .list-item.deleting {
+            opacity: 0;
+            transform: translateX(-100%);
+            height: 0;
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* 侧滑相关 */
+        .swipe-content {
+            /* 关键：允许横向操作，禁用浏览器默认的横向手势（如前进后退） */
+            touch-action: pan-y; 
+            user-select: none; /* 防止拖拽时选中文本 */
+            -webkit-user-select: none;
+            transform: translateX(0); /* 初始位置 */
+            will-change: transform; /* 性能优化 */
+        }
+        
+        /* 数量输入框隐藏箭头 */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+    </style>
+</head>
+<body class="bg-[#f7f7f5] pb-24">
+
+    <!-- 顶部导航栏 -->
+    <div class="fixed top-0 left-0 right-0 bg-white z-50 px-4 py-3 shadow-sm border-b border-gray-100">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <a href="javascript:history.back()" class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+                <h1 class="text-lg font-bold text-gray-800">新建要货单</h1>
+            </div>
+        </div>
+    </div>
+
+    <!-- 占位符 -->
+    <div class="h-16"></div>
+
+    <!-- 主内容区域 -->
+    <div class="p-4 max-w-2xl mx-auto space-y-4">
+        
+        <!-- 门店信息 -->
+        <div class="card p-5">
+            <div class="flex items-center space-x-2 mb-4">
+                <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                    <i class="fas fa-store text-blue-600"></i>
+                </div>
+                <h2 class="text-base font-bold text-gray-800">门店信息</h2>
+            </div>
+            
+            <div class="space-y-4">
+                <div class="form-group">
+                    <label class="form-label">要货单号</label>
+                    <div class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
+                        <span class="font-mono font-bold text-gray-700 text-lg" id="displayOrderId">Generating...</span>
+                        <span class="text-xs text-gray-400 bg-white px-2 py-1 rounded border border-gray-100">自动生成</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">要货门店</label>
+                    <select class="form-select" id="storeSelect">
+                        <option value="1">市中心旗舰店 (当前)</option>
+                        <option value="2">科技园分店</option>
+                        <option value="3">社区便民店</option>
+                    </select>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="form-group">
+                        <label class="form-label">店长</label>
+                        <div class="flex items-center bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-700">
+                            <i class="fas fa-user-circle mr-2 text-gray-400"></i>
+                            <span class="font-medium">王小明</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">联系电话</label>
+                        <div class="flex items-center bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-700">
+                            <i class="fas fa-phone mr-2 text-gray-400"></i>
+                            <span class="font-mono">13800138000</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="form-group">
+                        <label class="form-label">期望送达日期</label>
+                        <input type="date" class="form-input" id="deliveryDate">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">紧急程度</label>
+                        <select class="form-select" id="urgencyLevel">
+                            <option value="normal">普通</option>
+                            <option value="urgent">紧急</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 要货清单 -->
+        <div class="card p-5">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center">
+                        <i class="fas fa-list-ul text-orange-600"></i>
+                    </div>
+                    <h2 class="text-base font-bold text-gray-800">要货清单</h2>
+                </div>
+                <button class="text-orange-600 text-sm font-semibold bg-orange-50 px-3 py-1.5 rounded-lg active:scale-95 transition-transform" onclick="openProductSelector()">
+                    <i class="fas fa-plus mr-1"></i> 添加商品
+                </button>
+            </div>
+
+            <!-- 空状态 -->
+            <div id="emptyState" class="text-center py-8 border-2 border-dashed border-gray-100 rounded-xl" onclick="openProductSelector()">
+                <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3 text-gray-300">
+                    <i class="fas fa-shopping-basket text-2xl"></i>
+                </div>
+                <p class="text-gray-400 text-sm">暂无商品，请点击右上角添加</p>
+            </div>
+
+            <!-- 商品列表 -->
+            <div id="orderItems" class="space-y-3 hidden">
+                <!-- 动态插入 -->
+            </div>
+        </div>
+
+        <!-- 备注信息 -->
+        <div class="card p-5">
+            <div class="flex items-center space-x-2 mb-3">
+                <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
+                    <i class="fas fa-comment-alt text-gray-500"></i>
+                </div>
+                <h2 class="text-base font-bold text-gray-800">备注说明</h2>
+            </div>
+            <textarea class="form-textarea" rows="3" placeholder="如有特殊要求请在此填写..."></textarea>
+        </div>
+
+    </div>
+
+    <!-- 底部提交栏 -->
+    <div class="bottom-bar flex items-center justify-between gap-4 !bg-white/90 backdrop-blur-md border-t border-gray-100 transition-all duration-300">
+        <div class="flex flex-col pl-2">
+            <span class="text-[10px] text-gray-400 font-medium tracking-wide">已选商品</span>
+            <div class="flex items-baseline gap-1.5">
+                <span class="text-2xl font-bold text-gray-800 font-mono tracking-tight" id="totalCount">0</span>
+                <span class="text-xs font-medium text-gray-500">种</span>
+            </div>
+        </div>
+        <button id="submitOrderBtn" class="btn-primary flex-1 max-w-[240px] h-[50px] rounded-full shadow-lg shadow-orange-200/50 flex items-center justify-center gap-2 text-[15px] font-bold active:scale-95 transition-all hover:shadow-orange-200 hover:-translate-y-0.5" onclick="submitOrder()">
+            <span>提交要货单</span>
+            <i class="fas fa-arrow-right text-sm opacity-80"></i>
+        </button>
+    </div>
+
+    <!-- 商品选择弹窗 -->
+    <div id="productSelector" class="fixed inset-0 bg-black/50 z-[60] hidden flex flex-col justify-end sm:justify-center backdrop-blur-sm transition-opacity">
+        <div class="bg-white w-full sm:max-w-md sm:mx-auto sm:rounded-2xl rounded-t-2xl h-[80vh] flex flex-col shadow-2xl transition-transform transform translate-y-full" id="selectorContent">
+            
+            <!-- 弹窗头部 -->
+            <div class="px-4 py-3 border-b border-gray-100 flex justify-between items-center bg-white rounded-t-2xl z-10">
+                <h3 class="font-bold text-base text-gray-800">添加要货项</h3>
+                <button onclick="closeProductSelector()" class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- 搜索 -->
+            <div class="p-3 bg-gray-50">
+                <div class="relative">
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" placeholder="搜索名称..." class="w-full pl-10 pr-4 py-2.5 rounded-xl border-none outline-none bg-white shadow-sm" id="searchInput" oninput="filterPopupList()">
+                </div>
+            </div>
+
+            <!-- 分类与列表 -->
+            <div class="flex flex-1 overflow-hidden">
+                <!-- 左侧分类 (Dynamic) -->
+                <div class="w-24 bg-gray-50 overflow-y-auto border-r border-gray-100" id="popupSidebar">
+                    <!-- Injected by JS -->
+                </div>
+
+                <!-- 右侧列表 (Dynamic) -->
+                <div class="flex-1 overflow-y-auto p-3 space-y-3" id="popupList">
+                    <!-- Injected by JS -->
+                </div>
+            </div>
+
+            <!-- 底部 Tabs 和 确认按钮 -->
+            <div class="bg-white border-t border-gray-100">
+                <div class="flex">
+                    <button id="tab-products" class="flex-1 py-3 text-sm font-medium text-orange-600 border-b-2 border-orange-600 bg-orange-50/50 transition-colors" onclick="switchPopupTab('products')">
+                        <i class="fas fa-box-open mr-1"></i> 商品
+                    </button>
+                    <button id="tab-recipes" class="flex-1 py-3 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:bg-gray-50 transition-colors" onclick="switchPopupTab('recipes')">
+                        <i class="fas fa-book-open mr-1"></i> 配方
+                    </button>
+                    <button id="tab-materials" class="flex-1 py-3 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:bg-gray-50 transition-colors" onclick="switchPopupTab('materials')">
+                        <i class="fas fa-cubes mr-1"></i> 原料
+                    </button>
+                </div>
+                <div class="p-4">
+                     <button onclick="confirmSelection()" class="w-full btn-primary py-3 rounded-xl font-bold shadow-lg shadow-orange-200">
+                        确认添加选中的商品
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 成功提示 Toast -->
+    <div id="toast" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/80 text-white px-6 py-3 rounded-xl shadow-xl z-[70] hidden transition-opacity opacity-0">
+        <div class="flex items-center gap-2">
+            <i class="fas fa-check-circle text-green-400"></i>
+            <span id="toastMsg">操作成功</span>
+        </div>
+    </div>
+
+    <script>
+        // 初始化日期为明天
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        document.getElementById('deliveryDate').valueAsDate = tomorrow;
+
+        // 状态管理
+        const state = {
+            items: JSON.parse(localStorage.getItem('yaohuo_draft_items') || '[]')
+        };
+
+        // 保存草稿
+        function saveDraft() {
+            localStorage.setItem('yaohuo_draft_items', JSON.stringify(state.items));
+        }
+
+        // 处理 URL 参数 (Edit/Append/Reorder)
+        const urlParams = new URLSearchParams(window.location.search);
+        const mode = urlParams.get('mode'); // edit, append, reorder
+        const orderId = urlParams.get('id');
+        const refId = urlParams.get('ref');
+
+        // 初始化单号
+        initOrderId();
+
+        if (mode) {
+            handleMode(mode, orderId || refId);
+        }
+
+        // 初始化列表
+        renderList();
+
+        function initOrderId() {
+            const displayEl = document.getElementById('displayOrderId');
+            if (mode === 'edit' && orderId) {
+                displayEl.innerText = orderId;
+            } else {
+                displayEl.innerText = generateOrderId();
+            }
+        }
+
+        function generateOrderId() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+            return `YH${year}${month}${day}${random}`;
+        }
+
+        function handleMode(mode, id) {
+            const title = document.querySelector('h1');
+            const submitBtnSpan = document.querySelector('#submitOrderBtn span');
+            
+            if (mode === 'edit') {
+                title.innerText = '修改要货申请';
+                if (submitBtnSpan) submitBtnSpan.innerText = '保存修改';
+                // 模拟加载订单数据
+                showToast('正在加载订单数据...');
+                setTimeout(() => {
+                    // 模拟数据
+                    addProduct('法式牛角包面团', '65g/个', 'bread', 50, '个');
+                    addProduct('全麦吐司面团', '450g/个', 'bread', 30, '个');
+                    document.querySelector('textarea').value = '麻烦尽量在明天上午10点前送到，下午有团购订单需要提前准备。谢谢！';
+                }, 500);
+            } else if (mode === 'append') {
+                title.innerText = '漏点补货申请';
+                if (submitBtnSpan) submitBtnSpan.innerText = '提交补货单';
+                // 补货通常是从空开始，或者带入原单数据供筛选？
+                // 这里假设是从空开始，但关联了原单号
+                document.querySelector('textarea').value = `关联原单号: ${id}。`;
+            } else if (mode === 'reorder') {
+                title.innerText = '再次要货';
+                // 模拟加载原单数据
+                showToast('已加载历史订单');
+                setTimeout(() => {
+                    addProduct('牛皮纸包装袋', '100个/捆', 'package', 10, '捆');
+                }, 300);
+            }
+        }
+
+        // 基础数据模拟
+        const inventoryDB = {
+            products: [
+                { id: 'p1', name: '法式牛角包面团', spec: '65g/个', category: 'bread', categoryName: '面包', icon: 'fas fa-bread-slice', bg: 'bg-orange-100', color: 'text-orange-500', availableUnits: ['个', '份', '箱'] },
+                { id: 'p2', name: '全麦吐司面团', spec: '450g/个', category: 'bread', categoryName: '面包', icon: 'fas fa-bread-slice', bg: 'bg-orange-100', color: 'text-orange-500', availableUnits: ['个', '份', '箱'] },
+                { id: 'p3', name: '草莓慕斯', spec: '4寸', category: 'cake', categoryName: '蛋糕', icon: 'fas fa-birthday-cake', bg: 'bg-pink-100', color: 'text-pink-500', availableUnits: ['个', '盒'] }
+            ],
+            recipes: [
+                { id: 'r1', name: '可颂面团配方', spec: '1份', category: 'dough', categoryName: '面团', icon: 'fas fa-scroll', bg: 'bg-purple-100', color: 'text-purple-500', availableUnits: ['g', 'kg', 'ml', 'L'] },
+                { id: 'r2', name: '戚风蛋糕胚', spec: '1个', category: 'cakebase', categoryName: '蛋糕胚', icon: 'fas fa-birthday-cake', bg: 'bg-purple-100', color: 'text-purple-500', availableUnits: ['g', 'kg', '个'] }
+            ],
+            materials: [
+                { id: 'm1', name: '高筋面粉', spec: '25kg/袋', category: 'ingredient', categoryName: '原料', icon: 'fas fa-leaf', bg: 'bg-green-100', color: 'text-green-600', availableUnits: ['g', 'kg', '袋', '包'] },
+                { id: 'm2', name: '牛皮纸袋(大)', spec: '100个/捆', category: 'package', categoryName: '包材', icon: 'fas fa-box', bg: 'bg-blue-100', color: 'text-blue-600', availableUnits: ['个', '捆', '箱', '包'] },
+                { id: 'm3', name: '黄油', spec: '25kg/箱', category: 'ingredient', categoryName: '原料', icon: 'fas fa-cheese', bg: 'bg-yellow-100', color: 'text-yellow-500', availableUnits: ['g', 'kg', '箱', '块'] }
+            ]
+        };
+
+        let currentPopupTab = 'products';
+        let currentCategory = 'all';
+
+        // 打开选择器
+        function openProductSelector() {
+            const modal = document.getElementById('productSelector');
+            const content = document.getElementById('selectorContent');
+            
+            // 初始化显示
+            // 每次打开可以清空，或者保留上次的选择？这里假设清空
+            // tempSelectedItems = []; 
+            // 用户可能希望保留上次没确认的？或者每次都是新的？
+            // 按照需求描述 "都选择完后点击 总确认按钮"，暗示是一个累加的过程。
+            // 但如果已经添加到了主列表，这里应该不显示选中？
+            // 简单起见，每次打开是新的选择会话，但我们可以让用户继续之前的选择。
+            // 这里我们不清空 tempSelectedItems，让用户可以跨 tab 选择，最后一次性确认。
+            // 但是如果关闭了弹窗再打开，最好还是清空一下，除非是 "最小化"
+            
+            // 现在的逻辑：关闭弹窗=取消未确认的。
+            // 所以打开时清空
+            tempSelectedItems = [];
+            
+            if (typeof renderPopupSidebar === 'function') renderPopupSidebar();
+            if (typeof renderPopupList === 'function') renderPopupList();
+            
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                content.classList.remove('translate-y-full');
+            }, 10);
+        }
+
+        // 关闭选择器
+        function closeProductSelector() {
+            const modal = document.getElementById('productSelector');
+            const content = document.getElementById('selectorContent');
+            content.classList.add('translate-y-full');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        // 添加商品
+        function addProduct(name, spec, category, quantity = 1, unit = '个') {
+            // 检查是否已存在 (如果需要允许多个单位可能需要放宽这个限制，或者更新数量)
+            const existing = state.items.find(i => i.name === name && i.unit === unit);
+            if (existing) {
+                // 如果已存在相同单位的，直接增加数量
+                existing.quantity += parseFloat(quantity);
+                renderList();
+                saveDraft(); // 保存
+                showToast('已更新商品数量');
+                return;
+            }
+
+            state.items.push({
+                id: Date.now(),
+                name,
+                spec,
+                category,
+                quantity: parseFloat(quantity),
+                unit
+            });
+
+            renderList();
+            saveDraft(); // 保存
+            showToast('添加成功');
+        }
+
+        // 渲染列表
+        function renderList() {
+            const container = document.getElementById('orderItems');
+            const emptyState = document.getElementById('emptyState');
+            const totalCount = document.getElementById('totalCount');
+
+            if (state.items.length === 0) {
+                container.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                totalCount.innerText = '0';
+                return;
+            }
+
+            container.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+            totalCount.innerText = state.items.length;
+
+            container.innerHTML = state.items.map(item => `
+                <div class="list-item relative overflow-hidden mb-3 rounded-xl select-none group" id="item-${item.id}">
+                    <!-- 背景操作层 (删除) -->
+                    <div class="absolute inset-y-0 right-0 w-20 bg-red-500 flex items-center justify-center text-white cursor-pointer z-0 active:bg-red-600 transition-colors" onclick="removeItem(${item.id})">
+                        <i class="fas fa-trash-alt text-lg"></i>
+                    </div>
+                    
+                    <!-- 前景内容层 (可滑动 - 支持触摸和鼠标) -->
+                    <div class="swipe-content relative bg-white p-3 z-10 transition-transform duration-200 ease-out flex items-center justify-between border border-gray-100 rounded-xl"
+                         data-id="${item.id}">
+                         
+                        <div class="flex items-center gap-3 flex-1"> <!-- 恢复 pointer-events -->
+                            <div class="w-10 h-10 rounded-lg ${getIconBg(item.category)} flex items-center justify-center ${getIconColor(item.category)}">
+                                <i class="${getIcon(item.category)} text-sm"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-gray-800 text-sm">${item.name}</div>
+                                <div class="text-xs text-gray-500 mt-0.5">规格: ${item.spec}</div>
+                            </div>
+                        </div>
+                        
+                        <!-- 数量控制 -->
+                        <div class="flex items-center gap-2" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">
+                             <button class="w-7 h-7 rounded-full bg-gray-50 text-gray-500 flex items-center justify-center hover:bg-gray-100 transition-colors active:scale-90" onclick="updateQuantity(${item.id}, -1)">
+                                <i class="fas fa-minus text-[10px]"></i>
+                            </button>
+                            <div class="flex items-baseline gap-1 min-w-[3rem] justify-center">
+                                <span class="font-bold text-gray-800 text-base">${item.quantity}</span>
+                                <span class="text-xs text-gray-400">${item.unit}</span>
+                            </div>
+                            <button class="w-7 h-7 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center hover:bg-orange-100 transition-colors active:scale-90" onclick="updateQuantity(${item.id}, 1)">
+                                <i class="fas fa-plus text-[10px]"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            // 重新绑定事件
+            bindSwipeEvents();
+        }
+
+        // 辅助函数：图标样式
+        function getIconBg(cat) {
+            const map = { 
+                bread: 'bg-orange-100', dough: 'bg-orange-100',
+                cake: 'bg-pink-100', cakebase: 'bg-pink-100',
+                material: 'bg-green-100', ingredient: 'bg-green-100',
+                package: 'bg-blue-100' 
+            };
+            return map[cat] || 'bg-gray-100';
+        }
+        function getIconColor(cat) {
+            const map = { 
+                bread: 'text-orange-500', dough: 'text-orange-500',
+                cake: 'text-pink-500', cakebase: 'text-pink-500',
+                material: 'text-green-600', ingredient: 'text-green-600',
+                package: 'text-blue-600' 
+            };
+            return map[cat] || 'text-gray-500';
+        }
+        function getIcon(cat) {
+            const map = { 
+                bread: 'fas fa-bread-slice', dough: 'fas fa-scroll',
+                cake: 'fas fa-birthday-cake', cakebase: 'fas fa-birthday-cake',
+                material: 'fas fa-leaf', ingredient: 'fas fa-cubes',
+                package: 'fas fa-box' 
+            };
+            return map[cat] || 'fas fa-box';
+        }
+
+        // 更新数量
+        function updateQuantity(id, delta) {
+            const item = state.items.find(i => i.id === id);
+            if (item) {
+                const newQty = item.quantity + delta;
+                if (newQty >= 1) {
+                    item.quantity = newQty;
+                    renderList();
+                }
+            }
+        }
+
+        // 删除商品
+        function removeItem(id) {
+            if(confirm('确定移除该商品吗？')) {
+                const el = document.getElementById(`item-${id}`);
+                el.classList.add('deleting');
+                setTimeout(() => {
+                    state.items = state.items.filter(i => i.id !== id);
+                    renderList();
+                }, 300);
+            }
+        }
+
+        // --- 左滑删除逻辑 (支持触摸 & 鼠标) ---
+        let startX = 0;
+        let startY = 0;
+        let isDragging = false;
+        let currentSwipedEl = null;
+
+        // 绑定事件
+        function bindSwipeEvents() {
+            const items = document.querySelectorAll('.swipe-content');
+            items.forEach(el => {
+                // Touch
+                el.addEventListener('touchstart', (e) => handleSwipeStart(e, el), { passive: false });
+                el.addEventListener('touchmove', (e) => handleSwipeMove(e, el), { passive: false });
+                el.addEventListener('touchend', (e) => handleSwipeEnd(e, el));
+                
+                // Mouse
+                el.addEventListener('mousedown', (e) => handleSwipeStart(e, el));
+                el.addEventListener('mousemove', (e) => handleSwipeMove(e, el));
+                el.addEventListener('mouseup', (e) => handleSwipeEnd(e, el));
+                el.addEventListener('mouseleave', (e) => handleSwipeEnd(e, el));
+                
+                // Click interception (Capture phase)
+                el.addEventListener('click', (e) => {
+                    // 如果被标记为正在滑动，则阻止点击
+                    if (el.dataset.isSwiping === 'true') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('Click blocked due to swipe');
+                    }
+                }, true);
+            });
+        }
+
+        // 获取坐标 (兼容 Touch 和 Mouse)
+        function getClientX(e) {
+            return e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+        }
+        function getClientY(e) {
+            return e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+        }
+
+        function handleSwipeStart(e, el) {
+            if (e.type === 'mousedown' && e.button !== 0) return;
+            
+            isDragging = true;
+            startX = getClientX(e);
+            startY = getClientY(e);
+            
+            el.style.transition = 'none';
+            el.dataset.isSwiping = 'false'; // 重置滑动标记
+        }
+
+        function handleSwipeMove(e, el) {
+            if (!isDragging) return;
+            
+            const currentX = getClientX(e);
+            const currentY = getClientY(e);
+            const moveX = currentX - startX;
+            const moveY = currentY - startY;
+
+            // 阈值判断：移动超过 5px 才视为滑动
+            if (Math.abs(moveX) > 5 || Math.abs(moveY) > 5) {
+                el.dataset.isSwiping = 'true';
+            }
+
+            // 如果垂直滑动幅度大于水平，认为是滚动，不处理侧滑
+            if (Math.abs(moveY) > Math.abs(moveX)) return;
+
+            // 水平滑动时阻止默认行为 (防止页面滚动/后退)
+            if (Math.abs(moveX) > 5) {
+                if (e.cancelable && e.type === 'touchmove') e.preventDefault();
+            }
+
+            // 限制只能向左滑
+            if (moveX < 0 && moveX > -120) {
+                el.style.transform = `translateX(${moveX}px)`;
+            } else if (moveX >= 0) {
+                el.style.transform = `translateX(0)`;
+            }
+        }
+
+        function handleSwipeEnd(e, el) {
+            if (!isDragging) return;
+            isDragging = false;
+            
+            el.style.transition = 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)';
+            
+            const endX = getClientX(e);
+            const distance = endX - startX;
+
+            // 阈值判断：左滑超过 40px 则展开
+            if (distance < -40) {
+                openSwipe(el);
+            } else {
+                closeSwipe(el);
+            }
+            
+            // 延迟清除标记，确保 click 事件能读取到
+            setTimeout(() => {
+                el.dataset.isSwiping = 'false';
+            }, 100);
+        }
+
+        function openSwipe(el) {
+            if (currentSwipedEl && currentSwipedEl !== el) {
+                closeSwipe(currentSwipedEl);
+            }
+            
+            el.style.transform = `translateX(-80px)`;
+            currentSwipedEl = el;
+            
+            // 点击内容区关闭
+            const closeHandler = function(e) {
+                // 如果是微小移动（点击），则关闭
+                if (Math.abs(getClientX(e) - startX) < 5) {
+                    closeSwipe(el);
+                    el.removeEventListener('click', closeHandler);
+                    el.removeEventListener('touchstart', closeHandler);
+                }
+            };
+            
+            setTimeout(() => {
+                el.addEventListener('click', closeHandler, { once: true });
+                el.addEventListener('touchstart', closeHandler, { once: true });
+            }, 50);
+        }
+
+        function closeSwipe(el) {
+            if (!el) return;
+            el.style.transform = `translateX(0)`;
+            if (currentSwipedEl === el) {
+                currentSwipedEl = null;
+            }
+        }
+
+        // 提交订单
+        function submitOrder() {
+            if (state.items.length === 0) {
+                showToast('请至少添加一种商品');
+                return;
+            }
+
+            const btn = document.getElementById('submitOrderBtn');
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i>提交中...';
+            btn.disabled = true;
+
+            // 模拟API调用
+            setTimeout(() => {
+                showToast('提交成功！即将返回列表');
+                setTimeout(() => {
+                    window.location.href = 'yaohuo-zhuye.html';
+                }, 1500);
+            }, 1000);
+        }
+
+        // 切换弹窗 Tab
+        function switchPopupTab(tab) {
+            currentPopupTab = tab;
+            currentCategory = 'all'; // 重置分类
+            
+            // 更新 Tab 样式
+            ['products', 'recipes', 'materials'].forEach(t => {
+                const btn = document.getElementById(`tab-${t}`);
+                if (t === tab) {
+                    btn.className = "flex-1 py-3 text-sm font-medium text-orange-600 border-t-2 border-orange-600 bg-orange-50/50 transition-colors";
+                } else {
+                    btn.className = "flex-1 py-3 text-sm font-medium text-gray-500 border-t-2 border-transparent hover:bg-gray-50 transition-colors";
+                }
+            });
+
+            renderPopupSidebar();
+            renderPopupList();
+        }
+
+        // 渲染弹窗侧边栏
+        function renderPopupSidebar() {
+            const sidebar = document.getElementById('popupSidebar');
+            const data = inventoryDB[currentPopupTab];
+            
+            // 提取所有分类
+            const categories = ['all'];
+            const categoryNames = { all: '全部' };
+            
+            data.forEach(item => {
+                if (!categories.includes(item.category)) {
+                    categories.push(item.category);
+                    categoryNames[item.category] = item.categoryName;
+                }
+            });
+            
+            sidebar.innerHTML = categories.map(cat => `
+                <div class="category-item cursor-pointer p-3 text-sm ${currentCategory === cat ? 'active font-medium text-orange-600 bg-white border-l-2 border-orange-600' : 'text-gray-500 hover:bg-white border-l-2 border-transparent'}" 
+                     onclick="selectCategory('${cat}')">
+                    ${categoryNames[cat]}
+                </div>
+            `).join('');
+        }
+
+        // 选择分类
+        function selectCategory(cat) {
+            currentCategory = cat;
+            renderPopupSidebar();
+            renderPopupList();
+        }
+
+        // 渲染弹窗列表 (含搜索和分类过滤)
+        function renderPopupList() {
+            const list = document.getElementById('popupList');
+            const searchText = document.getElementById('searchInput').value.toLowerCase();
+            const data = inventoryDB[currentPopupTab];
+            
+            const filtered = data.filter(item => {
+                const matchCategory = currentCategory === 'all' || item.category === currentCategory;
+                const matchSearch = item.name.toLowerCase().includes(searchText);
+                return matchCategory && matchSearch;
+            });
+            
+            if (filtered.length === 0) {
+                list.innerHTML = `
+                    <div class="text-center py-8 text-gray-400">
+                        <i class="fas fa-search text-2xl mb-2 opacity-50"></i>
+                        <div class="text-xs">无匹配项</div>
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = filtered.map(item => {
+                let units = item.availableUnits || ['个']; 
+                const selectedItem = tempSelectedItems.find(i => i.id === item.id);
+                const isSelected = !!selectedItem;
+                const qty = selectedItem ? selectedItem.quantity : '';
+                const unit = selectedItem ? selectedItem.unit : units[0];
+
+                return `
+                <div class="product-item flex items-center justify-between bg-white border border-gray-100 rounded-xl p-3 shadow-sm mb-2 relative overflow-hidden transition-all duration-200 ${isSelected ? 'ring-1 ring-orange-200 bg-orange-50/30' : ''}" id="popup-item-${item.id}">
+                    
+                    <div class="flex items-center gap-3 flex-1 min-w-0">
+                        <!-- 图标 -->
+                        <div class="w-10 h-10 rounded-lg ${item.bg} flex items-center justify-center ${item.color} flex-shrink-0">
+                            <i class="${item.icon} text-base"></i>
+                        </div>
+                        
+                        <!-- 文本信息 -->
+                        <div class="flex-1 min-w-0">
+                            <div class="font-bold text-gray-800 text-sm truncate">${item.name}</div>
+                            <div class="text-xs text-gray-400 mt-0.5 truncate">规格: ${item.spec}</div>
+                        </div>
+                    </div>
+
+                    <!-- 操作区 (右侧) -->
+                    <div class="flex items-center gap-2 ml-2">
+                        <!-- 单位 -->
+                        <div class="relative">
+                             <select class="appearance-none bg-gray-50 text-gray-600 text-xs rounded-md py-1 pl-2 pr-5 border-none focus:ring-0 cursor-pointer" 
+                                     onchange="updateTempItem('${item.id}', null, null, null, null, this.value)">
+                                 ${units.map(u => `<option value="${u}" ${u === unit ? 'selected' : ''}>${u}</option>`).join('')}
+                             </select>
+                             <i class="fas fa-caret-down absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 pointer-events-none"></i>
+                        </div>
+
+                        <!-- 步进器 -->
+                        <div class="input-wrapper flex items-center bg-gray-50 rounded-lg h-8 w-24 relative border border-gray-200 ${isSelected ? 'border-orange-200 bg-white' : ''}">
+                            <button class="w-8 h-full flex items-center justify-center text-gray-500 hover:text-orange-600 active:scale-90 transition-transform" 
+                                    onclick="updateTempItem('${item.id}', '${qty ? qty - 1 : 0}', '${item.name}', '${item.spec}', '${item.category}', '${units[0]}')">
+                                <i class="fas fa-minus text-[10px]"></i>
+                            </button>
+                            <input type="number" 
+                                   class="w-8 h-full text-center text-sm font-bold text-gray-800 bg-transparent border-none focus:ring-0 p-0 ${isSelected ? 'text-orange-600' : ''}" 
+                                   value="${qty}" 
+                                   oninput="updateTempItem('${item.id}', this.value, '${item.name}', '${item.spec}', '${item.category}', '${units[0]}')" 
+                                   placeholder="0">
+                            <button class="w-8 h-full flex items-center justify-center text-gray-500 hover:text-orange-600 active:scale-90 transition-transform" 
+                                    onclick="updateTempItem('${item.id}', '${qty ? parseFloat(qty) + 1 : 1}', '${item.name}', '${item.spec}', '${item.category}', '${units[0]}')">
+                                <i class="fas fa-plus text-[10px]"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        // 临时选中状态
+        let tempSelectedItems = [];
+
+        // Unified update function: handles adding, updating quantity, and updating unit
+        function updateTempItem(id, qtyStr, name, spec, category, unit) {
+            // Find existing item
+            let itemIndex = tempSelectedItems.findIndex(i => i.id === id);
+            
+            // If qtyStr is provided (from input), parse it
+            let qty = null;
+            if (qtyStr !== null && qtyStr !== undefined) {
+                 qty = parseFloat(qtyStr);
+            }
+
+            if (itemIndex > -1) {
+                // Update existing
+                if (qty !== null) {
+                    if (isNaN(qty) || qty <= 0) {
+                        // If invalid quantity, remove item
+                        tempSelectedItems.splice(itemIndex, 1);
+                    } else {
+                        tempSelectedItems[itemIndex].quantity = qty;
+                    }
+                }
+                if (unit !== null && unit !== undefined) {
+                    tempSelectedItems[itemIndex].unit = unit;
+                }
+            } else {
+                // Add new item (only if quantity is valid)
+                if (qty !== null && !isNaN(qty) && qty > 0) {
+                    tempSelectedItems.push({
+                        id: id,
+                        name: name,
+                        spec: spec,
+                        category: category,
+                        quantity: qty,
+                        unit: unit // use default unit passed in
+                    });
+                }
+            }
+            
+            // DOM Update Logic
+            const row = document.getElementById(`popup-item-${id}`);
+            if (!row) return; // safety check
+            
+            const inputWrapper = row.querySelector('.input-wrapper');
+            const inputEl = row.querySelector('input');
+            const selectEl = row.querySelector('select');
+            
+            const isSelected = tempSelectedItems.some(i => i.id === id);
+            
+            if (isSelected) {
+                row.classList.add('ring-2', 'ring-orange-100', 'bg-orange-50/30');
+                
+                inputWrapper.classList.add('border-orange-200', 'ring-1', 'ring-orange-50');
+                inputWrapper.classList.remove('border-gray-200');
+                
+                inputEl.classList.add('text-orange-600');
+                
+                selectEl.classList.add('text-orange-600', 'font-medium', 'border-orange-200');
+                selectEl.classList.remove('border-gray-200');
+            } else {
+                row.classList.remove('ring-2', 'ring-orange-100', 'bg-orange-50/30');
+                
+                inputWrapper.classList.remove('border-orange-200', 'ring-1', 'ring-orange-50');
+                inputWrapper.classList.add('border-gray-200');
+                
+                inputEl.classList.remove('text-orange-600');
+                
+                selectEl.classList.remove('text-orange-600', 'font-medium', 'border-orange-200');
+                selectEl.classList.add('border-gray-200');
+            }
+            
+            // Sync input value if not focused (prevents jumping cursor)
+            if (document.activeElement !== inputEl && qty !== null) {
+                inputEl.value = qty > 0 ? qty : '';
+            }
+        }
+        
+        // Remove unused functions
+        // function addTempItem... 
+        // function removeTempItem...
+
+        function confirmSelection() {
+            try {
+                const count = tempSelectedItems.length;
+                if (count === 0) {
+                    closeProductSelector();
+                    return;
+                }
+
+                tempSelectedItems.forEach(item => {
+                    // 确保数量有效
+                    const qty = parseFloat(item.quantity);
+                    if (!isNaN(qty) && qty > 0) {
+                         addProduct(item.name, item.spec, item.category, qty, item.unit);
+                    }
+                });
+                
+                showToast(`已添加 ${count} 项商品`);
+            } catch (error) {
+                console.error("添加商品出错:", error);
+                showToast("添加部分商品时出错");
+            } finally {
+                // 无论是否出错，都要清理并关闭
+                tempSelectedItems = [];
+                closeProductSelector();
+            }
+        }
+        
+        // 兼容旧的 filterPopupList 调用 (searchInput oninput)
+        function filterPopupList() {
+            renderPopupList();
+        }
+
+        // Toast 提示
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            toast.classList.remove('hidden');
+            // 强制重绘
+            void toast.offsetWidth;
+            toast.classList.remove('opacity-0');
+            
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                setTimeout(() => {
+                    toast.classList.add('hidden');
+                }, 300);
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

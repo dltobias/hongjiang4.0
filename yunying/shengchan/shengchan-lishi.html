@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生产历史 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="../style.css">
+
+</head>
+<body class="bg-[#f7f7f5] h-screen flex flex-col">
+
+    <!-- Header -->
+    <div class="bg-white px-4 py-3 shadow-sm border-b border-gray-100 z-30 flex-shrink-0">
+        <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center space-x-3">
+                <a href="shengchan-zhuye.html" class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+                <h1 class="text-lg font-bold text-gray-800">生产历史记录</h1>
+            </div>
+            <button class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50 text-gray-600">
+                <i class="fas fa-filter"></i>
+            </button>
+        </div>
+        
+        <!-- Month Filter -->
+        <div class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+            <button class="px-4 py-1.5 bg-gray-800 text-white rounded-full text-xs font-bold whitespace-nowrap">本月</button>
+            <button class="px-4 py-1.5 bg-white border border-gray-200 text-gray-600 rounded-full text-xs font-medium whitespace-nowrap">9月</button>
+            <button class="px-4 py-1.5 bg-white border border-gray-200 text-gray-600 rounded-full text-xs font-medium whitespace-nowrap">8月</button>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="flex-1 overflow-y-auto p-4 space-y-4">
+        
+        <!-- Record 1 -->
+        <div class="card p-4">
+            <div class="flex justify-between items-start mb-3 border-b border-gray-50 pb-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 text-sm font-bold">
+                        25
+                    </div>
+                    <div>
+                        <div class="font-bold text-gray-800">2023-10-25 (昨天)</div>
+                        <div class="text-xs text-gray-500">总产量: 118个 / 完成率 100%</div>
+                    </div>
+                </div>
+                <span class="px-2 py-1 bg-green-50 text-green-600 text-xs font-bold rounded">已完成</span>
+            </div>
+            
+            <div class="space-y-2 mb-3">
+                <div class="flex justify-between text-xs text-gray-600">
+                    <span><i class="fas fa-store mr-1 text-gray-400"></i>市中心旗舰店</span>
+                    <span>法式牛角包等 5 品项</span>
+                </div>
+                <div class="flex justify-between text-xs text-gray-600">
+                    <span><i class="fas fa-store mr-1 text-gray-400"></i>科技园分店</span>
+                    <span>菠萝包等 3 品项</span>
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <button class="flex-1 py-2 bg-gray-50 text-gray-600 text-xs font-bold rounded-lg hover:bg-gray-100 transition-colors">
+                    查看当日详情
+                </button>
+                <button onclick="openRemakeModal('2023-10-25')" class="flex-1 py-2 bg-red-50 text-red-600 text-xs font-bold rounded-lg hover:bg-red-100 transition-colors">
+                    <i class="fas fa-exclamation-triangle mr-1"></i> 异常/补单
+                </button>
+            </div>
+        </div>
+
+        <!-- Record 2 -->
+        <div class="card p-4">
+            <div class="flex justify-between items-start mb-3 border-b border-gray-50 pb-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 text-sm font-bold">
+                        24
+                    </div>
+                    <div>
+                        <div class="font-bold text-gray-800">2023-10-24 (周二)</div>
+                        <div class="text-xs text-gray-500">总产量: 95个 / 完成率 100%</div>
+                    </div>
+                </div>
+                <span class="px-2 py-1 bg-green-50 text-green-600 text-xs font-bold rounded">已完成</span>
+            </div>
+            
+            <div class="space-y-2 mb-3">
+                <div class="flex justify-between text-xs text-gray-600">
+                    <span><i class="fas fa-store mr-1 text-gray-400"></i>市中心旗舰店</span>
+                    <span>全麦吐司等 4 品项</span>
+                </div>
+            </div>
+
+            <button class="w-full py-2 bg-gray-50 text-gray-600 text-xs font-bold rounded-lg hover:bg-gray-100 transition-colors">
+                查看当日详情
+            </button>
+        </div>
+
+        <!-- Record 3 -->
+        <div class="card p-4 opacity-80">
+            <div class="flex justify-between items-start mb-3 border-b border-gray-50 pb-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 text-sm font-bold">
+                        23
+                    </div>
+                    <div>
+                        <div class="font-bold text-gray-800">2023-10-23 (周一)</div>
+                        <div class="text-xs text-gray-500">总产量: 150个 / 完成率 98%</div>
+                    </div>
+                </div>
+                <span class="px-2 py-1 bg-orange-50 text-orange-600 text-xs font-bold rounded">有异常</span>
+            </div>
+            
+            <div class="bg-orange-50 p-2 rounded text-xs text-orange-700 mb-3">
+                <i class="fas fa-exclamation-circle mr-1"></i> 烤箱故障导致一批次报废
+            </div>
+
+            <button class="w-full py-2 bg-gray-50 text-gray-600 text-xs font-bold rounded-lg hover:bg-gray-100 transition-colors">
+                查看当日详情
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Remake Modal -->
+    <div id="remakeModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <i class="fas fa-tools text-red-500"></i> 申请生产补单
+            </h3>
+            
+            <div class="space-y-4 mb-6">
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">选择产品</label>
+                    <select class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500">
+                        <option>法式牛角包</option>
+                        <option>菠萝包</option>
+                        <option>全麦吐司</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">补单数量</label>
+                    <div class="flex items-center gap-3">
+                        <button class="w-10 h-10 rounded-lg border border-gray-200 flex items-center justify-center text-gray-600" onclick="adjustRemakeQty(-1)">-</button>
+                        <input type="number" id="remakeQty" class="flex-1 h-10 border border-gray-200 rounded-lg text-center font-bold text-lg" value="5">
+                        <button class="w-10 h-10 rounded-lg border border-gray-200 flex items-center justify-center text-gray-600" onclick="adjustRemakeQty(1)">+</button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">异常原因</label>
+                    <textarea class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 h-20" placeholder="例如：装车时挤压变形..."></textarea>
+                </div>
+            </div>
+
+            <div class="flex gap-3">
+                <button class="flex-1 py-3 rounded-xl bg-gray-100 text-gray-600 font-medium" onclick="closeRemakeModal()">取消</button>
+                <button class="flex-1 py-3 rounded-xl bg-red-500 text-white font-bold shadow-lg shadow-red-200" onclick="submitRemake()">
+                    <i class="fas fa-plus-circle mr-1"></i> 生成补单任务
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openRemakeModal(date) {
+            document.getElementById('remakeModal').classList.remove('hidden');
+        }
+
+        function closeRemakeModal() {
+            document.getElementById('remakeModal').classList.add('hidden');
+        }
+
+        function adjustRemakeQty(delta) {
+            const input = document.getElementById('remakeQty');
+            let val = parseInt(input.value) || 0;
+            val += delta;
+            if (val < 1) val = 1;
+            input.value = val;
+        }
+
+        function submitRemake() {
+            // Logic to submit remake request
+            closeRemakeModal();
+            
+            // Show toast
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-4 left-1/2 -translate-x-1/2 bg-gray-900/90 backdrop-blur text-white px-4 py-3 rounded-xl shadow-xl z-[110] text-sm font-medium flex items-center gap-2';
+            toast.innerHTML = '<i class="fas fa-check-circle text-green-400"></i> 已生成加急补单任务';
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+                // Optional: Redirect to Pending tab
+                 window.location.href = 'shengchan-zhuye.html';
+            }, 1500);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商品管理 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Cookpad Design System */
+        :root {
+            --primary-orange: #ff9f43;
+            --primary-dark: #ff8c00;
+            --text-main: #333333;
+            --text-sub: #8b8b8b;
+            --bg-light: #f7f7f5;
+            --bg-white: #ffffff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-main);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* 滚动条美化 */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 3px;
+        }
+
+        /* 搜索栏样式 */
+        .search-header {
+            background-color: #ffffff;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        
+        .search-input-wrapper {
+            background-color: #f3f3f3;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        .search-input-wrapper:focus-within {
+            background-color: #ffffff;
+            box-shadow: 0 0 0 2px var(--primary-orange) inset;
+        }
+
+        /* 分类栏样式 */
+        .category-sidebar {
+            width: 90px;
+            background-color: #ffffff;
+            border-right: 1px solid #f0f0f0;
+        }
+        
+        .category-item {
+            transition: all 0.2s ease;
+            margin: 4px 8px;
+            border-radius: 8px;
+            border: 1px solid transparent;
+        }
+        
+        .category-item:hover {
+            background-color: #f7f7f5;
+        }
+        
+        .category-item.active {
+            background-color: #fff7ed;
+            border-color: #ffedd5;
+            color: var(--primary-dark);
+        }
+        
+        .category-item.active .text-gray-800,
+        .category-item.active .text-gray-700 {
+            color: var(--primary-dark) !important;
+            font-weight: 600;
+        }
+        
+        .category-item.active i {
+            color: var(--primary-dark) !important;
+        }
+
+        .category-item.active .bg-gray-50 {
+            background-color: #ffedd5 !important;
+        }
+
+        /* 商品卡片样式 */
+        .product-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            border: 1px solid #f0f0f0;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .product-card:active {
+            transform: scale(0.98);
+        }
+
+        /* 商品卡片右上角分类标签样式 */
+        .product-card .category-tag {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            border-top-right-radius: 12px;
+            border-bottom-left-radius: 12px;
+            border-top-left-radius: 0;
+            border-bottom-right-radius: 0;
+            min-width: fit-content;
+            white-space: nowrap;
+            padding: 6px 10px;
+            font-size: 11px;
+        }
+
+        /* 价格标签样式 */
+        .price-tag {
+            color: var(--primary-dark);
+            font-weight: 700;
+            background: transparent;
+            text-shadow: none;
+            padding: 0;
+        }
+        
+        /* 库存状态样式 */
+        .stock-status {
+            font-size: 10px;
+            font-weight: 500;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        
+        .stock-high { background-color: #ecfdf5; color: #059669; }
+        .stock-medium { background-color: #fff7ed; color: #b45309; }
+        .stock-low { background-color: #fef2f2; color: #b91c1c; }
+        .stock-out { background-color: #f3f4f6; color: #6b7280; }
+
+        /* 新建按钮（圆形、主色统一） */
+        .create-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+        .create-btn:hover { filter: brightness(1.06); }
+        .create-btn:active { transform: scale(0.95); }
+
+        /* 新建按钮阴影统一为主色（橙色系） */
+        .create-fab {
+            box-shadow: 0 8px 25px rgba(255, 140, 0, 0.25);
+            transition: box-shadow 0.3s ease, transform 0.2s ease, filter 0.2s ease;
+        }
+        .create-fab:hover { box-shadow: 0 12px 35px rgba(255, 140, 0, 0.35); }
+        .create-fab:active { box-shadow: 0 4px 15px rgba(255, 140, 0, 0.20); }
+
+        /* Unified Orange Theme Helpers */
+        .text-orange-600 { color: #ea580c; }
+        .bg-orange-50 { background-color: #fff7ed; }
+        .bg-orange-100 { background-color: #ffedd5; }
+
+        /* 商品分类拖拽排序样式 */
+        .product-category-item {
+            transition: all 0.2s ease;
+        }
+        
+        .product-category-item:hover {
+            background-color: #f9fafb;
+        }
+        
+        .product-category-item.dragging {
+            background-color: #f3f4f6;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border-radius: 8px;
+            opacity: 0.9;
+        }
+        
+        .drag-handle {
+            cursor: grab;
+            transition: color 0.2s ease;
+        }
+        
+        .drag-handle:hover {
+            color: #6b7280;
+        }
+        
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 h-screen flex flex-col">
+    <!-- 顶部状态栏 - Cookpad 风格 -->
+    <div class="bg-white px-4 py-4 shadow-sm border-b border-gray-100 z-30 flex-shrink-0">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <a href="../../cangku-gongneng/erp-zhuye-canku.html" class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+                <div>
+                    <div class="text-xl font-bold text-gray-800 tracking-wide">商品管理</div>
+                    <div class="text-xs text-gray-500 font-medium">共 <span id="totalProductCount" class="font-bold">36</span> 个商品</div>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="showBatchImportSheet()" class="bg-orange-50 hover:bg-orange-100 text-orange-600 px-3 py-2 rounded-lg transition-all">
+                    <i class="fas fa-file-import text-xs"></i>
+                </button>
+                <button onclick="showStockAlert()" class="bg-gray-50 hover:bg-gray-100 text-gray-600 px-3 py-2 rounded-lg transition-all" title="库存预警">
+                    <i class="fas fa-exclamation-triangle text-xs"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 搜索栏 -->
+    <div class="px-4 mt-3 mb-2 flex-shrink-0">
+        <div class="relative search-input-wrapper">
+            <input type="text" placeholder="搜索商品名称..." 
+                   class="w-full bg-transparent rounded-xl px-4 py-2.5 pl-10 text-sm text-gray-700 focus:outline-none placeholder-gray-500"
+                   id="searchInput">
+            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            <button class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-orange-500 hidden w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-100 transition-all duration-200" 
+                    id="clearSearch" 
+                    onclick="clearSearchInput()">
+                <i class="fas fa-times text-xs"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 主内容区域 - 左右两栏布局 -->
+    <div class="flex main-content mt-2 flex-1 overflow-hidden pb-0">
+        <!-- 左侧分类栏 -->
+        <div class="category-sidebar h-full custom-scrollbar flex flex-col">
+            <div class="py-1 flex-1 overflow-y-auto" id="categorySidebar">
+                <!-- 分类项 -->
+                <div class="category-item active px-2 py-3 text-center cursor-pointer" data-category="all" onclick="selectCategory('all', this)">
+                    <div class="w-9 h-9 rounded-xl bg-orange-100 flex items-center justify-center mx-auto mb-1.5 transition-colors">
+                        <i class="fas fa-th text-orange-600 text-sm"></i>
+                    </div>
+                    <div class="text-xs font-medium text-gray-700">全部</div>
+                    <div class="text-[10px] text-gray-600 font-medium mt-0.5">36</div>
+                </div>
+                
+                <div class="category-item px-2 py-3 text-center cursor-pointer" data-category="bread" onclick="selectCategory('bread', this)">
+                    <div class="w-9 h-9 rounded-xl bg-gray-50 flex items-center justify-center mx-auto mb-1.5 transition-colors group-hover:bg-orange-50">
+                        <i class="fas fa-bread-slice text-gray-400 text-sm group-hover:text-orange-500"></i>
+                    </div>
+                    <div class="text-xs font-medium text-gray-700">面包</div>
+                    <div class="text-[10px] text-gray-400 mt-0.5">12</div>
+                </div>
+                
+                <div class="category-item px-2 py-3 text-center cursor-pointer" data-category="cake" onclick="selectCategory('cake', this)">
+                    <div class="w-9 h-9 rounded-xl bg-gray-50 flex items-center justify-center mx-auto mb-1.5 transition-colors group-hover:bg-orange-50">
+                        <i class="fas fa-birthday-cake text-gray-400 text-sm group-hover:text-orange-500"></i>
+                    </div>
+                    <div class="text-xs font-medium text-gray-700">蛋糕</div>
+                    <div class="text-[10px] text-gray-400 mt-0.5">8</div>
+                </div>
+                
+                <div class="category-item px-2 py-3 text-center cursor-pointer" data-category="cookie" onclick="selectCategory('cookie', this)">
+                    <div class="w-9 h-9 rounded-xl bg-gray-50 flex items-center justify-center mx-auto mb-1.5 transition-colors group-hover:bg-orange-50">
+                        <i class="fas fa-cookie-bite text-gray-400 text-sm group-hover:text-orange-500"></i>
+                    </div>
+                    <div class="text-xs font-medium text-gray-700">饼干</div>
+                    <div class="text-[10px] text-gray-400 mt-0.5">6</div>
+                </div>
+                
+                <div class="category-item px-2 py-3 text-center cursor-pointer" data-category="dessert" onclick="selectCategory('dessert', this)">
+                    <div class="w-9 h-9 rounded-xl bg-gray-50 flex items-center justify-center mx-auto mb-1.5 transition-colors group-hover:bg-orange-50">
+                        <i class="fas fa-ice-cream text-gray-400 text-sm group-hover:text-orange-500"></i>
+                    </div>
+                    <div class="text-xs font-medium text-gray-700">甜点</div>
+                    <div class="text-[10px] text-gray-400 mt-0.5">5</div>
+                </div>
+                
+                <div class="category-item px-2 py-3 text-center cursor-pointer" data-category="drink" onclick="selectCategory('drink', this)">
+                    <div class="w-9 h-9 rounded-xl bg-gray-50 flex items-center justify-center mx-auto mb-1.5 transition-colors group-hover:bg-orange-50">
+                        <i class="fas fa-coffee text-gray-400 text-sm group-hover:text-orange-500"></i>
+                    </div>
+                    <div class="text-xs font-medium text-gray-700">饮品</div>
+                    <div class="text-[10px] text-gray-400 mt-0.5">3</div>
+                </div>
+                
+                <div class="category-item px-2 py-3 text-center cursor-pointer" data-category="other" onclick="selectCategory('other', this)">
+                    <div class="w-9 h-9 rounded-xl bg-gray-50 flex items-center justify-center mx-auto mb-1.5 transition-colors group-hover:bg-orange-50">
+                        <i class="fas fa-utensils text-gray-400 text-sm group-hover:text-orange-500"></i>
+                    </div>
+                    <div class="text-xs font-medium text-gray-700">其他</div>
+                    <div class="text-[10px] text-gray-400 mt-0.5">2</div>
+                </div>
+            </div>
+            
+            <!-- 分类设置按钮 -->
+            <div class="border-t border-gray-100 py-3 px-2">
+                <button onclick="showCategorySettings()" class="block text-center w-full hover:bg-gray-50 rounded-lg py-2 transition-all duration-200 group">
+                    <div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center mx-auto mb-1 group-hover:bg-orange-50 transition-colors">
+                        <i class="fas fa-cog text-gray-400 text-xs group-hover:text-orange-500"></i>
+                    </div>
+                    <div class="text-xs font-medium text-gray-500 group-hover:text-orange-600">设置</div>
+                </button>
+            </div>
+        </div>
+        
+        <!-- 右侧商品列表 -->
+        <div class="flex-1 px-4 h-full overflow-y-auto custom-scrollbar" id="productList">
+            
+            <!-- 商品卡片 -->
+            <div class="space-y-3 pb-24">
+                <!-- 商品卡片1 -->
+                <div class="bg-white rounded-xl p-3 shadow-sm border border-gray-200 transition-all hover:shadow-md hover:transform hover:translate-y-[-2px] product-card group relative" 
+                     data-category="bread" 
+                     onclick="openProductDetail('经典吐司面包')" 
+                     style="touch-action: pan-y;">
+                    
+                    <button class="category-tag bg-white/95 text-gray-500 shadow-sm transition-all hover:bg-orange-50 hover:text-orange-600" 
+                            onclick="event.stopPropagation(); openProductCategorySelector(this)" data-category="bread">
+                        面包
+                    </button>
+
+                    <div class="flex items-center space-x-3 mt-1">
+                        <img src="https://images.unsplash.com/photo-1509440159596-0249088772ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80" 
+                             class="w-12 h-12 rounded-lg object-cover border-2 border-gray-200" alt="经典吐司面包">
+                        <div class="flex-1 pr-12">
+                            <div class="flex items-center gap-1.5 mb-0.5">
+                                <div class="text-sm font-semibold text-gray-800">经典吐司面包</div>
+                            </div>
+                            <div class="flex items-center space-x-2 mt-1">
+                                <span class="price-tag text-xs">¥12.8</span>
+                                <span class="stock-status stock-high">库存充足</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 商品卡片2 -->
+                <div class="bg-white rounded-xl p-3 shadow-sm border border-gray-200 transition-all hover:shadow-md hover:transform hover:translate-y-[-2px] product-card group relative" 
+                     data-category="cake" 
+                     onclick="openProductDetail('浓郁巧克力蛋糕')" 
+                     style="touch-action: pan-y;">
+                    
+                    <!-- 右上角分类标签组 -->
+                    <div class="absolute top-0 right-0 z-10 flex flex-col items-end">
+                        <button class="bg-white/95 backdrop-blur-sm text-gray-500 px-3 py-1 rounded-bl-xl text-[11px] font-bold border-b border-l border-gray-100 shadow-sm transition-all hover:bg-orange-50 hover:text-orange-600" 
+                                onclick="event.stopPropagation(); filterByCategory('cake')" data-category="cake">
+                            蛋糕
+                        </button>
+                    </div>
+
+                    <div class="flex items-center space-x-3 mt-1">
+                        <img src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80" 
+                             class="w-12 h-12 rounded-lg object-cover border-2 border-gray-200" alt="浓郁巧克力蛋糕">
+                        <div class="flex-1 pr-12">
+                            <div class="text-sm font-semibold text-gray-800">浓郁巧克力蛋糕</div>
+                            <div class="flex items-center space-x-2 mt-1">
+                                <span class="price-tag text-xs">¥68.0</span>
+                                <span class="stock-status stock-medium">库存一般</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 商品卡片3 -->
+                <div class="bg-white rounded-xl p-3 shadow-sm border border-gray-200 transition-all hover:shadow-md hover:transform hover:translate-y-[-2px] product-card group relative" 
+                     data-category="cookie" 
+                     onclick="openProductDetail('香草曲奇饼干')" 
+                     style="touch-action: pan-y;">
+                    
+                    <button class="category-tag bg-white/95 text-gray-500 shadow-sm transition-all hover:bg-orange-50 hover:text-orange-600" 
+                            onclick="event.stopPropagation(); openProductCategorySelector(this)" data-category="cake">
+                        蛋糕
+                    </button>
+
+                    <div class="flex items-center space-x-3 mt-1">
+                        <img src="https://images.unsplash.com/photo-1499636136210-6f4ee915583e?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80" 
+                             class="w-12 h-12 rounded-lg object-cover border-2 border-gray-200" alt="香草曲奇饼干">
+                        <div class="flex-1 pr-12">
+                            <div class="text-sm font-semibold text-gray-800">香草曲奇饼干</div>
+                            <div class="flex items-center space-x-2 mt-1">
+                                <span class="price-tag text-xs">¥18.5</span>
+                                <span class="stock-status stock-low">库存不足</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 商品卡片4 -->
+                <div class="bg-white rounded-xl p-3 shadow-sm border border-gray-200 transition-all hover:shadow-md hover:transform hover:translate-y-[-2px] product-card group relative" 
+                     data-category="dessert" 
+                     onclick="openProductDetail('草莓慕斯')" 
+                     style="touch-action: pan-y;">
+                    
+                    <button class="category-tag bg-white/95 text-gray-500 shadow-sm transition-all hover:bg-orange-50 hover:text-orange-600" 
+                            onclick="event.stopPropagation(); openProductCategorySelector(this)" data-category="dessert">
+                        甜点
+                    </button>
+
+                    <div class="flex items-center space-x-3 mt-1">
+                        <img src="https://images.unsplash.com/photo-1551024506-0bccd828d307?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80" 
+                             class="w-12 h-12 rounded-lg object-cover border-2 border-gray-200" alt="草莓慕斯">
+                        <div class="flex-1 pr-12">
+                            <div class="text-sm font-semibold text-gray-800">草莓慕斯</div>
+                            <div class="flex items-center space-x-2 mt-1">
+                                <span class="price-tag text-xs">¥35.0</span>
+                                <span class="stock-status stock-out">缺货</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 商品卡片5 -->
+                <div class="bg-white rounded-xl p-3 shadow-sm border border-gray-200 transition-all hover:shadow-md hover:transform hover:translate-y-[-2px] product-card group relative" 
+                     data-category="drink" 
+                     onclick="openProductDetail('拿铁咖啡')" 
+                     style="touch-action: pan-y;">
+                    
+                    <!-- 右上角分类标签组 -->
+                    <div class="absolute top-0 right-0 z-10 flex flex-col items-end">
+                        <button class="bg-white/95 backdrop-blur-sm text-gray-500 px-3 py-1 rounded-bl-xl text-[11px] font-bold border-b border-l border-gray-100 shadow-sm transition-all hover:bg-orange-50 hover:text-orange-600" 
+                     button    饮品cgyag 
+                </div>
+
+                     class="img src="https://images.unsplash.com/photo-1461023058943-07fcbe16d735?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80" 
+                             class="w-12 h-12 rounded-lg object-cover border-2 border-gray-200" alt="拿铁咖啡">
+                        <div class="flex-1 pr-12">
+                            <div class="text-sm font-semibold text-gray-800">拿铁咖啡</div>
+                            <div class="flex items-center space-x-2 mt-1">
+                                <span class="price-tag text-xs">¥25.0</span>
+                                <span class="stock-status stock-high">库存充足</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 商品卡片6 -->
+                <div class="bg-white rounded-xl p-3 shadow-sm border border-gray-200 transition-all hover:shadow-md hover:transform hover:translate-y-[-2px] product-card group relative" 
+                     data-category="bread" 
+                     onclick="openProductDetail('法式长棍面包')" 
+                     style="touch-action: pan-y;">
+                    
+                    <button class="category-tag bg-white/95 text-gray-500 shadow-sm transition-all hover:bg-orange-50 hover:text-orange-600" 
+                            onclick="event.stopPropagation(); openProductCategorySelector(this)" data-category="cookie">
+                        饼干
+                    </button>
+
+                    <div class="flex items-center space-x-3 mt-1">
+                        <img src="https://images.unsplash.com/photo-1555507036-ab1f4038808a?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80" 
+                             class="w-12 h-12 rounded-lg object-cover border-2 border-gray-200" alt="法式长棍面包">
+                        <div class="flex-1 pr-12">
+                            <div class="text-sm font-semibold text-gray-800">法式长棍面包</div>
+                            <div class="flex items-center space-x-2 mt-1">
+                                <span class="price-tag text-xs">¥15.0</span>
+                                <span class="stock-status stock-medium">库存一般</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 商品卡片7 -->
+                <div class="bg-white rounded-xl p-3 shadow-sm border border-gray-200 transition-all hover:shadow-md hover:transform hover:translate-y-[-2px] product-card group relative" 
+                     data-category="dessert" 
+                     onclick="openProductDetail('法式马卡龙')" 
+                     style="touch-action: pan-y;">
+                    
+                    <button class="category-tag bg-white/95 text-gray-500 shadow-sm transition-all hover:bg-orange-50 hover:text-orange-600" 
+                            onclick="event.stopPropagation(); openProductCategorySelector(this)" data-category="dessert">
+                        甜点
+                    </button>
+
+                    <div class="flex items-center space-x-3 mt-1">
+                        <img src="https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80" 
+                             class="w-12 h-12 rounded-lg object-cover border-2 border-gray-200" alt="法式马卡龙">
+                        <div class="flex-1 pr-12">
+                            <div class="text-sm font-semibold text-gray-800">法式马卡龙</div>
+                            <div class="flex items-center space-x-2 mt-1">
+                                <span class="price-tag text-xs">¥8.0</span>
+                                <span class="stock-status stock-high">库存充足</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 悬浮添加按钮 -->
+    <div class="fixed bottom-8 right-6 z-40">
+        <button
+            class="create-btn create-fab bg-gradient-to-r from-orange-400 to-orange-600 text-white shadow-lg shadow-orange-200"
+            onclick="showProductSelectionModal()"
+            aria-label="新建商品"
+            title="新建">
+            <i class="fas fa-plus text-base"></i>
+        </button>
+    </div>
+
+    <!-- 商品分类管理弹窗 -->
+    <div id="productCategoryModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-xl mx-4 w-full max-w-md h-[80vh] flex flex-col shadow-2xl">
+            <!-- 弹窗头部 -->
+            <div class="flex items-center justify-between p-4 border-b border-gray-100">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-800">商品分类管理</h3>
+                    <p class="text-xs text-gray-500 mt-0.5">共 <span id="modalTotalCategoryCount">7</span> 个分类</p>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button onclick="addNewProductCategory()" class="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white shadow-md hover:bg-orange-600 transition-colors">
+                        <i class="fas fa-plus text-sm"></i>
+                    </button>
+                    <button onclick="closeProductCategoryModal()" class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors">
+                        <i class="fas fa-times text-sm"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 操作提示 -->
+            <div class="bg-orange-50 border border-orange-100 rounded-xl m-4 mb-2 overflow-hidden transition-all duration-300">
+                <div class="p-3 flex items-center justify-between cursor-pointer" onclick="toggleTips(this)">
+                    <div class="flex items-center">
+                        <i class="fas fa-info-circle text-orange-500 mr-2"></i>
+                        <h4 class="text-sm font-medium text-orange-800">操作提示</h4>
+                    </div>
+                    <i class="fas fa-chevron-down text-orange-500 transition-transform duration-300 transform -rotate-90"></i>
+                </div>
+                <div class="hidden transition-all duration-300 ease-in-out origin-top">
+                    <div class="px-3 pb-3 text-xs text-orange-700 pl-9">
+                        <ul class="list-disc pl-4 space-y-1">
+                            <li>长按并拖动 <i class="fas fa-grip-lines"></i> 图标可以调整分类排序</li>
+                            <li>点击 <i class="fas fa-edit"></i> 图标可以编辑分类名称</li>
+                            <li>点击 <i class="fas fa-trash"></i> 图标可以删除分类</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 分类列表 -->
+            <div class="flex-1 overflow-y-auto px-4 pb-4">
+                <div class="bg-white rounded-xl border border-gray-100" id="productCategoryList">
+                    <!-- 分类项将通过JS动态生成 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑商品分类弹窗 -->
+    <div id="editProductCategoryModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-xl p-6 mx-4 w-full max-w-sm shadow-2xl">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">编辑商品分类</h3>
+            
+            <div class="mb-4">
+                <label for="productCategoryName" class="block text-sm font-medium text-gray-700 mb-1">分类名称</label>
+                <input type="text" id="productCategoryName" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all" placeholder="请输入分类名称">
+            </div>
+            
+            <div class="mb-4">
+                <label for="productCategoryIcon" class="block text-sm font-medium text-gray-700 mb-1">分类图标</label>
+                <select id="productCategoryIcon" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all">
+                    <option value="fa-bread-slice">面包图标</option>
+                    <option value="fa-birthday-cake">蛋糕图标</option>
+                    <option value="fa-cookie-bite">饼干图标</option>
+                    <option value="fa-ice-cream">甜点图标</option>
+                    <option value="fa-coffee">饮品图标</option>
+                    <option value="fa-utensils">其他图标</option>
+                    <option value="fa-th">全部图标</option>
+                </select>
+            </div>
+            
+            <div class="mb-4">
+                <label for="productCategoryColor" class="block text-sm font-medium text-gray-700 mb-1">分类颜色</label>
+                <select id="productCategoryColor" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all">
+                    <option value="amber">琥珀色</option>
+                    <option value="blue">蓝色</option>
+                    <option value="emerald">翠绿色</option>
+                    <option value="orange">橙色</option>
+                    <option value="pink">粉色</option>
+                    <option value="purple">紫色</option>
+                    <option value="cyan">青色</option>
+                    <option value="red">红色</option>
+                </select>
+            </div>
+            
+            <div class="flex justify-end space-x-3 mt-6">
+                <button onclick="closeEditProductCategoryModal()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium">取消</button>
+                <button onclick="saveProductCategory()" class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium shadow-md shadow-orange-200">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除商品分类确认弹窗 -->
+    <div id="deleteProductCategoryModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-xl p-6 mx-4 w-full max-w-sm">
+            <h3 class="text-lg font-semibold text-gray-800 mb-2">删除商品分类</h3>
+            <p class="text-sm text-gray-600 mb-4">确定要删除 "<span id="deleteProductCategoryName">分类名称</span>" 吗？此操作不可撤销。</p>
+            
+            <div class="flex justify-end space-x-3">
+                <button onclick="closeDeleteProductCategoryModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg">取消</button>
+                <button onclick="confirmDeleteProductCategory()" class="px-4 py-2 bg-red-600 text-white rounded-lg">删除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 商品选择弹窗 -->
+    <div id="productSelectionModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-2xl mx-4 w-full max-w-md max-h-[80vh] overflow-y-auto shadow-2xl">
+            <!-- 弹窗头部 -->
+            <div class="flex items-center justify-between p-6 border-b border-gray-100">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-plus text-orange-600 text-sm"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-800">新建商品</h3>
+                </div>
+                <button onclick="closeProductSelectionModal()" class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-times text-sm"></i>
+                </button>
+            </div>
+            
+            <!-- 商品类型选择 -->
+            <div class="p-6">
+                <!-- 常用类型 -->
+                <div class="mb-6">
+                    <h4 class="text-sm font-medium text-gray-500 mb-4">常用类型</h4>
+                    <div class="grid grid-cols-2 gap-3">
+                        <!-- 面包 -->
+                        <button onclick="createProductByType('bread')" class="bg-gray-50 hover:bg-orange-50 border border-gray-200 hover:border-orange-200 rounded-xl p-4 text-center transition-all group">
+                            <div class="text-2xl mb-2">🍞</div>
+                            <div class="text-sm font-medium text-gray-700 group-hover:text-orange-600">面包</div>
+                        </button>
+                        
+                        <!-- 蛋糕 -->
+                        <button onclick="createProductByType('cake')" class="bg-gray-50 hover:bg-orange-50 border border-gray-200 hover:border-orange-200 rounded-xl p-4 text-center transition-all group">
+                            <div class="text-2xl mb-2">🎂</div>
+                            <div class="text-sm font-medium text-gray-700 group-hover:text-orange-600">蛋糕</div>
+                        </button>
+                        
+                        <!-- 饼干 -->
+                        <button onclick="createProductByType('cookie')" class="bg-gray-50 hover:bg-orange-50 border border-gray-200 hover:border-orange-200 rounded-xl p-4 text-center transition-all group">
+                            <div class="text-2xl mb-2">🍪</div>
+                            <div class="text-sm font-medium text-gray-700 group-hover:text-orange-600">饼干</div>
+                        </button>
+                        
+                        <!-- 甜点 -->
+                        <button onclick="createProductByType('dessert')" class="bg-gray-50 hover:bg-orange-50 border border-gray-200 hover:border-orange-200 rounded-xl p-4 text-center transition-all group">
+                            <div class="text-2xl mb-2">🍰</div>
+                            <div class="text-sm font-medium text-gray-700 group-hover:text-orange-600">甜点</div>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 其他类型 -->
+                <div class="mb-6">
+                    <h4 class="text-sm font-medium text-gray-500 mb-4">其他类型</h4>
+                    <div class="grid grid-cols-2 gap-3">
+                        <!-- 饮品 -->
+                        <button onclick="createProductByType('drink')" class="bg-gray-50 hover:bg-purple-50 border border-gray-200 hover:border-purple-200 rounded-xl p-4 text-center transition-all group">
+                            <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                                <i class="fas fa-coffee text-purple-600 text-sm"></i>
+                            </div>
+                            <div class="text-sm font-medium text-gray-700 group-hover:text-purple-600">饮品</div>
+                        </button>
+                        
+                        <!-- 其他 -->
+                        <button onclick="createProductByType('other')" class="bg-gray-50 hover:bg-blue-50 border border-gray-200 hover:border-blue-200 rounded-xl p-4 text-center transition-all group">
+                            <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+                                <div class="text-xs font-bold text-blue-600">其他</div>
+                            </div>
+                            <div class="text-sm font-medium text-gray-700 group-hover:text-blue-600">其他</div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 底部按钮 -->
+            <div class="p-6 pt-0">
+                <button onclick="closeProductSelectionModal()" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl font-medium transition-colors">
+                    取消
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 库存预警弹窗 -->
+    <div id="stockAlertModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-xl mx-4 w-full max-w-md h-[70vh] flex flex-col">
+            <!-- 弹窗头部 -->
+            <div class="flex items-center justify-between p-4 border-b border-gray-200">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800">库存预警</h3>
+                    <p class="text-sm text-gray-500">需要关注的商品</p>
+                </div>
+                <button onclick="closeStockAlert()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600">
+                    <i class="fas fa-times text-sm"></i>
+                </button>
+            </div>
+            
+            <!-- 预警列表 -->
+            <div class="flex-1 overflow-y-auto p-4">
+                <div class="space-y-3">
+                    <!-- 缺货商品 -->
+                    <div class="bg-red-50 border border-red-200 rounded-xl p-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="text-sm font-semibold text-red-800">缺货商品</h4>
+                            <span class="text-xs text-red-600 bg-red-100 px-2 py-1 rounded-full">1个</span>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-red-700">草莓慕斯</span>
+                                <span class="text-xs text-red-600">库存: 0</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 库存不足商品 -->
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="text-sm font-semibold text-yellow-800">库存不足</h4>
+                            <span class="text-xs text-yellow-600 bg-yellow-100 px-2 py-1 rounded-full">1个</span>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-yellow-700">香草曲奇饼干</span>
+                                <span class="text-xs text-yellow-600">库存: 5</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 产品类别选择器 -->
+    <div id="productCategorySelectorModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-2xl mx-4 w-full max-w-md max-height-[80vh] overflow-y-auto shadow-2xl">
+            <div class="flex items-center justify-between p-6 border-b border-gray-100">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-list text-orange-600 text-sm"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-800">选择产品类别</h3>
+                </div>
+                <button onclick="closeProductCategorySelector()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors">
+                    <i class="fas fa-times text-sm"></i>
+                </button>
+            </div>
+            <div class="p-6 grid grid-cols-2 gap-3" id="productCategoryOptions"></div>
+        </div>
+    </div>
+
+    <!-- 加载中提示 -->
+    <div id="loadingIndicator" class="fixed inset-0 bg-white bg-opacity-80 flex items-center justify-center z-50 hidden">
+        <div class="text-center">
+            <div class="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p class="text-gray-600">加载中...</p>
+        </div>
+    </div>
+
+    <script>
+        // 商品分类数据
+        const productCategories = [
+            { id: 'all', name: '全部', count: 36, icon: 'fa-th', color: 'blue' },
+            { id: 'bread', name: '面包', count: 12, icon: 'fa-bread-slice', color: 'amber' },
+            { id: 'cake', name: '蛋糕', count: 8, icon: 'fa-birthday-cake', color: 'pink' },
+            { id: 'cookie', name: '饼干', count: 6, icon: 'fa-cookie-bite', color: 'orange' },
+            { id: 'dessert', name: '甜点', count: 5, icon: 'fa-ice-cream', color: 'emerald' },
+            { id: 'drink', name: '饮品', count: 3, icon: 'fa-coffee', color: 'cyan' },
+            { id: 'other', name: '其他', count: 2, icon: 'fa-utensils', color: 'purple' }
+        ];
+        
+        // 当前编辑的商品分类
+        let currentEditProductCategory = null;
+        
+        // 搜索功能初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('商品管理页面已加载');
+            initializeSearch();
+        });
+        
+        function initializeSearch() {
+            const searchInput = document.getElementById('searchInput');
+            const clearSearch = document.getElementById('clearSearch');
+            
+            if (searchInput && clearSearch) {
+                searchInput.addEventListener('input', function() {
+                    if (this.value.length > 0) {
+                        clearSearch.classList.remove('hidden');
+                    } else {
+                        clearSearch.classList.add('hidden');
+                    }
+                    searchProducts(this.value);
+                });
+            }
+        }
+        
+        function clearSearchInput() {
+            const searchInput = document.getElementById('searchInput');
+            const clearSearch = document.getElementById('clearSearch');
+            searchInput.value = '';
+            clearSearch.classList.add('hidden');
+            searchProducts('');
+        }
+        
+        function searchProducts(query) {
+            const productCards = document.querySelectorAll('.product-card');
+            productCards.forEach(card => {
+                const productName = card.querySelector('.text-sm.font-semibold').textContent.toLowerCase();
+                if (productName.includes(query.toLowerCase()) || query === '') {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+        
+        function filterProducts(category) {
+            const productCards = document.querySelectorAll('.product-card');
+            productCards.forEach((card, index) => {
+                if (category === 'all' || card.dataset.category === category) {
+                    card.style.display = 'block';
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateY(20px)';
+                    
+                    // 添加延迟动画效果
+                    setTimeout(() => {
+                        card.style.transition = 'all 0.3s ease';
+                        card.style.opacity = '1';
+                        card.style.transform = 'translateY(0)';
+                    }, index * 50);
+                } else {
+                    card.style.transition = 'all 0.2s ease';
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateY(-10px)';
+                    setTimeout(() => {
+                        card.style.display = 'none';
+                    }, 200);
+                }
+            });
+            console.log('筛选分类:', category);
+        }
+        
+        function showBatchImportSheet() {
+            alert('批量导入功能开发中...');
+        }
+        
+        function showStockAlert() {
+            document.getElementById('stockAlertModal').classList.remove('hidden');
+        }
+        
+        function closeStockAlert() {
+            document.getElementById('stockAlertModal').classList.add('hidden');
+        }
+        
+        function openProductDetail(productName) {
+            window.location.href = 'shangpin-xiangqing.html?name=' + encodeURIComponent(productName);
+        }
+        
+        function selectCategory(category, element) {
+            // 更新分类选中状态
+            const categoryItems = document.querySelectorAll('.category-item');
+            categoryItems.forEach(item => {
+                item.classList.remove('active');
+            });
+            element.classList.add('active');
+            
+            // 筛选商品
+            filterProducts(category);
+        }
+        
+        function filterByCategory(category) {
+            // 通过分类标签快速筛选
+            const categoryItems = document.querySelectorAll('.category-item');
+            categoryItems.forEach(item => {
+                item.classList.remove('active');
+                if (item.dataset.category === category) {
+                    item.classList.add('active');
+                }
+            });
+            filterProducts(category);
+        }
+
+        let currentCategoryButtonTarget = null;
+        function openProductCategorySelector(btn) {
+            currentCategoryButtonTarget = btn;
+            const modal = document.getElementById('productCategorySelectorModal');
+            const options = document.getElementById('productCategoryOptions');
+            options.innerHTML = '';
+            productCategories.filter(c => c.id !== 'all').forEach(c => {
+                const el = document.createElement('button');
+                el.className = 'bg-gray-50 border border-gray-200 rounded-xl p-4 text-center transition-all hover:bg-gray-100';
+                el.innerHTML = `<div class="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center mx-auto mb-2"><i class="fas ${c.icon} text-gray-400 text-sm"></i></div><div class="text-sm font-medium text-gray-700">${c.name}</div>`;
+                el.onclick = function() { applyProductCategory(c.id); };
+                options.appendChild(el);
+            });
+            modal.classList.remove('hidden');
+        }
+        function closeProductCategorySelector() {
+            const modal = document.getElementById('productCategorySelectorModal');
+            modal.classList.add('hidden');
+        }
+        function applyProductCategory(categoryId) {
+            if (!currentCategoryButtonTarget) return;
+            const cfg = productCategories.find(c => c.id === categoryId);
+            const name = cfg ? cfg.name : '其他';
+            // Unified theme: always use orange/gray regardless of category color
+            const card = currentCategoryButtonTarget.closest('.product-card');
+            if (card) card.setAttribute('data-category', categoryId);
+            currentCategoryButtonTarget.setAttribute('data-category', categoryId);
+            
+            // Apply unified style (Neutral White/Gray) with corner styling for premium look - NO BACKGROUND COLOR
+            currentCategoryButtonTarget.className = 'category-tag bg-white/95 text-gray-500 shadow-sm transition-all hover:bg-orange-50 hover:text-orange-600';
+            
+            currentCategoryButtonTarget.textContent = name;
+            closeProductCategorySelector();
+            showProductToast(`已切换到${name}类别`, 'success');
+        }
+        
+        // 显示分类设置弹窗
+        function showCategorySettings() {
+            renderProductCategories();
+            document.getElementById('productCategoryModal').classList.remove('hidden');
+        }
+        
+        // 关闭商品分类管理弹窗
+        function closeProductCategoryModal() {
+            document.getElementById('productCategoryModal').classList.add('hidden');
+        }
+        
+        // 切换操作提示显示状态
+        function toggleTips(header) {
+            const content = header.nextElementSibling;
+            const icon = header.querySelector('.fa-chevron-down');
+            
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                icon.classList.remove('-rotate-90');
+            } else {
+                content.classList.add('hidden');
+                icon.classList.add('-rotate-90');
+            }
+        }
+
+        // 渲染商品分类列表
+        function renderProductCategories() {
+            const categoryListContainer = document.getElementById('productCategoryList');
+            categoryListContainer.innerHTML = '';
+            
+            productCategories.forEach((category, index) => {
+                const categoryElement = document.createElement('div');
+                categoryElement.className = 'product-category-item flex items-center justify-between p-4 border-b border-gray-100 last:border-b-0';
+                categoryElement.setAttribute('data-id', category.id);
+                
+                categoryElement.innerHTML = `
+                    <div class="flex items-center">
+                        <div class="drag-handle w-8 h-8 flex items-center justify-center text-gray-400 mr-2">
+                            <i class="fas fa-grip-lines"></i>
+                        </div>
+                        <div class="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center mr-3">
+                            <i class="fas ${category.icon} text-gray-400 text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-800">${category.name}</p>
+                            <p class="text-xs text-gray-500">${category.count} 个商品</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        ${category.id !== 'all' ? `
+                        <button class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600" onclick="editProductCategory('${category.id}')">
+                            <i class="fas fa-edit text-sm"></i>
+                        </button>
+                        <button class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600" onclick="deleteProductCategory('${category.id}')">
+                            <i class="fas fa-trash text-sm"></i>
+                        </button>
+                        ` : '<div class="w-16"></div>'}
+                    </div>
+                `;
+                
+                categoryListContainer.appendChild(categoryElement);
+            });
+            
+            // 更新分类总数
+            document.getElementById('modalTotalCategoryCount').textContent = productCategories.length;
+            
+            // 初始化拖拽排序
+            initProductCategoryDragAndDrop();
+        }
+        
+        // 编辑商品分类
+        function editProductCategory(categoryId) {
+            const category = productCategories.find(c => c.id === categoryId);
+            if (!category) return;
+            
+            currentEditProductCategory = category;
+            
+            // 填充表单
+            document.getElementById('productCategoryName').value = category.name;
+            document.getElementById('productCategoryIcon').value = category.icon;
+            document.getElementById('productCategoryColor').value = category.color;
+            
+            // 显示弹窗
+            document.getElementById('editProductCategoryModal').classList.remove('hidden');
+        }
+        
+        // 关闭编辑商品分类弹窗
+        function closeEditProductCategoryModal() {
+            document.getElementById('editProductCategoryModal').classList.add('hidden');
+            currentEditProductCategory = null;
+        }
+        
+        // 保存商品分类
+        function saveProductCategory() {
+            const name = document.getElementById('productCategoryName').value.trim();
+            const icon = document.getElementById('productCategoryIcon').value;
+            const color = document.getElementById('productCategoryColor').value;
+            
+            // 验证表单
+            if (!name) {
+                showProductToast('请输入分类名称', 'error');
+                return;
+            }
+            
+            if (currentEditProductCategory) {
+                // 更新现有分类
+                currentEditProductCategory.name = name;
+                currentEditProductCategory.icon = icon;
+                currentEditProductCategory.color = color;
+                
+                // 重新渲染分类列表
+                renderProductCategories();
+                updateSidebarCategories();
+                
+                showProductToast('分类已更新', 'success');
+            } else {
+                // 添加新分类
+                const newId = 'category_' + Date.now();
+                productCategories.push({
+                    id: newId,
+                    name: name,
+                    count: 0,
+                    icon: icon,
+                    color: color
+                });
+                
+                // 重新渲染分类列表
+                renderProductCategories();
+                updateSidebarCategories();
+                
+                showProductToast('分类已添加', 'success');
+            }
+            
+            // 关闭弹窗
+            closeEditProductCategoryModal();
+        }
+        
+        // 添加新商品分类
+        function addNewProductCategory() {
+            currentEditProductCategory = null;
+            
+            // 清空表单
+            document.getElementById('productCategoryName').value = '';
+            document.getElementById('productCategoryIcon').value = 'fa-th';
+            document.getElementById('productCategoryColor').value = 'blue';
+            
+            // 显示弹窗
+            document.getElementById('editProductCategoryModal').classList.remove('hidden');
+        }
+        
+        // 删除商品分类
+        function deleteProductCategory(categoryId) {
+            const category = productCategories.find(c => c.id === categoryId);
+            if (!category) return;
+            
+            // 检查是否有商品使用此分类
+            if (category.count > 0) {
+                showProductToast(`无法删除"${category.name}"分类，该分类下还有 ${category.count} 个商品`, 'error');
+                return;
+            }
+            
+            // 显示确认弹窗
+            document.getElementById('deleteProductCategoryName').textContent = category.name;
+            document.getElementById('deleteProductCategoryModal').classList.remove('hidden');
+            
+            // 保存要删除的分类ID
+            window.pendingDeleteCategoryId = categoryId;
+        }
+        
+        // 关闭删除商品分类确认弹窗
+        function closeDeleteProductCategoryModal() {
+            document.getElementById('deleteProductCategoryModal').classList.add('hidden');
+            window.pendingDeleteCategoryId = null;
+        }
+        
+        // 确认删除商品分类
+        function confirmDeleteProductCategory() {
+            if (!window.pendingDeleteCategoryId) return;
+            
+            // 从数组中删除分类
+            const index = productCategories.findIndex(c => c.id === window.pendingDeleteCategoryId);
+            if (index > -1) {
+                const deletedCategory = productCategories.splice(index, 1)[0];
+                
+                // 重新渲染分类列表
+                renderProductCategories();
+                updateSidebarCategories();
+                
+                showProductToast(`"${deletedCategory.name}"分类已删除`, 'success');
+            }
+            
+            // 关闭弹窗
+            closeDeleteProductCategoryModal();
+        }
+        
+        // 更新侧边栏分类
+        function updateSidebarCategories() {
+            const categoryItems = document.getElementById('categorySidebar');
+            
+            // 获取当前选中的分类ID
+            const activeItem = categoryItems.querySelector('.category-item.active');
+            const activeId = activeItem ? activeItem.dataset.category : 'all';
+            
+            // 清空现有分类项
+            categoryItems.innerHTML = '';
+            
+            // 重新生成分类项
+            productCategories.forEach(category => {
+                const isActive = category.id === activeId;
+                
+                const categoryElement = document.createElement('div');
+                categoryElement.className = `category-item px-2 py-3 text-center cursor-pointer ${isActive ? 'active' : ''}`;
+                categoryElement.setAttribute('data-category', category.id);
+                categoryElement.setAttribute('onclick', `selectCategory('${category.id}', this)`);
+                
+                // 统一使用Cookpad风格（橙色/灰色主题），忽略category.color
+                categoryElement.innerHTML = `
+                    <div class="w-9 h-9 rounded-xl bg-gray-50 flex items-center justify-center mx-auto mb-1.5 transition-colors group-hover:bg-orange-50">
+                        <i class="fas ${category.icon} text-gray-400 text-sm group-hover:text-orange-500"></i>
+                    </div>
+                    <div class="text-xs font-medium text-gray-700">${category.name}</div>
+                    <div class="text-[10px] text-gray-400 mt-0.5">${category.count}</div>
+                `;
+                
+                categoryItems.appendChild(categoryElement);
+            });
+        }
+        
+        // 显示商品提示消息
+        function showProductToast(message, type = 'info') {
+            // 创建toast元素
+            const toast = document.createElement('div');
+            toast.className = `product-toast fixed top-20 left-1/2 transform -translate-x-1/2 px-4 py-3 rounded-lg text-white z-50 transition-all duration-300`;
+            
+            // 根据类型设置样式
+            if (type === 'success') {
+                toast.classList.add('bg-green-500');
+            } else if (type === 'error') {
+                toast.classList.add('bg-red-500');
+            } else {
+                toast.classList.add('bg-blue-500');
+            }
+            
+            toast.textContent = message;
+            
+            // 添加到页面
+            document.body.appendChild(toast);
+            
+            // 显示动画
+            setTimeout(() => {
+                toast.style.opacity = '1';
+                toast.style.transform = 'translate(-50%, 0)';
+            }, 100);
+            
+            // 3秒后移除
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translate(-50%, -20px)';
+                setTimeout(() => {
+                    document.body.removeChild(toast);
+                }, 300);
+            }, 3000);
+        }
+        
+        // 显示商品选择弹窗
+        function showProductSelectionModal() {
+            document.getElementById('productSelectionModal').classList.remove('hidden');
+        }
+        
+        // 关闭商品选择弹窗
+        function closeProductSelectionModal() {
+            document.getElementById('productSelectionModal').classList.add('hidden');
+        }
+        
+        // 根据类型创建商品
+        function createProductByType(type) {
+            // 关闭弹窗
+            closeProductSelectionModal();
+            
+            // 跳转到新建商品页面，携带类型参数
+            window.location.href = `shangpin-xinjian.html?type=${type}`;
+        }
+        
+        // 初始化商品分类拖拽排序
+        function initProductCategoryDragAndDrop() {
+            const categoryItems = document.querySelectorAll('.product-category-item');
+            let draggedItem = null;
+            let startY = 0;
+            let currentY = 0;
+            let isDragging = false;
+            let longPressTimer = null;
+            
+            categoryItems.forEach(item => {
+                const dragHandle = item.querySelector('.drag-handle');
+                
+                // 触摸开始
+                dragHandle.addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    startY = touch.clientY;
+                    currentY = touch.clientY;
+                    
+                    // 长按检测
+                    longPressTimer = setTimeout(() => {
+                        isDragging = true;
+                        draggedItem = item;
+                        item.classList.add('dragging');
+                        
+                        // 触觉反馈
+                        if (navigator.vibrate) {
+                            navigator.vibrate(50);
+                        }
+                        
+                        showProductToast('开始拖拽排序', 'info');
+                    }, 500); // 500ms长按
+                }, { passive: false });
+                
+                // 触摸移动
+                dragHandle.addEventListener('touchmove', function(e) {
+                    if (!isDragging) return;
+                    
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    currentY = touch.clientY;
+                    
+                    // 移动拖拽元素
+                    const deltaY = currentY - startY;
+                    draggedItem.style.transform = `translateY(${deltaY}px)`;
+                    draggedItem.style.zIndex = '1000';
+                    
+                    // 查找插入位置
+                    const container = document.getElementById('productCategoryList');
+                    const afterElement = getProductDragAfterElement(container, currentY);
+                    
+                    if (afterElement == null) {
+                        container.appendChild(draggedItem);
+                    } else {
+                        container.insertBefore(draggedItem, afterElement);
+                    }
+                }, { passive: false });
+                
+                // 触摸结束
+                dragHandle.addEventListener('touchend', function(e) {
+                    clearTimeout(longPressTimer);
+                    
+                    if (isDragging) {
+                        e.preventDefault();
+                        isDragging = false;
+                        
+                        // 重置样式
+                        draggedItem.style.transform = '';
+                        draggedItem.style.zIndex = '';
+                        draggedItem.classList.remove('dragging');
+                        
+                        // 更新分类顺序
+                        updateProductCategoryOrder();
+                        
+                        draggedItem = null;
+                    }
+                }, { passive: false });
+                
+                // 触摸取消
+                dragHandle.addEventListener('touchcancel', function() {
+                    clearTimeout(longPressTimer);
+                    
+                    if (isDragging) {
+                        isDragging = false;
+                        draggedItem.style.transform = '';
+                        draggedItem.style.zIndex = '';
+                        draggedItem.classList.remove('dragging');
+                        draggedItem = null;
+                    }
+                });
+                
+                // 阻止默认的拖拽行为
+                item.addEventListener('dragstart', function(e) {
+                    e.preventDefault();
+                });
+            });
+        }
+        
+        // 获取商品分类拖拽后的位置
+        function getProductDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.product-category-item:not(.dragging)')];
+            
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+        
+        // 更新商品分类顺序
+        function updateProductCategoryOrder(showToastMessage = true) {
+            const categoryItems = document.querySelectorAll('.product-category-item');
+            const newOrder = [];
+            
+            categoryItems.forEach(item => {
+                const categoryId = item.getAttribute('data-id');
+                const category = productCategories.find(c => c.id === categoryId);
+                if (category) {
+                    newOrder.push(category);
+                }
+            });
+            
+            // 更新分类数组
+            productCategories.length = 0;
+            productCategories.push(...newOrder);
+            
+            // 更新侧边栏分类
+            updateSidebarCategories();
+            
+            // 显示保存成功提示
+            if (showToastMessage) {
+                showProductToast('分类排序已更新', 'success');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>销售流水 - 烘匠 BakeManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-purple: #7c3aed;
+            --text-main: #333333;
+            --bg-light: #f7f7f5;
+            --bg-white: #ffffff;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-main);
+        }
+        .card {
+            background: var(--bg-white);
+            border-radius: 12px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.03);
+        }
+        .platform-icon {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-[#f7f7f5] h-screen flex flex-col">
+
+    <!-- Header -->
+    <div class="bg-white px-4 py-3 shadow-sm border-b border-gray-100 z-30 flex-shrink-0">
+        <div class="flex items-center space-x-3">
+            <a href="xiaoshou-zhuye.html" class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            <h1 class="text-lg font-bold text-gray-800">销售流水 (API同步)</h1>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white px-4 py-2 border-b border-gray-100 flex gap-2 overflow-x-auto flex-shrink-0">
+        <button class="px-3 py-1.5 rounded-full bg-purple-600 text-white text-xs font-bold whitespace-nowrap">全部渠道</button>
+        <button class="px-3 py-1.5 rounded-full bg-white border border-gray-200 text-gray-600 text-xs font-medium whitespace-nowrap">美团</button>
+        <button class="px-3 py-1.5 rounded-full bg-white border border-gray-200 text-gray-600 text-xs font-medium whitespace-nowrap">有赞</button>
+        <button class="px-3 py-1.5 rounded-full bg-white border border-gray-200 text-gray-600 text-xs font-medium whitespace-nowrap">饿了么</button>
+        <button class="px-3 py-1.5 rounded-full bg-white border border-gray-200 text-gray-600 text-xs font-medium whitespace-nowrap">快团团</button>
+    </div>
+
+    <!-- List -->
+    <div class="flex-1 overflow-y-auto p-4 space-y-3">
+        
+        <!-- Order 1 -->
+        <div class="card p-4">
+            <div class="flex justify-between items-start mb-2">
+                <div class="flex items-center gap-2">
+                    <div class="bg-yellow-100 p-1 rounded">
+                        <img src="https://img.icons8.com/color/48/meituan.png" class="platform-icon">
+                    </div>
+                    <div>
+                        <div class="text-xs text-gray-500">美团 #20231026001</div>
+                        <div class="text-xs text-gray-400">10:30:25</div>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="font-bold text-gray-800">¥ 45.00</div>
+                    <div class="text-xs text-green-600 bg-green-50 px-1.5 py-0.5 rounded mt-1">已扣库</div>
+                </div>
+            </div>
+            <div class="border-t border-dashed border-gray-100 my-2"></div>
+            <div class="space-y-1">
+                <div class="flex justify-between text-xs text-gray-600">
+                    <span>法式牛角包 x 2</span>
+                    <span class="text-gray-400">扣减: 成品库存 x2</span>
+                </div>
+                <div class="flex justify-between text-xs text-gray-600">
+                    <span>拿铁咖啡 x 1</span>
+                    <span class="text-gray-400">扣减: 咖啡豆/牛奶 (BOM)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order 2 -->
+        <div class="card p-4">
+            <div class="flex justify-between items-start mb-2">
+                <div class="flex items-center gap-2">
+                    <div class="bg-red-50 p-1 rounded">
+                        <img src="https://img.icons8.com/color/48/shop.png" class="platform-icon">
+                    </div>
+                    <div>
+                        <div class="text-xs text-gray-500">有赞 #YZ882910</div>
+                        <div class="text-xs text-gray-400">10:15:00</div>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="font-bold text-gray-800">¥ 128.00</div>
+                    <div class="text-xs text-green-600 bg-green-50 px-1.5 py-0.5 rounded mt-1">已扣库</div>
+                </div>
+            </div>
+            <div class="border-t border-dashed border-gray-100 my-2"></div>
+            <div class="space-y-1">
+                <div class="flex justify-between text-xs text-gray-600">
+                    <span>草莓生日蛋糕 (6寸) x 1</span>
+                    <span class="text-gray-400">扣减: 成品库存 x1</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order 3 (Pending Stock Deduction) -->
+        <div class="card p-4 border-l-4 border-l-orange-400">
+            <div class="flex justify-between items-start mb-2">
+                <div class="flex items-center gap-2">
+                    <div class="bg-blue-50 p-1 rounded">
+                        <img src="https://img.icons8.com/color/48/ele-me.png" class="platform-icon">
+                    </div>
+                    <div>
+                        <div class="text-xs text-gray-500">饿了么 #EL9921</div>
+                        <div class="text-xs text-gray-400">09:55:12</div>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="font-bold text-gray-800">¥ 32.00</div>
+                    <div class="text-xs text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded mt-1">
+                        <i class="fas fa-spinner fa-spin mr-1"></i>扣库中
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-dashed border-gray-100 my-2"></div>
+            <div class="space-y-1">
+                <div class="flex justify-between text-xs text-gray-600">
+                    <span>肉松小贝 (4个装) x 1</span>
+                    <span class="text-gray-400">正在计算BOM...</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>
